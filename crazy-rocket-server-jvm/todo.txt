@@ -1,0 +1,7 @@
+RegEx:
+Dataclass members to Kotlin:
+( {4})([a-zA-Z]+: .+)
+$1val $2,
+
+Ts-Array to Kt-Array
+([^ \[\]]+)\[\]
