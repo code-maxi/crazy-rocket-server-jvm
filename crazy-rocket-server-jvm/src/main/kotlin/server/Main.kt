@@ -1,4 +1,5 @@
 package server
 fun main(args: Array<String>) {
-    println("Hello World!")
+    server = Server(1435)
+    server.listen()
 }

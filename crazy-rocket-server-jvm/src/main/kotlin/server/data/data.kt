@@ -1,13 +1,11 @@
-package server.data
+import kotlin.math.abs
+import kotlin.math.sqrt
 
 data class IDable(val id: Int)
 
-data class SendFormatI (
-    val header: String,
-    val value: Any
-)
+data class SendFormat(val header: String, val value: String?)
 
-// Galaxy and User
+// Galaxy
 
 data class GalaxySettingsI(
     val name: String,
@@ -16,106 +14,66 @@ data class GalaxySettingsI(
     val level: Int
 )
 
-data class CreateGalaxySettingsI(
-    val reason: String?,
-    gs: GalaxySettingsI
-) : GalaxySettingsI(gs.name,gs.password,gs.passwordJoin,gs.level)
+data class CreateGalaxySettingsI(val reason: String?, val galaxySettings: GalaxySettingsI)
 
-data class GalaxyObjectsI (
-    val asteroids: Array<AsteroidI>,
-    val rockets: Array<RocketI>,
-)
-
-data class GalaxyTouchingObjectsI (
-    val asteroids: Array<AsteroidI>,
-)
-
-data class GalaxyWithoutObjectsI { // data sent to login client
+data class GalaxyWithoutObjectsI( // data sent to login client
     val users: Array<UserI>,
     val galaxyParams: GalaxySettingsI,
     val width: Double,
     val height: Double,
-    val fps: Double | null,
-}
-
-data class GalaxyI : GalaxyWithoutObjectsI (
-    val objects: GalaxyObjectsI,
+    val fps: Double
 )
 
-data class UserViewI (
+data class UserViewI(
     val eye: VectorI,
-    val zoom: Double,
+    val zoom: Double
 )
 
-data class UserPropsI (
+data class UserPropsI(
     val name: String,
     val galaxy: String?,
-) : IDable
+    val id: Int
+)
 
-data class UserI (
+data class UserI(
     val props: UserPropsI,
     val view: UserViewI?,
+    val currentClientData: ClientDataI
+)
+
+data class ClientDataI(
     val keyboard: Array<Pair<String, Boolean>>,
+    val screenSize: VectorI
 )
 
-// Math
+data class GalaxyI(val settings: GalaxyWithoutObjectsI)
 
+data class VectorI(val x: Double, val y: Double) {
+    operator fun plus(v: VectorI) = VectorI(this.x + v.x, this.y + v.y)
+    operator fun minus(v: VectorI) = VectorI(this.x - v.x, this.y - v.y)
+    operator fun times(s: Double) = VectorI(this.x * s, this.y * s)
+    operator fun times(v: VectorI) = VectorI(this.x * v.x, this.y * v.y)
+    operator fun div(s: Double) = VectorI(this.x / s, this.y / s)
+    operator fun div(v: VectorI) = VectorI(this.x / v.x, this.y / v.y)
+    operator fun unaryMinus() = this * -1.0
 
-data class VectorI (
-    val x: Double,
-    val y: Double,
-)
+    fun length() = sqrt(this.x*this.x + this.y*this.y)
+    fun e() = VectorI(1/this.x, 1/this.y)
+    fun abs() = VectorI(abs(this.x), abs(this.y))
 
-data class GeoI (
-    val pos: VectorI,
-    val angle: Double,
-    val width: Double,
-    val height: Double,
-)
+    infix fun distance(v: VectorI) = (v - this).length()
+    infix fun sProduct(v: VectorI) = this.x * v.x + this.y * v.y
 
-data class GeoImplI (
-    val geo: GeoI,
-)
+    fun addAll(vararg vs: VectorI): VectorI {
+        var o = this.copy()
+        vs.forEach { v -> o = o + v }
+        return o
+    }
 
-// Objects
+    fun normalRight() = VectorI(this.y, -this.x)
 
-
-data class DrawableObjectI : GeoImplI, IDable { img: String }
-data class MovingObjectI : DrawableObjectI { movingVector: VectorI }
-
-data class AsteroidI : MovingObjectI (
-    val live: Double,,
-    val size: Double,
-)
-
-data class RocketI : MovingObjectI { rocketTypeId: rocketTypes }
-
-data class RocketTypeI (
-    val id: rocketTypes,
-    val fires: Array<RocketFireSettingsI>,
-    val acceleratingSpeed: Double,
-    val turningSpeed: Double,
-    val standardZoom: Double,
-    val img: String,
-    val width: Double,
-    val height: Double,
-)
-
-data class RocketFireI(
-    val on: boolean,
-    val settings: RocketFireSettingsI,
-) : GeoImplI()
-
-data class RocketFireSettingsI {
-    val dx: Double,
-    val dy: Double,
-    val fireSpeed: Double,
-
-    val startWidth: Double,
-    val plusWidth: Double,
-
-    val startHeight: Double,
-    val plusHeight: Double,
-
-    val img: String,
+    companion object {
+        fun zero() = VectorI(0.0,0.0)
+        fun square(s: Double) = VectorI(s,s)
+    }
 }
