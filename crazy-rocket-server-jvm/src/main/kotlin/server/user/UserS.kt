@@ -2,13 +2,17 @@ package server.user
 
 import ClientDataI
 import SendFormat
-import UserI
 import UserPropsI
 import UserViewI
+import com.google.gson.Gson
+import org.java_websocket.WebSocket
+import server.LogType
+import server.Logable
+import server.coloredLog
 import server.galaxy.GalaxyS
-import java.net.Socket
 
-class UserS(socket: Socket, id: Int) : SocketUser(socket) {
+
+class UserS(val socket: WebSocket, id: Int) : Logable {
     var props = UserPropsI("UNDEFINED", null, id)
     private var inGame = false
 
@@ -17,13 +21,17 @@ class UserS(socket: Socket, id: Int) : SocketUser(socket) {
     lateinit var galaxy: GalaxyS
 
     init {
-        quiet = false
         userQueue.add(this)
+        userSocketMap.put(socket, this)
     }
 
-    override fun log(str: String) { println("UserS[${props.name}, ${props.id}] logs: $str") }
+    override fun log(str: String, type: LogType) {
+        coloredLog("UserS[${props.name}, ${props.id}] logs: ", str, type)
+    }
+    fun send(v: SendFormat) { socket.send(Gson().toJson(v)) }
 
-    override fun onMessage(a: SendFormat) {
+    fun onMessage(a: SendFormat) {
+        log("Recieving: $a")
         when(a.header) {
             "create new galaxy" -> {
                 log("creating galaxy")
@@ -34,15 +42,23 @@ class UserS(socket: Socket, id: Int) : SocketUser(socket) {
         }
     }
 
-    fun isInGame() = inGame
-
-    override fun onConnection() {
-        super.onConnection()
-        log("Connected!")
-        sendMessage(SendFormat("hello", "Hello, my Friend!"))
+    fun onOpen() {
+        log("Opened.")
     }
+
+    fun onClose() {
+        log("Closed.")
+    }
+
+    fun onError(ex: Exception) {
+        println("onError::" + ex.message)
+    }
+
+    fun isInGame() = inGame
 
     companion object {
         val userQueue = ArrayList<UserS>()
+        val userSocketMap = HashMap<WebSocket, UserS>()
+        fun findUser(s: WebSocket) = userSocketMap[s]!!
     }
 }

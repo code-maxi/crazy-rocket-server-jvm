@@ -1,0 +1,12 @@
+- Rocket Fire
+x Map
+x Eye hakt
+- Background flimmert
+- Timer
+
+- newId in environment
+- waiting for friends
+- closing user
+- adding user
+- init galaxy
+- closing galaxy
