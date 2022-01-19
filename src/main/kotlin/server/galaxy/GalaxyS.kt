@@ -30,39 +30,54 @@ class GalaxyS {
         private var galaxyPasswords = hashMapOf<String, String>()
 
         private fun saveGalaxyState() {
+            println("saveGalaxyState: in")
             val home = File(System.getProperty("user.home"))
+            println("saveGalaxyState: homef")
             val confFolder = createIf(home, ".config", "d")
+            println("saveGalaxyState: conff")
             val crazyRocketFolder = createIf(confFolder, "crazy-rocket", "d")
+            println("saveGalaxyState: crazyf")
             val galaxyFile = createIf(crazyRocketFolder, "galaxies.json", "f")
-            galaxyFile.writeText(
-                Gson().toJson(
-                    GalaxySettingsArrI(
-                        galaxies.map { it.params }.toTypedArray(),
-                        galaxyPasswords.map { GalaxyPasswordI(it.key, it.value) }.toTypedArray()
-                    )
-                )
+            println("saveGalaxyState: galaxyf")
+            val ob = GalaxySettingsArrI(
+                galaxies.map { it.params }.toTypedArray(),
+                galaxyPasswords.map { GalaxyPasswordI(it.key, it.value) }.toTypedArray()
             )
+            println("saveGalaxyState: settingsa")
+            val toJ = Gson().toJson(ob)
+            println("saveGalaxyState: galaxyf")
+            galaxyFile.writeText(toJ)
+            println("saveGalaxyState: textw")
         }
         fun readGalaxyState() {
             val home = System.getProperty("user.home")
             val galaxyFile = File(file(home, ".config", "crazy-rocket"), "galaxies.json")
             val text = galaxyFile.readText()
-            val parsed = Gson().fromJson(text, GalaxySettingsArrI::class.java)
+            galaxies = try {
+                val parsed = Gson().fromJson(text, GalaxySettingsArrI::class.java)
 
-            galaxies = parsed.items
-                .map { GalaxyWithoutObjectsI(arrayOf(), it, "frozen") }
-                .toCollection(ArrayList())
+                parsed.items
+                    .map { GalaxyWithoutObjectsI(arrayOf(), it, "frozen") }
+                    .toCollection(ArrayList())
+            } catch (ex: Exception) {
+                arrayListOf()
+            }
         }
 
         fun addGalaxy(g: CreateNewGalaxyI): String {
             return if (!galaxies.any { it.params.name == g.name }) {
+                println("addGalaxy: in if")
                 galaxies.add(GalaxyWithoutObjectsI(
                     arrayOf(),
                     GalaxyPropsI(g.name, 1),
                     "frozen")
                 )
+                println("addGalaxy: galaxies added")
                 galaxyPasswords[g.name] = g.password
+                println("addGalaxy: password set")
                 saveGalaxyState()
+                println("addGalaxy: state saved")
+                println()
                 "successful"
             }
             else "galaxy name already exist"

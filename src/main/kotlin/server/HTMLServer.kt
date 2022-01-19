@@ -12,24 +12,25 @@ import server.galaxy.GalaxyS
 import java.net.InetSocketAddress
 
 class HTTPServer(val port: Int) {
-    val responseWebSite = { ex: HttpExchange ->
-        if (ex.requestMethod == "GET") {
-            val response = "This is the response at ${ex.requestURI}"
-            ex.sendResponseHeaders(200, response.toByteArray().size.toLong())
-            val os = ex.responseBody
-            os.write(response.toByteArray())
-            os.close()
-        }
+    private val responseWebSite = { ex: HttpExchange ->
+        println("Get WebSite")
+
+        val response = "This is the response at ${ex.requestURI}"
+        ex.sendResponseHeaders(200, response.toByteArray().size.toLong())
+        val os = ex.responseBody
+        os.write(response.toByteArray())
+        os.close()
     }
 
-    val server = HttpServer.create(InetSocketAddress(port), 0)
+    private val server: HttpServer = HttpServer.create(InetSocketAddress(port), 0)
 
-    val contexts = arrayListOf<String>()
+    private val contexts = arrayListOf<String>()
 
-    init {
+    fun create() {
+        println("Creating Http-Server at localhost:$port.")
         server.createContext("/", responseWebSite)
         server.createContext("/get-galaxies") {
-            if (it.requestMethod === "GET") {
+            if (it.requestMethod == "GET") {
                 val response = Gson().toJson(JsonListI(GalaxyS.getGalaxies()))
                 it.sendResponseHeaders(200, response.toByteArray().size.toLong())
                 it.responseBody.write(response.toByteArray())
@@ -37,25 +38,30 @@ class HTTPServer(val port: Int) {
             }
         }
         server.createContext("/create-galaxy") {
+            println("request to /create-galaxy ${it.requestMethod}")
             Network.handlePostRequest(
                 it, CreateNewGalaxyI::class.java
             ) { parsed, finish ->
                 println("/create-galaxy parsed: $parsed")
-                val res = JsonStatusI(GalaxyS.addGalaxy(parsed))
+                val status = GalaxyS.addGalaxy(parsed)
+                println("Status: $status")
+                val res = JsonStatusI(status)
                 println("/create-galaxy res: $res")
-                finish(res)
+                finish(res, 200)
             }
         }
         server.createContext("/delete-galaxy") {
+            println("request to /delete-galaxy ${it.requestMethod}")
             Network.handlePostRequest(
-                it, GalaxyPasswordI::class.java
+                it, GalaxyPasswordI::class.java, "DELETE"
             ) { parsed, finish ->
                 println("/delete-galaxy parsed: $parsed")
                 val res = JsonStatusI(GalaxyS.removeGalaxy(parsed))
                 println("/delete-galaxy res: $res")
-                finish(res)
+                finish(res, 200)
             }
         }
+        server.start()
     }
 
     fun updateContexts(list: ArrayList<GalaxyPropsI>) {
