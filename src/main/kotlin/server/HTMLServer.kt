@@ -43,7 +43,7 @@ class HTTPServer(val port: Int) {
                 it, CreateNewGalaxyI::class.java
             ) { parsed, finish ->
                 println("/create-galaxy parsed: $parsed")
-                val status = GalaxyS.addGalaxy(parsed)
+                val status = GalaxyS.createGalaxy(parsed)
                 println("Status: $status")
                 val res = JsonStatusI(status)
                 println("/create-galaxy res: $res")

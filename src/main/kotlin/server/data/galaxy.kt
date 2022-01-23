@@ -2,7 +2,7 @@ import server.data.VectorI
 
 data class IDable(val id: Int)
 
-data class SendFormat(val header: String, val value: String?)
+data class SendFormat(val header: String, val value: Any? = null)
 
 // Galaxy
 

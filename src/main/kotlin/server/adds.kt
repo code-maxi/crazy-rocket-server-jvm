@@ -10,6 +10,7 @@ import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.util.EntityUtils
+import server.data.inRange
 import java.io.File
 import java.io.InputStreamReader
 import java.nio.file.FileSystems
@@ -106,5 +107,20 @@ object Network {
         }
 
         return responseBody
+    }
+}
+
+object Game {
+    fun effectStep(
+        value: Double,
+        target: Double,
+        speed: Double,
+        linear: Boolean = true,
+        range: Double? = null
+    ): Double {
+        return if (inRange(value, target, range ?: speed)) target
+        else if (value > target && linear) value - speed
+        else if (value < target && linear) value + speed
+        else value + (target - value) * speed
     }
 }
