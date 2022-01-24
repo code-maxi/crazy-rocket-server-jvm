@@ -5,12 +5,13 @@ import GalaxyPasswordI
 import GalaxySettingsArrI
 import GalaxyPropsI
 import GalaxyWithoutObjectsI
+import JoinGalaxyI
 import SendFormat
 import com.google.gson.Gson
 import server.FileA.createIf
 import server.FileA.file
-import server.data.NameAlreadyExists
-import server.data.NameAlreadyExistsEx
+import server.Text
+import server.data.*
 import server.game.Game
 import server.user.UserS
 import java.io.File
@@ -28,22 +29,36 @@ class GalaxyS(
         props, state
     )
 
-    init {
-
-    }
-
     fun joinUser(u: UserS) {
-
+        if (users.any { it.props.name == u.props.name })
+             throw DoesAlreadyExistEx("name", u.props.name)
+        else {
+            if (Text.validNameText(u.props.name, "user name", 3, 15)) {
+                u.galaxy = this
+                users.add(u)
+                u.onSuccessfullyJoined()
+                sendGalaxyData()
+            }
+        }
     }
 
-    fun createGame() {
+    private fun sendGalaxyData() {
+        if (game == null) {
+            sendAllClients(SendFormat("galaxy-data", data()))
+        }
+    }
+
+    fun startGame(password: String) {
+        checkMyPassword(password)
+
         game = Game(props.level)
         sendAllClients(SendFormat("game-created"))
+
         thread {
             var oldTimestamp: Long
             var newTimestamp: Long
             var fullDataIntervalCount = 0
-            val FULL_DATA_INTERVAL = 20
+            val fullDataInterval = 20
 
             while (game != null) {
                 oldTimestamp = System.nanoTime()
@@ -55,16 +70,21 @@ class GalaxyS(
 
                 users.forEach {
                     it.sendData(
-                        fullDataIntervalCount == FULL_DATA_INTERVAL,
+                        fullDataIntervalCount == fullDataInterval,
                         game!!.settings,
                         game!!.objects.toTypedArray()
                     )
                 }
 
-                if (fullDataIntervalCount < FULL_DATA_INTERVAL) fullDataIntervalCount ++
+                if (fullDataIntervalCount < fullDataInterval) fullDataIntervalCount ++
                 else fullDataIntervalCount = 0
             }
         }
+    }
+
+    fun checkMyPassword(password: String) {
+        if (!checkGalaxyPassword(props.name, password))
+            throw InvalidPasswordEx(password, props.name)
     }
 
     private fun sendAllClients(s: SendFormat) {
@@ -84,10 +104,12 @@ class GalaxyS(
             val confFolder = createIf(home, ".config", "d")
             val crazyRocketFolder = createIf(confFolder, "crazy-rocket", "d")
             val galaxyFile = createIf(crazyRocketFolder, "galaxies.json", "f")
+
             val ob = GalaxySettingsArrI(
                 galaxies.map { it.data().params }.toTypedArray(),
                 galaxyPasswords.map { GalaxyPasswordI(it.key, it.value) }.toTypedArray()
             )
+
             val toJ = Gson().toJson(ob)
             galaxyFile.writeText(toJ)
         }
@@ -118,20 +140,19 @@ class GalaxyS(
             else throw NameAlreadyExistsEx(g.name)
         }
 
-        fun removeGalaxy(g: GalaxyPasswordI): String {
-            return if (galaxies.any { it.props.name == g.name }) {
+        fun removeGalaxy(g: GalaxyPasswordI) {
+            if (galaxies.any { it.props.name == g.name }) {
                 if (galaxyPasswords[g.name] == g.password) {
                     galaxies.removeIf { it.props.name == g.name }
                     galaxyPasswords.remove(g.name)
                     saveGalaxyState()
-
-                    "successful"
-                } else "invalid password"
-            } else "galaxy does not exist anymore"
+                } else throw InvalidPasswordEx(g.password, g.name)
+            } else throw DoesNotExistEx("Galaxy", g.name)
         }
 
-        fun joinGalaxy(user: UserS, galaxyName: String) {
-            return try { galaxies.find { galaxyName == it.props.name }!!.joinUser(user) }
+        fun joinGalaxy(join: JoinGalaxyI, user: UserS) {
+            return try { galaxies.find { join.galaxyName == it.props.name }!!.joinUser(user) }
+              catch (ex: Exception) { throw DoesNotExistEx("Galaxy", join.userName) }
         }
 
         fun getGalaxies() = galaxies.toTypedArray()

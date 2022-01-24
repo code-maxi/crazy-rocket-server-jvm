@@ -10,6 +10,7 @@ import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.util.EntityUtils
+import server.data.InvalidTextEx
 import server.data.inRange
 import java.io.File
 import java.io.InputStreamReader
@@ -122,5 +123,14 @@ object Game {
         else if (value > target && linear) value - speed
         else if (value < target && linear) value + speed
         else value + (target - value) * speed
+    }
+}
+
+object Text {
+    fun validNameText(text: String, errorType: String, minLetters: Int, maxLetters: Int): Boolean {
+        if (text.length <= 3) throw InvalidTextEx(errorType, text, "it's too short.")
+        else if (text.length <= 7) throw InvalidTextEx(errorType, text, "it's too long.")
+        else if (!text.matches("\\w+".toRegex())) throw InvalidTextEx(errorType, text, "it's too short.")
+        else return true
     }
 }

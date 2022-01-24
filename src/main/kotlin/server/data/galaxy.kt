@@ -32,6 +32,16 @@ data class CreateNewGalaxyI(
     val password: String
 )
 
+data class GalaxyAdminI(
+    val password: String,
+    val value: Any?
+)
+
+data class JoinGalaxyI(
+    val userName: String,
+    val galaxyName: String
+)
+
 data class GalaxyPaswordArrI(
     val items: Array<GalaxyPasswordI>
 )
