@@ -1,7 +1,5 @@
 import server.data.VectorI
 
-data class IDable(val id: Int)
-
 data class SendFormat(val header: String, val value: Any? = null)
 
 // Galaxy
@@ -16,7 +14,7 @@ data class GalaxySettingsArrI(
     val passwords: Array<GalaxyPasswordI>
 )
 
-data class GalaxyWithoutObjectsI( // data sent to login client
+data class GalaxyI( // data sent to login client
     val users: Array<UserPropsI>,
     val params: GalaxyPropsI,
     val state: String // "frozen" or "queue" or "running"
@@ -39,6 +37,7 @@ data class GalaxyAdminI(
 
 data class JoinGalaxyI(
     val userName: String,
+    val screenSize: VectorI,
     val galaxyName: String
 )
 
@@ -47,10 +46,17 @@ data class GalaxyPaswordArrI(
 )
 
 data class GalaxyDataI(
-    val other: GalaxyWithoutObjectsI,
+    val other: GalaxyI,
     val width: Double,
     val height: Double,
     val fps: Double
+)
+
+data class ResponseResult(
+    val successfully: Boolean,
+    val data: Any? = null,
+    val message: String? = null,
+    val errorType: String? = null
 )
 
 data class JsonListI<T>(
@@ -69,15 +75,15 @@ data class UserViewI(
 data class UserPropsI(
     val name: String,
     val galaxy: String?,
-    val id: Int
+    val id: String
 )
 
 data class ClientDataI(
-    val keyboard: ClientKeyboard,
+    val keyboard: ClientKeyboardI,
     val screenSize: VectorI
 )
 
-data class ClientKeyboard(val keys: Array<ClientKeyI> = arrayOf()) {
+data class ClientKeyboardI(val keys: Array<ClientKeyI> = arrayOf()) {
     fun key(search: String) = keys.find { it.key == search }?.active ?: false
 }
 

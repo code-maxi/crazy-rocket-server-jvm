@@ -7,7 +7,7 @@ import server.game.objects.Rocket
 class Game(level: Int) : GameClassI {
     val objects = arrayListOf<GameObjectI>()
 
-    var idCount = Int.MIN_VALUE
+    var idCount = Long.MIN_VALUE
 
     lateinit var settings: GameSettings
 
@@ -15,9 +15,9 @@ class Game(level: Int) : GameClassI {
         loadLevel(level)
     }
 
-    fun newID(): Int {
+    fun newID(): String {
         idCount ++
-        return idCount
+        return idCount.toString()
     }
 
     fun addRocket(u: UserPropsI) {
@@ -28,7 +28,7 @@ class Game(level: Int) : GameClassI {
         ))
     }
 
-    fun addObject(f: (l: ArrayList<GameObjectI>, id: Int) -> Unit) { f(objects, newID()) }
+    fun addObject(f: (l: ArrayList<GameObjectI>, id: String) -> Unit) { f(objects, newID()) }
 
     fun loadLevel(l: Int) {
         settings = GameSettings(l, 5000, 5000)

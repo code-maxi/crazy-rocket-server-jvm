@@ -9,7 +9,7 @@ abstract class GeoObject(
     var height: Double,
     var ang: Double,
     var velocity: VectorI,
-    override val id: Int
+    override val id: String
 ): GameObjectI {
     //protected var effects = arrayListOf<GeoObjectEffect<T>>()
 

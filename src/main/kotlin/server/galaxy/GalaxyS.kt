@@ -4,7 +4,7 @@ import CreateNewGalaxyI
 import GalaxyPasswordI
 import GalaxySettingsArrI
 import GalaxyPropsI
-import GalaxyWithoutObjectsI
+import GalaxyI
 import JoinGalaxyI
 import SendFormat
 import com.google.gson.Gson
@@ -24,7 +24,7 @@ class GalaxyS(
     var game: Game? = null
     var state = "frozen"
 
-    fun data() = GalaxyWithoutObjectsI(
+    fun data() = GalaxyI(
         users.map { it.props }.toTypedArray(),
         props, state
     )
@@ -121,7 +121,7 @@ class GalaxyS(
 
             val galaxiesData = try {
                 val parsed = Gson().fromJson(text, GalaxySettingsArrI::class.java)
-                parsed.items.map { GalaxyWithoutObjectsI(arrayOf(), it, "frozen") }
+                parsed.items.map { GalaxyI(arrayOf(), it, "frozen") }
             } catch (ex: Exception) {
                 arrayListOf()
             }

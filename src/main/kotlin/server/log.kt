@@ -15,4 +15,4 @@ fun coloredLog(
     from: String,
     str: String,
     type: LogType = LogType.NONE
-) { println("${type.color}$from${LogType.NONE.color}$str") }
+) { println("$from$str") }

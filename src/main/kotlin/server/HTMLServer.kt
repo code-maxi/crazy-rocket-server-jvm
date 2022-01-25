@@ -8,8 +8,10 @@ import JsonStatusI
 import com.google.gson.Gson
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import server.data.OwnException
 import server.galaxy.GalaxyS
 import java.net.InetSocketAddress
+import kotlin.concurrent.thread
 
 class HTTPServer(val port: Int) {
     private val responseWebSite = { ex: HttpExchange ->
@@ -28,6 +30,7 @@ class HTTPServer(val port: Int) {
 
     fun create() {
         println("Creating Http-Server at localhost:$port.")
+
         server.createContext("/", responseWebSite)
         server.createContext("/get-galaxies") {
             if (it.requestMethod == "GET") {
@@ -43,9 +46,13 @@ class HTTPServer(val port: Int) {
                 it, CreateNewGalaxyI::class.java
             ) { parsed, finish ->
                 println("/create-galaxy parsed: $parsed")
-                val status = GalaxyS.createGalaxy(parsed)
-                println("Status: $status")
-                val res = JsonStatusI(status)
+
+                val result = try { GalaxyS.createGalaxy(parsed); "successfully" }
+                catch (ex: ClassCastException) { "wrong request" }
+                catch (ex: OwnException) { ex.toString() }
+
+                val res = JsonStatusI(result)
+
                 println("/create-galaxy res: $res")
                 finish(res, 200)
             }
@@ -53,15 +60,23 @@ class HTTPServer(val port: Int) {
         server.createContext("/delete-galaxy") {
             println("request to /delete-galaxy ${it.requestMethod}")
             Network.handlePostRequest(
-                it, GalaxyPasswordI::class.java, "DELETE"
+                it, GalaxyPasswordI::class.java
             ) { parsed, finish ->
                 println("/delete-galaxy parsed: $parsed")
-                val res = JsonStatusI(GalaxyS.removeGalaxy(parsed))
+
+                val result = try { GalaxyS.removeGalaxy(parsed); "successfully" }
+                catch (ex: ClassCastException) { "wrong request" }
+                catch (ex: OwnException) { ex.toString() }
+                val res = JsonStatusI(result)
+
                 println("/delete-galaxy res: $res")
                 finish(res, 200)
             }
         }
-        server.start()
+
+        thread {
+            server.start()
+        }
     }
 
     fun updateContexts(list: ArrayList<GalaxyPropsI>) {

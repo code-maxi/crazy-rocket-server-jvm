@@ -2,19 +2,22 @@ package server
 
 import org.apache.http.impl.client.HttpClients
 import server.galaxy.GalaxyS
+import kotlin.concurrent.thread
 
 fun main(args: Array<String>) {
     when (args[0]) {
         "server" -> {
             GalaxyS.readGalaxyState()
 
-            val server = HTTPServer(1238)
-            server.create()
+            val httpServer = HTTPServer(1112)
+            httpServer.create()
+
+            thread { SocketServer(1113) }
         }
         "post" -> {
             val httpClient = HttpClients.createDefault()
             val response = Network.makeHTTPPostRequest(
-                "http://localhost:1238/${args[1]}",
+                "http://localhost:1112/${args[1]}",
                 args[2], httpClient
             )
             println(response)

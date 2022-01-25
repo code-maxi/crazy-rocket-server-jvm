@@ -55,10 +55,10 @@ object Network {
     fun <T> handlePostRequest(
         it: HttpExchange,
         classT: Class<T>,
-        method: String = "POST",
+        method: String? = null,
         response: (parsed: T, finish: (res: JsonStatusI, code: Int) -> Unit) -> Unit
     ) {
-        if (it.requestMethod == method) {
+        if (method == null || it.requestMethod == method) {
             val bytes = InputStreamReader(it.requestBody)
             val message = bytes.readText()
 

@@ -8,9 +8,13 @@ import org.java_websocket.server.WebSocketServer
 import server.user.UserS
 import java.net.InetSocketAddress
 
-lateinit var server: Server
+lateinit var server: SocketServer
 
-class Server(port: Int) : WebSocketServer(InetSocketAddress(port)), Logable {
+class SocketServer(port: Int) : WebSocketServer(InetSocketAddress(port)), Logable {
+    init {
+        println("Initializing SocketServer.")
+    }
+
     override fun onOpen(conn: WebSocket?, handshake: ClientHandshake?) {
         if (conn != null) {
             log("New User Recieved...")
@@ -32,14 +36,14 @@ class Server(port: Int) : WebSocketServer(InetSocketAddress(port)), Logable {
         catch (ex: NullPointerException) { ex.printStackTrace() }
     }
 
-    override fun log(str: String, type: LogType) { coloredLog("Server: ", str, type) }
+    override fun log(str: String, type: LogType) { coloredLog("SocketServer: ", str, type) }
 
     companion object {
-        private var idCounter = Int.MIN_VALUE
-        fun newID(): Int {
+        private var idCounter = Long.MIN_VALUE
+        fun newID(): String {
             idCounter ++
-            if (idCounter == 0) idCounter ++
-            return idCounter
+            if (idCounter == 0L) idCounter ++
+            return idCounter.toString()
         }
     }
 }

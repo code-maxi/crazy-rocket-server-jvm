@@ -1,9 +1,11 @@
 package server.user
 
 import ClientDataI
+import ClientKeyboardI
 import CreateNewGalaxyI
 import GalaxyAdminI
 import JoinGalaxyI
+import ResponseResult
 import SendFormat
 import UserPropsI
 import com.google.gson.Gson
@@ -17,7 +19,7 @@ import server.game.objects.GeoObject
 import server.game.objects.Rocket
 
 
-class UserS(val socket: WebSocket, id: Int) : Logable {
+class UserS(val socket: WebSocket, id: String) : Logable {
     var props = UserPropsI("UNDEFINED", null, id)
     private var inGame = false
     private val sendQueue = arrayListOf<SendFormat>()
@@ -29,6 +31,8 @@ class UserS(val socket: WebSocket, id: Int) : Logable {
     init {
         userQueue.add(this)
         userSocketMap[socket] = this
+        onOpen()
+        println("User initialized.")
     }
 
     private fun galaxyInitialized() = this::galaxy.isInitialized
@@ -40,46 +44,48 @@ class UserS(val socket: WebSocket, id: Int) : Logable {
     fun send(v: SendFormat) { if (galaxyInitialized()) sendQueue.add(v) else sendDirectly(v) }
 
     fun onMessage(a: SendFormat) {
-        log("Recieving: $a")
+        log("Receiving: $a")
 
         when(a.header) {
-            "create new galaxy" -> {
-                val result = try { GalaxyS.createGalaxy(a.value as CreateNewGalaxyI) }
-                catch (ex: ClassCastException) { "wrong request" }
-                catch (ex: OwnException) { ex.toString() }
+            "join-galaxy" -> {
+                println("Joining Galaxy...")
 
-                send(SendFormat(
-                    "create new galaxy result",
-                    result
-                ))
-            }
-            "join galaxy" -> {
                 val result = try {
                     val join = a.value as JoinGalaxyI
                     GalaxyS.joinGalaxy(join, this)
                     props = props.copy(name = join.userName)
+                    ResponseResult(true, data = props)
                 }
-                catch (ex: ClassCastException) { "wrong request" }
-                catch (ex: OwnException) { ex.toString() }
+                catch (ex: ClassCastException) { throw WrongRequestEx(a.value) }
+                catch (ex: OwnException) { ex.responseResult() }
+
+                println("join-galaxy-result: $result")
 
                 send(SendFormat(
-                    "join galaxy result",
+                    "join-galaxy-result",
                     result
                 ))
             }
             "start game" -> {
+                println("Starting game...")
+
                 val result = try {
                     val admin = a.value as GalaxyAdminI
                     galaxy.startGame(admin.password)
+                    ResponseResult(true)
                 }
-                catch (ex: ClassCastException) { "wrong request" }
-                catch (ex: OwnException) { ex.toString() }
-                catch (ex: UninitializedPropertyAccessException) { "galaxy not initialized yet" }
+                catch (ex: ClassCastException) { throw WrongRequestEx(a.value) }
+                catch (ex: OwnException) { ex.responseResult() }
+
+                println("starting-game-result: $result")
 
                 send(SendFormat(
-                    "start game result",
+                    "start-game-result",
                     result
                 ))
+            }
+            "keyboard-data" -> {
+                clientData = clientData.copy(keyboard = a.value as ClientKeyboardI)
             }
         }
     }
@@ -120,12 +126,13 @@ class UserS(val socket: WebSocket, id: Int) : Logable {
         }
         send(
             SendFormat(
-                "galaxy-data",
+                "game-data",
                 GameDataForSendingI(
                     settings,
                     objects.map { it.data() }.toTypedArray(),
                     sendQueue.toTypedArray(),
-                    fullData
+                    fullData,
+                    this.myRocket.userView()
                 )
             )
         )
