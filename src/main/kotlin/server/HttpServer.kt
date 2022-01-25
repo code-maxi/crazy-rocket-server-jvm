@@ -11,7 +11,6 @@ import com.sun.net.httpserver.HttpServer
 import server.data.OwnException
 import server.galaxy.GalaxyS
 import java.net.InetSocketAddress
-import kotlin.concurrent.thread
 
 class HTTPServer(val port: Int) {
     private val responseWebSite = { ex: HttpExchange ->
@@ -74,9 +73,7 @@ class HTTPServer(val port: Int) {
             }
         }
 
-        thread {
-            server.start()
-        }
+        server.start()
     }
 
     fun updateContexts(list: ArrayList<GalaxyPropsI>) {

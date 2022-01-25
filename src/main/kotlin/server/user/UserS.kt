@@ -51,12 +51,13 @@ class UserS(val socket: WebSocket, id: String) : Logable {
                 println("Joining Galaxy...")
 
                 val result = try {
-                    val join = a.value as JoinGalaxyI
+                    println(a.value.toString())
+                    val join = Gson().fromJson(a.value.toString(), JoinGalaxyI::class.java)
                     GalaxyS.joinGalaxy(join, this)
                     props = props.copy(name = join.userName)
                     ResponseResult(true, data = props)
                 }
-                catch (ex: ClassCastException) { throw WrongRequestEx(a.value) }
+                catch (ex: ClassCastException) { WrongRequestEx(a.value).responseResult() }
                 catch (ex: OwnException) { ex.responseResult() }
 
                 println("join-galaxy-result: $result")
@@ -66,7 +67,7 @@ class UserS(val socket: WebSocket, id: String) : Logable {
                     result
                 ))
             }
-            "start game" -> {
+            "start-game" -> {
                 println("Starting game...")
 
                 val result = try {
@@ -74,7 +75,7 @@ class UserS(val socket: WebSocket, id: String) : Logable {
                     galaxy.startGame(admin.password)
                     ResponseResult(true)
                 }
-                catch (ex: ClassCastException) { throw WrongRequestEx(a.value) }
+                catch (ex: ClassCastException) { WrongRequestEx(a.value).responseResult() }
                 catch (ex: OwnException) { ex.responseResult() }
 
                 println("starting-game-result: $result")
@@ -96,6 +97,7 @@ class UserS(val socket: WebSocket, id: String) : Logable {
 
     fun onClose() {
         log("Closed.")
+        galaxy.deleteUser(this)
     }
 
     fun onError(ex: Exception) {

@@ -7,12 +7,14 @@ import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import server.user.UserS
 import java.net.InetSocketAddress
+import kotlin.concurrent.thread
 
 lateinit var server: SocketServer
 
 class SocketServer(port: Int) : WebSocketServer(InetSocketAddress(port)), Logable {
     init {
-        println("Initializing SocketServer.")
+        println("Initializing SocketServer on port ${port}.")
+        start()
     }
 
     override fun onOpen(conn: WebSocket?, handshake: ClientHandshake?) {
@@ -39,10 +41,10 @@ class SocketServer(port: Int) : WebSocketServer(InetSocketAddress(port)), Logabl
     override fun log(str: String, type: LogType) { coloredLog("SocketServer: ", str, type) }
 
     companion object {
-        private var idCounter = Long.MIN_VALUE
+        private var idCounter = Int.MIN_VALUE
         fun newID(): String {
             idCounter ++
-            if (idCounter == 0L) idCounter ++
+            if (idCounter == 0) idCounter ++
             return idCounter.toString()
         }
     }

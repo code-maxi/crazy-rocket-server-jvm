@@ -9,10 +9,10 @@ fun main(args: Array<String>) {
         "server" -> {
             GalaxyS.readGalaxyState()
 
-            val httpServer = HTTPServer(1112)
+            val httpServer = HTTPServer(1115)
             httpServer.create()
 
-            thread { SocketServer(1113) }
+            SocketServer(1112)
         }
         "post" -> {
             val httpClient = HttpClients.createDefault()

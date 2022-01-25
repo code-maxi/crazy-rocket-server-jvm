@@ -29,6 +29,10 @@ class GalaxyS(
         props, state
     )
 
+    init {
+        println("Galaxy ${Gson().toJson(data())} created!")
+    }
+
     fun joinUser(u: UserS) {
         if (users.any { it.props.name == u.props.name })
              throw DoesAlreadyExistEx("name", u.props.name)
@@ -40,6 +44,11 @@ class GalaxyS(
                 sendGalaxyData()
             }
         }
+    }
+
+    fun deleteUser(u: UserS) {
+        users.remove(u)
+        sendGalaxyData()
     }
 
     private fun sendGalaxyData() {
