@@ -15,6 +15,7 @@ class SocketServer(port: Int) : WebSocketServer(InetSocketAddress(port)), Logabl
     init {
         println("Initializing SocketServer on port ${port}.")
         start()
+        server = this
     }
 
     override fun onOpen(conn: WebSocket?, handshake: ClientHandshake?) {

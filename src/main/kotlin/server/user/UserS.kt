@@ -26,7 +26,7 @@ class UserS(val socket: WebSocket, id: String) : Logable {
 
     lateinit var clientData: ClientDataI
     lateinit var galaxy: GalaxyS
-    lateinit var myRocket: Rocket
+    var myRocket: Rocket? = null
 
     init {
         userQueue.add(this)
@@ -62,7 +62,7 @@ class UserS(val socket: WebSocket, id: String) : Logable {
 
                 println("join-galaxy-result: $result")
 
-                send(SendFormat(
+                sendDirectly(SendFormat(
                     "join-galaxy-result",
                     result
                 ))
@@ -71,7 +71,7 @@ class UserS(val socket: WebSocket, id: String) : Logable {
                 println("Starting game...")
 
                 val result = try {
-                    val admin = a.value as GalaxyAdminI
+                    val admin = Gson().fromJson(a.value.toString(), GalaxyAdminI::class.java)
                     galaxy.startGame(admin.password)
                     ResponseResult(true)
                 }
@@ -80,7 +80,7 @@ class UserS(val socket: WebSocket, id: String) : Logable {
 
                 println("starting-game-result: $result")
 
-                send(SendFormat(
+                sendDirectly(SendFormat(
                     "start-game-result",
                     result
                 ))
@@ -96,8 +96,8 @@ class UserS(val socket: WebSocket, id: String) : Logable {
     }
 
     fun onClose() {
-        log("Closed.")
         galaxy.deleteUser(this)
+        log("Closed.")
     }
 
     fun onError(ex: Exception) {
@@ -107,9 +107,9 @@ class UserS(val socket: WebSocket, id: String) : Logable {
     fun isInGame() = inGame
 
     private fun viewRect(): GeoI {
-        val screen = this.clientData.screenSize * 1.5 * (1/this.myRocket.zoom)
+        val screen = this.clientData.screenSize * 1.5 * (1/this.myRocket!!.zoom)
         return GeoI(
-            pos = this.myRocket.eye - screen/2.0,
+            pos = this.myRocket!!.eye - screen/2.0,
             width = screen.x,
             height = screen.y
         )
@@ -123,18 +123,19 @@ class UserS(val socket: WebSocket, id: String) : Logable {
         var objects = objectsArray
         if (fullData) {
             objects = objects.filter {
-                it !is GeoObject || it.getGeo() touchesRect viewRect()
+                it !is GeoObject || myRocket == null || it.getGeo() touchesRect viewRect()
             }.toTypedArray()
         }
-        send(
+        sendDirectly(
             SendFormat(
                 "game-data",
                 GameDataForSendingI(
-                    settings,
-                    objects.map { it.data() }.toTypedArray(),
-                    sendQueue.toTypedArray(),
-                    fullData,
-                    this.myRocket.userView()
+                    settings = settings,
+                    objects = objects.map { it.data() }.toTypedArray(),
+                    galaxy = galaxy.data(),
+                    messages = sendQueue.toTypedArray(),
+                    fullData = fullData,
+                    userView = this.myRocket?.userView()
                 )
             )
         )

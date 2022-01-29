@@ -9,7 +9,7 @@ data class GalaxyPropsI(
     val level: Int
 )
 
-data class GalaxySettingsArrI(
+data class GalaxyPasswordArrI(
     val items: Array<GalaxyPropsI>,
     val passwords: Array<GalaxyPasswordI>
 )

@@ -1,10 +1,12 @@
 package server.game
 
+import SendFormat
 import UserPropsI
 import server.data.*
+import server.galaxy.GalaxyS
 import server.game.objects.Rocket
 
-class Game(level: Int) : GameClassI {
+class Game(level: Int, val galaxy: GalaxyS) : GameClassI {
     val objects = arrayListOf<GameObjectI>()
 
     var idCount = Long.MIN_VALUE
@@ -13,6 +15,10 @@ class Game(level: Int) : GameClassI {
 
     init {
         loadLevel(level)
+    }
+
+    fun sendUser(userId: String, sendFormat: SendFormat) {
+        galaxy.users[userId]!!.send(sendFormat)
     }
 
     fun newID(): String {
@@ -40,6 +46,9 @@ class Game(level: Int) : GameClassI {
                 vec(Math.PI*2 * Math.random(), Math.random() * 2.0 + 1.0),
                 newID()
             ))
+        }
+        galaxy.userList().forEach {
+            addRocket(it.props)
         }
     }
 
