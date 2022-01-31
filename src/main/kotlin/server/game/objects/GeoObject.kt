@@ -1,7 +1,10 @@
 package server.game.objects
 
-import server.Game
-import server.data.*
+import server.data.GameObjectI
+import server.data.GeoI
+import server.data.VectorI
+import server.data.vec
+import server.game.Game
 
 abstract class GeoObject(
     var pos: VectorI,
@@ -9,9 +12,10 @@ abstract class GeoObject(
     var height: Double,
     var ang: Double,
     var velocity: VectorI,
-    override val id: String
-): GameObjectI {
+    id: String
+): GameObjectI(id) {
     //protected var effects = arrayListOf<GeoObjectEffect<T>>()
+
 
     fun setSpeed(s: Double) { velocity = velocity.e() * s }
     fun setAngle(a: Double) { velocity = vec(a, velocity.length()) }

@@ -7,12 +7,14 @@ import GalaxyPropsI
 import GalaxyI
 import JoinGalaxyI
 import SendFormat
+import UserPropsI
 import com.google.gson.Gson
 import server.FileA.createIf
 import server.FileA.file
 import server.Text
 import server.data.*
 import server.game.Game
+import server.game.GameConfig
 import server.user.UserS
 import java.io.File
 import kotlin.concurrent.thread
@@ -20,11 +22,13 @@ import kotlin.concurrent.thread
 class GalaxyS(
     var props: GalaxyPropsI
 ) {
-    val users = hashMapOf<String, UserS>()
+    private val users = hashMapOf<String, UserS>()
     var game: Game? = null
     var state = "frozen"
 
-    fun userList() = users.values
+    private val sendGameQueue = arrayListOf<Pair<SendFormat, UserPropsI>>()
+
+    fun userList() = users.values.toTypedArray()
 
     fun data() = GalaxyI(
         userList().map { it.props }.toTypedArray(),
@@ -48,6 +52,8 @@ class GalaxyS(
         }
     }
 
+    fun sendGame(message: SendFormat, u: UserPropsI) { sendGameQueue.add(message to u) }
+
     fun deleteUser(u: UserS) {
         users.remove(u.props.id)
         sendGalaxyData()
@@ -62,36 +68,46 @@ class GalaxyS(
     fun startGame(password: String) {
         checkMyPassword(password)
 
-        game = Game(props.level, this)
+        game = Game(props.level, data().users, GameConfig(
+            sendUser = { id, sendFormat -> users[id]?.onMessageFromGame(sendFormat) },
+            onRocketCreated = { rocket -> users[rocket.userProps.id]?.myRocket = rocket }
+        ))
         sendAllClients(SendFormat("game-created"))
 
         thread {
-            val fullDataInterval = 3
+            val fullDataInterval = 1
             val estimatedTime = 300
 
             var oldTimestamp: Long
-            var measuredTime = 300L
+            var measuredTime = estimatedTime
             var fullDataIntervalCount = fullDataInterval
 
             while (game != null) {
                 oldTimestamp = System.nanoTime()
 
-                game!!.calc(measuredTime.toDouble() / estimatedTime)
+                Thread.sleep(10)
+
+                sendGameQueue.forEach { game!!.onMessage(it.first, it.second) }
+
+                println("$measuredTime vs. $estimatedTime")
+
+                val factor = (measuredTime.toDouble() / estimatedTime.toDouble())
+                game!!.calc(factor)
 
                 userList().forEach {
                     it.sendData(
                         fullDataIntervalCount == fullDataInterval,
                         game!!.settings,
-                        game!!.objects.toTypedArray()
+                        game!!.objectList()
                     )
                 }
 
                 if (fullDataIntervalCount < fullDataInterval) fullDataIntervalCount ++
                 else fullDataIntervalCount = 0
 
-                Thread.sleep(1000)
+                Thread.sleep(10)
 
-                measuredTime = System.nanoTime() - oldTimestamp
+                measuredTime = ((System.nanoTime() - oldTimestamp) / 100000).toInt()
             }
         }
     }

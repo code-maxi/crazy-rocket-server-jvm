@@ -1,60 +1,99 @@
 package server.game
 
+import ClientKeyboardI
 import SendFormat
 import UserPropsI
 import server.data.*
-import server.galaxy.GalaxyS
 import server.game.objects.Rocket
 
-class Game(level: Int, val galaxy: GalaxyS) : GameClassI {
-    val objects = arrayListOf<GameObjectI>()
+data class GameConfig(
+    val sendUser: (id: String, send: SendFormat) -> Unit,
+    val onRocketCreated: (rocket: Rocket) -> Unit
+)
 
-    var idCount = Long.MIN_VALUE
-
+class Game(
+    level: Int,
+    startUsers: Array<UserPropsI>,
+    private val gameConfig: GameConfig
+) : GameClassI {
+    private val objects = hashMapOf<String, GameObjectI>()
+    private var idCount = Long.MAX_VALUE
     lateinit var settings: GameSettings
 
+    fun objectList() = objects.values.toTypedArray()
+
     init {
-        loadLevel(level)
+        loadLevel(level, startUsers)
     }
 
-    fun sendUser(userId: String, sendFormat: SendFormat) {
-        galaxy.users[userId]!!.send(sendFormat)
-    }
-
-    fun newID(): String {
-        idCount ++
+    private fun newID(): String {
+        idCount --
         return idCount.toString()
     }
 
-    fun addRocket(u: UserPropsI) {
-        objects.add(Rocket(
-            vec(settings.width.toDouble(), settings.height.toDouble()) * vec(Math.random(), Math.random()),
-            VectorI.zero(),
-            u, newID()
-        ))
+    private fun checkOtherId(id: String): String {
+        if (objects[id] == null) return id
+        else throw IdIsAlreadyInUse("Object", id)
     }
 
-    fun addObject(f: (l: ArrayList<GameObjectI>, id: String) -> Unit) { f(objects, newID()) }
+    private fun addObject(objF: (id: String) -> GameObjectI) {
+        val id = newID()
 
-    fun loadLevel(l: Int) {
+        val obj = objF(id)
+        obj.setGame(this)
+
+        objects[id] = obj
+    }
+
+    fun onMessage(message: SendFormat, user: UserPropsI? = null) {
+        if (user != null) {
+            when (message.header) {
+                "user-keyboard" -> {
+                    val keyboard = message.value as ClientKeyboardI
+                    val rocket = objects[user.id]?.let { it as Rocket }
+                    rocket?.setKeyboard(keyboard)
+                }
+            }
+        }
+    }
+
+    fun killObject(id: String) { objects.remove(id) }
+
+    private fun addRocket(u: UserPropsI): Rocket {
+        checkOtherId(u.id)
+
+        val rocket = Rocket(
+            vec(settings.width.toDouble(), settings.height.toDouble()) * vec(Math.random(), Math.random()),
+            VectorI.zero(),
+            u, u.id
+        )
+        objects[u.id] = rocket
+
+        return rocket
+    }
+
+    private fun loadLevel(l: Int, startUser: Array<UserPropsI>) {
         settings = GameSettings(l, 5000, 5000)
         for (i in 0..10) {
-            objects.add(Asteroid(
-                (Math.random() * 3.0).toInt() + 1,
-                vec(settings.width.toDouble(), settings.height.toDouble()) * vec(Math.random(), Math.random()),
-                Math.PI*2 * Math.random(),
-                vec(Math.PI*2 * Math.random(), Math.random() * 2.0 + 1.0),
-                newID()
-            ))
+            addObject {
+                Asteroid(
+                    (Math.random() * 3.0).toInt() + 1,
+                    vec(settings.width.toDouble(), settings.height.toDouble()) * vec(Math.random(), Math.random()),
+                    Math.PI*2 * Math.random(),
+                    vec(Math.PI*2 * Math.random(), Math.random() * 2.0 + 1.0),
+                    it
+                )
+            }
         }
-        galaxy.userList().forEach {
-            addRocket(it.props)
+        startUser.forEach {
+            val r = addRocket(it)
+            gameConfig.onRocketCreated(r)
         }
     }
 
     override fun calc(s: Double) {
-        objects.forEach { it.calc(s) }
+        objects.forEach { it.value.calc(s) }
     }
 
-    override fun data() = GameDataI(settings, objects.map { it.data() }.toTypedArray())
+    override fun data() = GameDataI(settings, objectList().map { it.data() }.toTypedArray())
 }

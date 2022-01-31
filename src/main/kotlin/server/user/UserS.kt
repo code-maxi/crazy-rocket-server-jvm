@@ -2,7 +2,6 @@ package server.user
 
 import ClientDataI
 import ClientKeyboardI
-import CreateNewGalaxyI
 import GalaxyAdminI
 import JoinGalaxyI
 import ResponseResult
@@ -24,7 +23,10 @@ class UserS(val socket: WebSocket, id: String) : Logable {
     private var inGame = false
     private val sendQueue = arrayListOf<SendFormat>()
 
-    lateinit var clientData: ClientDataI
+    private var clientData = ClientDataI(
+        keyboard = ClientKeyboardI(arrayOf()),
+        screenSize = VectorI.zero()
+    )
     lateinit var galaxy: GalaxyS
     var myRocket: Rocket? = null
 
@@ -48,19 +50,26 @@ class UserS(val socket: WebSocket, id: String) : Logable {
 
         when(a.header) {
             "join-galaxy" -> {
-                println("Joining Galaxy...")
+                println()
 
                 val result = try {
-                    println(a.value.toString())
                     val join = Gson().fromJson(a.value.toString(), JoinGalaxyI::class.java)
+
+                    log("User '${join.userName}' wants to join the galaxy '${join.galaxyName}.'")
+                    log("Its data is: '$join'")
+
                     GalaxyS.joinGalaxy(join, this)
+
                     props = props.copy(name = join.userName)
+                    clientData = clientData.copy(screenSize = join.screenSize)
+
                     ResponseResult(true, data = props)
                 }
                 catch (ex: ClassCastException) { WrongRequestEx(a.value).responseResult() }
                 catch (ex: OwnException) { ex.responseResult() }
 
-                println("join-galaxy-result: $result")
+                log("join-galaxy-result: $result")
+                println()
 
                 sendDirectly(SendFormat(
                     "join-galaxy-result",
@@ -68,7 +77,7 @@ class UserS(val socket: WebSocket, id: String) : Logable {
                 ))
             }
             "start-game" -> {
-                println("Starting game...")
+                log("Starting game...")
 
                 val result = try {
                     val admin = Gson().fromJson(a.value.toString(), GalaxyAdminI::class.java)
@@ -78,7 +87,7 @@ class UserS(val socket: WebSocket, id: String) : Logable {
                 catch (ex: ClassCastException) { WrongRequestEx(a.value).responseResult() }
                 catch (ex: OwnException) { ex.responseResult() }
 
-                println("starting-game-result: $result")
+                log("starting-game-result: $result")
 
                 sendDirectly(SendFormat(
                     "start-game-result",
@@ -86,12 +95,22 @@ class UserS(val socket: WebSocket, id: String) : Logable {
                 ))
             }
             "keyboard-data" -> {
-                clientData = clientData.copy(keyboard = a.value as ClientKeyboardI)
+                try {
+                    val keyboard = Gson().fromJson(a.value.toString(), ClientKeyboardI::class.java)
+                    galaxy.sendGame(SendFormat("user-keyboard", keyboard), this.props)
+                }
+                catch (ex: ClassCastException) {
+                    log(WrongRequestEx(a.value).responseResult().toString())
+                }
             }
         }
     }
 
-    fun onOpen() {
+    fun onMessageFromGame(s: SendFormat) {
+        log("Data from Game: '$s'")
+    }
+
+    private fun onOpen() {
         log("Opened.")
     }
 
@@ -121,11 +140,14 @@ class UserS(val socket: WebSocket, id: String) : Logable {
         objectsArray: Array<GameObjectI>
     ) {
         var objects = objectsArray
-        if (fullData) {
+
+        if (!fullData && myRocket != null) {
             objects = objects.filter {
-                it !is GeoObject || myRocket == null || it.getGeo() touchesRect viewRect()
+                it !is GeoObject || it.getGeo() touchesRect viewRect()
             }.toTypedArray()
         }
+
+        //log("Sending Game-Data! objects: ${objectsArray.joinToString()}")
         sendDirectly(
             SendFormat(
                 "game-data",
