@@ -12,13 +12,13 @@ fun main(args: Array<String>) {
             val httpServer = HTTPServer(1115)
             httpServer.create()
 
-            SocketServer(1116)
+            //SocketServer(1116)
 
             Runtime.getRuntime().addShutdownHook(object : Thread() {
                 override fun run() {
                     println()
-                    println("Program exited! Stopping Server...")
-                    server.stop()
+                    println("Program exited!")
+                    //server.stop()
                 }
             })
         }

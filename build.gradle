@@ -2,6 +2,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.5.10'
     id 'java'
     id 'application'
+    //id "org.gretty" version "3.0.5"
 }
 
 group 'cr.server'
@@ -15,15 +16,19 @@ dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.6.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
-    implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.27'
-    implementation group: 'org.java-websocket', name: 'Java-WebSocket', version: '1.5.2'
+    //implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.27'
+    //implementation group: 'org.java-websocket', name: 'Java-WebSocket', version: '1.5.2'
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.9'
     // https://mvnrepository.com/artifact/javax.websocket/javax.websocket-api
     //compileOnly group: 'javax.websocket', name: 'javax.websocket-api', version: '1.1'
     implementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
-    implementation 'org.java-websocket:Java-WebSocket:1.5.2'
+    //implementation 'org.java-websocket:Java-WebSocket:1.5.2'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
-    implementation 'javax.websocket:javax.websocket-api:1.1'
+    //implementation 'javax.websocket:javax.websocket-api:1.1'
+    implementation "io.ktor:ktor-server-core:1.6.7"
+    implementation "io.ktor:ktor-server-netty:1.6.7"
+    implementation "io.ktor:ktor-websockets:1.6.7"
+    implementation "ch.qos.logback:logback-classic:1.2.5"
 }
 
 test {

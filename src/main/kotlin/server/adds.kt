@@ -100,7 +100,7 @@ object Network {
             val status: Int = it.statusLine.statusCode
 
             if (status in 200..299) {
-                val entity: HttpEntity = it.getEntity()
+                val entity: HttpEntity = it.entity
                 (EntityUtils.toString(entity))!!
             } else {
                 throw ClientProtocolException("Unexpected response status: $status")

@@ -8,7 +8,7 @@ import ResponseResult
 import SendFormat
 import UserPropsI
 import com.google.gson.Gson
-import org.java_websocket.WebSocket
+import com.google.protobuf.Message
 import server.LogType
 import server.Logable
 import server.coloredLog
@@ -16,12 +16,48 @@ import server.data.*
 import server.galaxy.GalaxyS
 import server.game.objects.GeoObject
 import server.game.objects.Rocket
+import javax.websocket.*
+import javax.websocket.DecodeException
+import javax.websocket.EncodeException
+import javax.websocket.server.ServerEndpoint
 
 
-class UserS(val socket: WebSocket, id: String) : Logable {
+@ServerEndpoint(
+    "/",
+    decoders = [MessageDecoder::class],
+    encoders = [MessageEncoder::class]
+)
+class UserS : Logable {
+    val id = newID()
     var props = UserPropsI("UNDEFINED", null, id)
     private var inGame = false
     private val sendQueue = arrayListOf<SendFormat>()
+    lateinit var socket: Session
+
+    @OnOpen
+    fun onOpen(session: Session) {
+        log("New User Recieved...")
+        socket = session
+        userSocketMap[socket.id] = this
+        userQueue.add(this)
+    }
+
+    @OnMessage
+    fun onMessage(session: Session, message: SendFormat) {
+        userSocketMap[session.id]?.onMessage(message)
+    }
+
+    @OnClose
+    fun onClose(session: Session) {
+        galaxy.deleteUser(this)
+        log("Closed.")
+    }
+
+    @OnMessage
+    fun onError(session: Session, throwable: Throwable) {
+        log("Websocket Error!")
+        throwable.printStackTrace()
+    }
 
     private var clientData = ClientDataI(
         keyboard = ClientKeyboardI(arrayOf()),
@@ -30,22 +66,15 @@ class UserS(val socket: WebSocket, id: String) : Logable {
     lateinit var galaxy: GalaxyS
     var myRocket: Rocket? = null
 
-    init {
-        userQueue.add(this)
-        userSocketMap[socket] = this
-        onOpen()
-        println("User initialized.")
-    }
-
     private fun galaxyInitialized() = this::galaxy.isInitialized
 
     override fun log(str: String, type: LogType) {
         coloredLog("UserS[${props.name}, ${props.id}] logs: ", str, type)
     }
-    private fun sendDirectly(v: SendFormat) { socket.send(Gson().toJson(v)) }
+    private fun sendDirectly(v: SendFormat) { socket.basicRemote.sendText(Gson().toJson(v)) }
     fun send(v: SendFormat) { if (galaxyInitialized()) sendQueue.add(v) else sendDirectly(v) }
 
-    fun onMessage(a: SendFormat) {
+    private fun onMessage(a: SendFormat) {
         log("Receiving: $a")
 
         when(a.header) {
@@ -110,19 +139,6 @@ class UserS(val socket: WebSocket, id: String) : Logable {
         log("Data from Game: '$s'")
     }
 
-    private fun onOpen() {
-        log("Opened.")
-    }
-
-    fun onClose() {
-        galaxy.deleteUser(this)
-        log("Closed.")
-    }
-
-    fun onError(ex: Exception) {
-        println("onError::" + ex.message)
-    }
-
     fun isInGame() = inGame
 
     private fun viewRect(): GeoI {
@@ -170,7 +186,55 @@ class UserS(val socket: WebSocket, id: String) : Logable {
 
     companion object {
         val userQueue = ArrayList<UserS>()
-        val userSocketMap = HashMap<WebSocket, UserS>()
-        fun findUser(s: WebSocket) = userSocketMap[s]!!
+        val userSocketMap = HashMap<String, UserS>()
+
+        private var idCounter = Int.MIN_VALUE
+        fun newID(): String {
+            idCounter ++
+            if (idCounter == 0) idCounter ++
+            return idCounter.toString()
+        }
+    }
+}
+
+class MessageEncoder : Encoder.Text<SendFormat?> {
+    @Throws(EncodeException::class)
+    override fun encode(message: SendFormat?): String {
+        return gson.toJson(message)
+    }
+
+    override fun init(endpointConfig: EndpointConfig?) {
+        // Custom initialization logic
+    }
+
+    override fun destroy() {
+        // Close resources
+    }
+
+    companion object {
+        private val gson = Gson()
+    }
+}
+
+class MessageDecoder : Decoder.Text<SendFormat?> {
+    @Throws(DecodeException::class)
+    override fun decode(s: String?): SendFormat {
+        return Companion.gson.fromJson(s, SendFormat::class.java)
+    }
+
+    override fun willDecode(s: String?): Boolean {
+        return s != null
+    }
+
+    override fun init(endpointConfig: EndpointConfig?) {
+        // Custom initialization logic
+    }
+
+    override fun destroy() {
+        // Close resources
+    }
+
+    companion object {
+        private val gson = Gson()
     }
 }
