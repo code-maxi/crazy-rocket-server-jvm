@@ -20,7 +20,7 @@ abstract class GeoObject(
     fun setSpeed(s: Double) { velocity = velocity.e() * s }
     fun setAngle(a: Double) { velocity = vec(a, velocity.length()) }
 
-    override fun calc(s: Double) {
+    override suspend fun calc(s: Double) {
         pos += velocity * s
     }
 

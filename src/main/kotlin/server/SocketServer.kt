@@ -2,16 +2,8 @@ package server
 
 import SendFormat
 import com.google.gson.Gson
-import org.java_websocket.WebSocket
-import org.java_websocket.handshake.ClientHandshake
-import org.java_websocket.server.WebSocketServer
 import server.user.UserS
 import java.net.InetSocketAddress
-import javax.websocket.OnClose
-import javax.websocket.OnMessage
-import javax.websocket.OnOpen
-import javax.websocket.Session
-import javax.websocket.server.ServerEndpoint
 import kotlin.concurrent.thread
 
 //lateinit var server: SocketServer

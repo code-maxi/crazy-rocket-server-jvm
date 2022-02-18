@@ -127,10 +127,41 @@ object Game {
 }
 
 object Text {
+    private const val LOG_HEADER_WIDTH = 20
     fun validNameText(text: String, errorType: String, minLetters: Int, maxLetters: Int): Boolean {
         if (text.length <= 3) throw InvalidTextEx(errorType, text, "it's too short.")
         else if (text.length <= 7) throw InvalidTextEx(errorType, text, "it's too long.")
         else if (!text.matches("\\w+".toRegex())) throw InvalidTextEx(errorType, text, "it's too short.")
         else return true
     }
+    fun coloredLog(
+        from: String,
+        str: String,
+        color: Ansi? = null,
+        name: Ansi? = null
+    ) {
+        println("${Ansi.BOLD.color}${name?.color ?: Ansi.YELLOW.color}${sizeString("$from: ", LOG_HEADER_WIDTH)}${Ansi.RESET.color} ${if (color != null) "${color.color}$str${Ansi.RESET.color}" else str}")
+    }
+    private fun maxSizeString(str: String, maxSize: Int) =
+        if (str.length > maxSize) "${str.substring(0, maxSize - 3)}..."
+        else str
+    private fun sizeString(str: String, size: Int) =
+        maxSizeString(str, size).let { "$it${Array(size - it.length) { " " }.joinToString("")}" }
+}
+
+enum class Ansi(val color: String) {
+    RESET("\u001b[0m"),
+    BLACK("\u001b[30m"),
+    RED("\u001b[31m"),
+    GREEN("\u001b[32m"),
+    YELLOW("\u001b[33m"),
+    BLUE("\u001b[34m"),
+    PURPLE("\u001b[35m"),
+    CYAN("\u001b[36m"),
+    WHITE("\u001b[37m"),
+    BOLD("\u001b[1m")
+}
+
+interface Logable {
+    fun log(str: String, color: Ansi? = null)
 }

@@ -1,16 +1,25 @@
 package server
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
 import org.apache.http.impl.client.HttpClients
 import server.galaxy.GalaxyS
-import kotlin.concurrent.thread
 
 fun main(args: Array<String>) {
     when (args[0]) {
         "server" -> {
-            GalaxyS.readGalaxyState()
+            runBlocking {
+                GalaxyS.readGalaxyState()
+                KtorServer.create()
 
-            val httpServer = HTTPServer(1115)
-            httpServer.create()
+                KtorServer.gameCalculation = CoroutineScope(Dispatchers.Main)
+
+                coroutineScope {
+                    KtorServer.otherWorks = this
+                }
+            }
 
             //SocketServer(1116)
 
@@ -25,7 +34,7 @@ fun main(args: Array<String>) {
         "post" -> {
             val httpClient = HttpClients.createDefault()
             val response = Network.makeHTTPPostRequest(
-                "http://localhost:1112/${args[1]}",
+                "http://localhost:1234/${args[1]}",
                 args[2], httpClient
             )
             println(response)

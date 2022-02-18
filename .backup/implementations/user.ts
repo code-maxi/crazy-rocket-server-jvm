@@ -79,7 +79,6 @@ export class User implements UserI, DatableI<UserI> {
 
                 this.onmessage.forEach(f => {
                     if (parse !== undefined && parse !== null) f(parse, () => {
-                        this.log('recieving following data...')
                         console.log(parse)
                         console.log()
                     })

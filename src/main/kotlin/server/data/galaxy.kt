@@ -1,4 +1,5 @@
 import server.data.VectorI
+import javax.lang.model.type.ErrorType
 
 data class SendFormat(val header: String, val value: Any? = null)
 
@@ -57,6 +58,11 @@ data class ResponseResult(
     val data: Any? = null,
     val message: String? = null,
     val errorType: String? = null
+)
+
+data class OwnExceptionData(
+    val type: String,
+    val message: String
 )
 
 data class JsonListI<T>(

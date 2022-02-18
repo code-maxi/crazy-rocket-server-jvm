@@ -9,15 +9,19 @@ import JoinGalaxyI
 import SendFormat
 import UserPropsI
 import com.google.gson.Gson
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import server.Ansi
 import server.FileA.createIf
 import server.FileA.file
+import server.KtorServer
 import server.Text
+import server.Text.coloredLog
 import server.data.*
 import server.game.Game
 import server.game.GameConfig
 import server.user.UserS
 import java.io.File
-import kotlin.concurrent.thread
 
 class GalaxyS(
     var props: GalaxyPropsI
@@ -25,10 +29,11 @@ class GalaxyS(
     private val users = hashMapOf<String, UserS>()
     var game: Game? = null
     var state = "frozen"
+    val clientAnswerChannel = Channel<>()
 
     private val sendGameQueue = arrayListOf<Pair<SendFormat, UserPropsI>>()
 
-    fun userList() = users.values.toTypedArray()
+    private fun userList() = users.values.toTypedArray()
 
     fun data() = GalaxyI(
         userList().map { it.props }.toTypedArray(),
@@ -36,10 +41,14 @@ class GalaxyS(
     )
 
     init {
-        println("Galaxy ${Gson().toJson(data())} with password '${galaxyPassword(props.name)}' created!")
+        log("created with password '${galaxyPassword(props.name)}'!")
     }
 
-    fun joinUser(u: UserS) {
+    private fun log(text: String, color: Ansi? = null) {
+        coloredLog("Galaxy [${props.name}]", text, color, name = Ansi.CYAN)
+    }
+
+    suspend fun joinUser(u: UserS) {
         if (users[u.props.id] != null)
              throw DoesAlreadyExistEx("name", u.props.name)
         else {
@@ -54,75 +63,89 @@ class GalaxyS(
 
     fun sendGame(message: SendFormat, u: UserPropsI) { sendGameQueue.add(message to u) }
 
-    fun deleteUser(u: UserS) {
+    suspend fun deleteUser(u: UserS) {
         users.remove(u.props.id)
         sendGalaxyData()
     }
 
-    private fun sendGalaxyData() {
+    private suspend fun sendGalaxyData() {
         if (game == null) {
             sendAllClients(SendFormat("galaxy-data", data()))
         }
     }
 
-    fun startGame(password: String) {
+    private suspend fun setupGame(password: String) {
+        log("Game setup 1!")
+
         checkMyPassword(password)
 
         game = Game(props.level, data().users, GameConfig(
             sendUser = { id, sendFormat -> users[id]?.onMessageFromGame(sendFormat) },
             onRocketCreated = { rocket -> users[rocket.userProps.id]?.myRocket = rocket }
         ))
+
         sendAllClients(SendFormat("game-created"))
 
-        thread {
-            val fullDataInterval = 1
-            val estimatedTime = 300
+        log("Game setup! 2")
+    }
 
-            var oldTimestamp: Long
-            var measuredTime = estimatedTime
-            var fullDataIntervalCount = fullDataInterval
+    fun startGame(password: String) {
+        log("Start Game! t")
+        KtorServer.gameCalculation.launch {
+            log("Setup game 0!")
+            setupGame(password)
+            gameLoop()
+        }
+        log("Exit Start Game!")
+    }
 
-            while (game != null) {
-                oldTimestamp = System.nanoTime()
+    private suspend fun gameLoop() {
+        log("Starting Game Loop...")
+        log("")
 
-                Thread.sleep(10)
+        val fullDataInterval = 1
+        val estimatedTime = 30
 
-                sendGameQueue.forEach { game!!.onMessage(it.first, it.second) }
+        var oldTimestamp: Long
+        var measuredTime = estimatedTime
+        var fullDataIntervalCount = fullDataInterval
 
-                println("$measuredTime vs. $estimatedTime")
+        while (game != null) {
+            oldTimestamp = System.nanoTime()
 
-                val factor = (measuredTime.toDouble() / estimatedTime.toDouble())
-                game!!.calc(factor)
+            sendGameQueue.forEach { game!!.onMessage(it.first, it.second) }
 
-                userList().forEach {
-                    it.sendData(
-                        fullDataIntervalCount == fullDataInterval,
-                        game!!.settings,
-                        game!!.objectList()
-                    )
-                }
+            val factor = (measuredTime.toDouble() / estimatedTime.toDouble())
 
-                if (fullDataIntervalCount < fullDataInterval) fullDataIntervalCount ++
-                else fullDataIntervalCount = 0
+            game!!.calc(factor)
 
-                Thread.sleep(10)
-
-                measuredTime = ((System.nanoTime() - oldTimestamp) / 100000).toInt()
+            userList().forEach {
+                it.sendData(
+                    fullDataIntervalCount == fullDataInterval,
+                    game!!.settings,
+                    game!!.objectList()
+                )
             }
+
+            if (fullDataIntervalCount < fullDataInterval) fullDataIntervalCount ++
+            else fullDataIntervalCount = 0
+
+            delay(20)
+
+            measuredTime = ((System.nanoTime() - oldTimestamp) / 100000).toInt()
         }
     }
 
-    fun checkMyPassword(password: String) {
+    private fun checkMyPassword(password: String) {
         if (!checkGalaxyPassword(props.name, password))
             throw InvalidPasswordEx(password, props.name)
     }
 
-    private fun sendAllClients(s: SendFormat) {
+    private suspend fun sendAllClients(s: SendFormat) {
         userList().forEach { it.send(s) }
     }
 
     companion object {
-        const val SEND_WHOLE_DATA_INTERVAL = 15
 
         private var galaxies = hashMapOf<String, GalaxyS>()
         private var galaxyPasswords = hashMapOf<String, String>()
@@ -175,7 +198,7 @@ class GalaxyS(
             else throw NameAlreadyExistsEx(g.name)
         }
 
-        fun removeGalaxy(g: GalaxyPasswordI) {
+        fun deleteGalaxy(g: GalaxyPasswordI) {
             if (galaxies[g.name] != null) {
                 if (galaxyPasswords[g.name] == g.password) {
                     galaxies.remove(g.name)
@@ -185,7 +208,7 @@ class GalaxyS(
             } else throw DoesNotExistEx("Galaxy", g.name)
         }
 
-        fun joinGalaxy(join: JoinGalaxyI, user: UserS) {
+        suspend fun joinGalaxy(join: JoinGalaxyI, user: UserS) {
             return try { galaxies[join.galaxyName]!!.joinUser(user) }
               catch (ex: NullPointerException) { throw DoesNotExistEx("Galaxy", join.userName) }
         }

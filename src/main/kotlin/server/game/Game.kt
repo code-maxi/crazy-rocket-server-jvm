@@ -91,7 +91,7 @@ class Game(
         }
     }
 
-    override fun calc(s: Double) {
+    override suspend fun calc(s: Double) {
         objects.forEach { it.value.calc(s) }
     }
 

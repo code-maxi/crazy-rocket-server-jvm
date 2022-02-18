@@ -63,7 +63,7 @@ class HTTPServer(val port: Int) {
             ) { parsed, finish ->
                 println("/delete-galaxy parsed: $parsed")
 
-                val result = try { GalaxyS.removeGalaxy(parsed); "successfully" }
+                val result = try { GalaxyS.deleteGalaxy(parsed); "successfully" }
                 catch (ex: ClassCastException) { "wrong request" }
                 catch (ex: OwnException) { ex.toString() }
                 val res = JsonStatusI(result)
