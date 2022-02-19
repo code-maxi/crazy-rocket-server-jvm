@@ -1,9 +1,8 @@
 package server.game
 
-import ClientKeyboardI
 import SendFormat
-import UserPropsI
 import server.data.*
+import server.game.objects.Asteroid
 import server.game.objects.Rocket
 
 data class GameConfig(
@@ -45,15 +44,11 @@ class Game(
         objects[id] = obj
     }
 
-    fun onMessage(message: SendFormat, user: UserPropsI? = null) {
-        if (user != null) {
-            when (message.header) {
-                "user-keyboard" -> {
-                    val keyboard = message.value as ClientKeyboardI
-                    val rocket = objects[user.id]?.let { it as Rocket }
-                    rocket?.setKeyboard(keyboard)
-                }
-            }
+    fun onClientData(data: ClientDataRequestI) {
+        if (data.keyboard != null) {
+            val keyboard = data.keyboard
+            val rocket = objects[data.userProps.id]?.let { it as Rocket }
+            rocket?.setKeyboard(keyboard)
         }
     }
 
@@ -64,7 +59,6 @@ class Game(
 
         val rocket = Rocket(
             vec(settings.width.toDouble(), settings.height.toDouble()) * vec(Math.random(), Math.random()),
-            VectorI.zero(),
             u, u.id
         )
         objects[u.id] = rocket
@@ -96,4 +90,8 @@ class Game(
     }
 
     override fun data() = GameDataI(settings, objectList().map { it.data() }.toTypedArray())
+
+    companion object {
+        val LISTINING_KEYS = arrayOf("ArrowUp", "ArrowRight", "ArrowLeft")
+    }
 }

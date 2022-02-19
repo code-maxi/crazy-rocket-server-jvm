@@ -127,7 +127,7 @@ object Game {
 }
 
 object Text {
-    private const val LOG_HEADER_WIDTH = 20
+    private const val LOG_HEADER_WIDTH = 18
     fun validNameText(text: String, errorType: String, minLetters: Int, maxLetters: Int): Boolean {
         if (text.length <= 3) throw InvalidTextEx(errorType, text, "it's too short.")
         else if (text.length <= 7) throw InvalidTextEx(errorType, text, "it's too long.")
@@ -138,11 +138,13 @@ object Text {
         from: String,
         str: String,
         color: Ansi? = null,
-        name: Ansi? = null
+        name: Ansi? = null,
+        maxSize: Int = 18
     ) {
-        println("${Ansi.BOLD.color}${name?.color ?: Ansi.YELLOW.color}${sizeString("$from: ", LOG_HEADER_WIDTH)}${Ansi.RESET.color} ${if (color != null) "${color.color}$str${Ansi.RESET.color}" else str}")
+        if (str != "") println("${Ansi.BOLD.color}${name?.color ?: Ansi.YELLOW.color}${sizeString(from, maxSize)} ${Ansi.RESET.color} ${if (color != null) "${color.color}$str${Ansi.RESET.color}" else str}")
+        else println()
     }
-    private fun maxSizeString(str: String, maxSize: Int) =
+    fun maxSizeString(str: String, maxSize: Int) =
         if (str.length > maxSize) "${str.substring(0, maxSize - 3)}..."
         else str
     private fun sizeString(str: String, size: Int) =

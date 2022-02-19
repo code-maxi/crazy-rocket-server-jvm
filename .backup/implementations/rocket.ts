@@ -41,8 +41,7 @@ export class Rocket extends MovingObject implements RocketI, DatableI<RocketI> {
         const al = this.myUser().checkKey('ArrowLeft')
         const au = this.myUser().checkKey('ArrowUp')
 
-        if (au)
-            this.fires.forEach(f => f.calc(au, this.geo))
+        if (au) this.fires.forEach(f => f.calc(au, this.geo))
 
         if (ar === true || al === true)
             this.geo.angle = this.geo.angle + (ar ? 1 : -1)*this.rocketType.turningSpeed*s

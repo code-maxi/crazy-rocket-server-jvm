@@ -1,22 +1,20 @@
 package server.user
 
-import ClientDataI
-import ClientKeyboardI
+import server.data.ClientDataI
+import server.data.ClientKeyboardI
 import GalaxyAdminI
 import JoinGalaxyI
 import ResponseResult
 import SendFormat
-import UserPropsI
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import io.ktor.http.cio.websocket.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
-import kotlinx.coroutines.launch
 import server.Ansi
 import server.Logable
 import server.Text.coloredLog
 import server.data.*
 import server.galaxy.GalaxyS
+import server.game.Game
 import server.game.objects.GeoObject
 import server.game.objects.Rocket
 
@@ -25,6 +23,8 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
     var props = UserPropsI("UNDEFINED", null, id)
     private var inGame = false
     private val sendQueue = arrayListOf<SendFormat>()
+    private var sendWholeDataCount = 0
+    private var dataRequest: ClientDataRequestI? = null
 
     init {
         log("initialized.")
@@ -81,13 +81,12 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
             }
             "start-game" -> {
                 val result = try {
-                    log("In start-game 1.")
                     val admin = Gson().fromJson(a.value.toString(), GalaxyAdminI::class.java)
-                    log("In start-game 2.")
                     galaxy.startGame(admin.password)
-                    log("In start-game 3.")
-                    ResponseResult(true)
-                    log("In start-game 4.")
+                    ResponseResult(
+                        true,
+                        data = GameStartI(Game.LISTINING_KEYS)
+                    )
                 }
                 catch (ex: ClassCastException) { WrongRequestEx(a.value).responseResult() }
                 catch (ex: OwnException) { ex.responseResult() }
@@ -99,13 +98,15 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
                     result
                 ))
             }
-            "keyboard-data" -> {
+            "client-data-request" -> {
                 try {
-                    val keyboard = Gson().fromJson(a.value.toString(), ClientKeyboardI::class.java)
-                    galaxy.sendGame(SendFormat("user-keyboard", keyboard), this.props)
+                    dataRequest = Gson().fromJson(a.value.toString(), ClientDataRequestI::class.java)
+                    dataRequest?.let {
+                        if (galaxyInitialized()) galaxy.registerClientData(it)
+                    }
                 }
-                catch (ex: ClassCastException) {
-                    log(WrongRequestEx(a.value).responseResult().toString())
+                catch (ex: JsonSyntaxException) {
+                    JsonParseEx(a.value.toString(), "ClientDataRequestI").printError()
                 }
             }
         }
@@ -113,6 +114,44 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
     fun onMessageFromGame(s: SendFormat) {
         log("Data from Game: '$s'")
+    }
+
+    suspend fun onGameCalculated(
+        settings: GameSettings,
+        objectsArray: Array<GameObjectI>
+    ) {
+        if (dataRequest != null) {
+            if (sendWholeDataCount < WHOLE_DATA_INTERVAL) sendWholeDataCount ++
+            else sendWholeDataCount = 0
+
+            var objects = objectsArray
+            val fullData = sendWholeDataCount == WHOLE_DATA_INTERVAL
+
+            if (!fullData && myRocket != null) {
+                objects = objects.filter {
+                    it !is GeoObject || it.getGeo() touchesRect viewRect()
+                }.toTypedArray()
+            }
+
+            //log("Sending Game-Data! objects: ${objectsArray.joinToString()}")
+            sendDirectly(
+                SendFormat(
+                    "game-data",
+                    GameDataForSendingI(
+                        settings = settings,
+                        objects = objects.map { it.data() }.toTypedArray(),
+                        galaxy = galaxy.data(),
+                        messages = sendQueue.toTypedArray(),
+                        fullData = fullData,
+                        userView = this.myRocket?.userView(),
+                        yourUserProps = props
+                    )
+                )
+            )
+            sendQueue.clear()
+
+            dataRequest = null
+        }
     }
 
     fun isInGame() = inGame
@@ -126,35 +165,13 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
         )
     }
 
-    suspend fun sendData(
+    /*suspend fun sendData(
         fullData: Boolean,
         settings: GameSettings,
         objectsArray: Array<GameObjectI>
     ) {
-        var objects = objectsArray
 
-        if (!fullData && myRocket != null) {
-            objects = objects.filter {
-                it !is GeoObject || it.getGeo() touchesRect viewRect()
-            }.toTypedArray()
-        }
-
-        //log("Sending Game-Data! objects: ${objectsArray.joinToString()}")
-        sendDirectly(
-            SendFormat(
-                "game-data",
-                GameDataForSendingI(
-                    settings = settings,
-                    objects = objects.map { it.data() }.toTypedArray(),
-                    galaxy = galaxy.data(),
-                    messages = sendQueue.toTypedArray(),
-                    fullData = fullData,
-                    userView = this.myRocket?.userView()
-                )
-            )
-        )
-        sendQueue.clear()
-    }
+    }*/
 
     fun onSuccessfullyJoined() {
         props = props.copy(galaxy = galaxy.props.name)
@@ -162,10 +179,9 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
     }
 
     companion object {
-        val userQueue = ArrayList<UserS>()
-        val userSocketMap = HashMap<String, UserS>()
-
         private var idCounter = Int.MIN_VALUE
+        const val WHOLE_DATA_INTERVAL = 20
+
         fun newID(): String {
             idCounter ++
             if (idCounter == 0) idCounter ++
@@ -176,4 +192,5 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
     override fun log(str: String, color: Ansi?) {
         coloredLog("User ${props.name}", str, color, name = Ansi.GREEN)
     }
+
 }

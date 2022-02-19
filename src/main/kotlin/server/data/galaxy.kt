@@ -1,5 +1,5 @@
+import server.data.UserPropsI
 import server.data.VectorI
-import javax.lang.model.type.ErrorType
 
 data class SendFormat(val header: String, val value: Any? = null)
 
@@ -70,30 +70,3 @@ data class JsonListI<T>(
 )
 
 data class JsonStatusI(val status: String)
-
-// User
-
-data class UserViewI(
-    val eye: VectorI,
-    val zoom: Double
-)
-
-data class UserPropsI(
-    val name: String,
-    val galaxy: String?,
-    val id: String
-)
-
-data class ClientDataI(
-    val keyboard: ClientKeyboardI,
-    val screenSize: VectorI
-)
-
-data class ClientKeyboardI(val keys: Array<ClientKeyI> = arrayOf()) {
-    fun key(search: String) = keys.find { it.key == search }?.active ?: false
-}
-
-data class ClientKeyI(
-    val key: String,
-    val active: Boolean
-)

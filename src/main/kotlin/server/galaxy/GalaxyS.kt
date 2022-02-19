@@ -7,7 +7,6 @@ import GalaxyPropsI
 import GalaxyI
 import JoinGalaxyI
 import SendFormat
-import UserPropsI
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -29,7 +28,7 @@ class GalaxyS(
     private val users = hashMapOf<String, UserS>()
     var game: Game? = null
     var state = "frozen"
-    val clientAnswerChannel = Channel<>()
+    //val clientAnswerChannel = Channel<ClientAnswerI>()
 
     private val sendGameQueue = arrayListOf<Pair<SendFormat, UserPropsI>>()
 
@@ -71,6 +70,7 @@ class GalaxyS(
     private suspend fun sendGalaxyData() {
         if (game == null) {
             sendAllClients(SendFormat("galaxy-data", data()))
+            // TODO: send only preview clients
         }
     }
 
@@ -91,7 +91,7 @@ class GalaxyS(
 
     fun startGame(password: String) {
         log("Start Game! t")
-        KtorServer.gameCalculation.launch {
+        GlobalScope.launch {
             log("Setup game 0!")
             setupGame(password)
             gameLoop()
@@ -99,27 +99,53 @@ class GalaxyS(
         log("Exit Start Game!")
     }
 
+    fun registerClientData(data: ClientDataRequestI) {
+        //clientAnswerChannel.send(data)
+        game?.onClientData(data)
+    }
+
     private suspend fun gameLoop() {
         log("Starting Game Loop...")
         log("")
 
-        val fullDataInterval = 1
-        val estimatedTime = 30
+        val debugspeed: Int? = null
+
+        //val fullDataInterval = 1
+        val estimatedTime = debugspeed ?: 30
 
         var oldTimestamp: Long
         var measuredTime = estimatedTime
-        var fullDataIntervalCount = fullDataInterval
+        //var fullDataIntervalCount = fullDataInterval
 
         while (game != null) {
             oldTimestamp = System.nanoTime()
 
-            sendGameQueue.forEach { game!!.onMessage(it.first, it.second) }
+            /*
+            val clientAnswersArray = arrayListOf<ClientAnswerI>()
+
+            while (!firstTime && users.size == clientAnswersArray.size) {
+                val clientAnswer = clientAnswerChannel.receive()
+                clientAnswersArray.add(clientAnswer)
+                log("client-answer from ${clientAnswer.userProps}")
+            }
+
+            clientAnswersArray.forEach { game!!.onClientData(it) }
+            */
+
+            //sendGameQueue.forEach { game!!.onMessage(it.first, it.second) }
 
             val factor = (measuredTime.toDouble() / estimatedTime.toDouble())
 
             game!!.calc(factor)
 
             userList().forEach {
+                it.onGameCalculated(
+                    game!!.settings,
+                    game!!.objectList()
+                )
+            }
+
+            /*userList().forEach {
                 it.sendData(
                     fullDataIntervalCount == fullDataInterval,
                     game!!.settings,
@@ -128,9 +154,12 @@ class GalaxyS(
             }
 
             if (fullDataIntervalCount < fullDataInterval) fullDataIntervalCount ++
-            else fullDataIntervalCount = 0
+            else {
+                fullDataIntervalCount = 0
+                log("factor: $factor")
+            }*/
 
-            delay(20)
+            delay(debugspeed?.toLong() ?: 10)
 
             measuredTime = ((System.nanoTime() - oldTimestamp) / 100000).toInt()
         }
