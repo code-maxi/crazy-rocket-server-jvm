@@ -109,29 +109,13 @@ class GalaxyS(
 
         val debugspeed: Int? = null
 
-        //val fullDataInterval = 1
         val estimatedTime = debugspeed ?: 30
 
         var oldTimestamp: Long
         var measuredTime = estimatedTime
-        //var fullDataIntervalCount = fullDataInterval
 
         while (game != null) {
             oldTimestamp = System.nanoTime()
-
-            /*
-            val clientAnswersArray = arrayListOf<ClientAnswerI>()
-
-            while (!firstTime && users.size == clientAnswersArray.size) {
-                val clientAnswer = clientAnswerChannel.receive()
-                clientAnswersArray.add(clientAnswer)
-                log("client-answer from ${clientAnswer.userProps}")
-            }
-
-            clientAnswersArray.forEach { game!!.onClientData(it) }
-            */
-
-            //sendGameQueue.forEach { game!!.onMessage(it.first, it.second) }
 
             val factor = (measuredTime.toDouble() / estimatedTime.toDouble())
 
@@ -143,20 +127,6 @@ class GalaxyS(
                     game!!.objectList()
                 )
             }
-
-            /*userList().forEach {
-                it.sendData(
-                    fullDataIntervalCount == fullDataInterval,
-                    game!!.settings,
-                    game!!.objectList()
-                )
-            }
-
-            if (fullDataIntervalCount < fullDataInterval) fullDataIntervalCount ++
-            else {
-                fullDataIntervalCount = 0
-                log("factor: $factor")
-            }*/
 
             delay(debugspeed?.toLong() ?: 10)
 

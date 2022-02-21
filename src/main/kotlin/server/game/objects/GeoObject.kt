@@ -16,7 +16,6 @@ abstract class GeoObject(
 ): GameObjectI(id) {
     //protected var effects = arrayListOf<GeoObjectEffect<T>>()
 
-
     fun setSpeed(s: Double) { velocity = velocity.e() * s }
     fun setAngle(a: Double) { velocity = vec(a, velocity.length()) }
 
