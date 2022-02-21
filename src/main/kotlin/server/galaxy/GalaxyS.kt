@@ -90,13 +90,12 @@ class GalaxyS(
     }
 
     fun startGame(password: String) {
-        log("Start Game! t")
-        GlobalScope.launch {
-            log("Setup game 0!")
-            setupGame(password)
-            gameLoop()
-        }
-        log("Exit Start Game!")
+        if (game == null) {
+            GlobalScope.launch {
+                setupGame(password)
+                gameLoop()
+            }
+        } else throw GameIsAlreadyRunning()
     }
 
     fun registerClientData(data: ClientDataRequestI) {

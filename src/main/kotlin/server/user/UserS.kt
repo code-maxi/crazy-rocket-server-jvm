@@ -91,8 +91,6 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
                 catch (ex: ClassCastException) { WrongRequestEx(a.value).responseResult() }
                 catch (ex: OwnException) { ex.responseResult() }
 
-                log("starting-game-result: $result")
-
                 sendDirectly(SendFormat(
                     "start-game-result",
                     result
