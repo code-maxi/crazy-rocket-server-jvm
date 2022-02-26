@@ -11,7 +11,12 @@ import server.Text.coloredLog
 abstract class OwnException(type: String, message: String) : Exception() {
     val exceptionData = OwnExceptionDataI(type, message)
     fun responseResult(header: String? = null, print: Boolean = false): ResponseResult {
-        val result = ResponseResult(false, message = exceptionData.message, errorType = message, header = header)
+        val result = ResponseResult(
+            false,
+            message = exceptionData.message,
+            errorType = exceptionData.type,
+            header = header
+        )
         if (print) printError()
         return result
     }
@@ -22,27 +27,27 @@ abstract class OwnException(type: String, message: String) : Exception() {
 }
 
 class WrongRequestEx(request: Any?) : OwnException(
-    "wrong-request-exception",
+    "wrong-request",
     "The Request '$request' is wrong."
 )
 
-class InvalidPasswordEx(password: String, galaxy: String) : OwnException(
-    "invalid-password-exception",
-    "The password '$password' is wrong for galaxy '$galaxy'."
+class InvalidPasswordEx(galaxy: String) : OwnException(
+    "invalid-password",
+    "The password was wrong for galaxy '$galaxy'."
 )
 
 open class DoesNotExistEx(type: String, value: String) : OwnException(
-    "does-not-exist-exception",
+    "does-not-exist",
     "The $type '$value' doesn't exist."
 )
 
 class GalaxyDoesNotExist(galaxy: String) : OwnException(
     "galaxy-does-not-exist",
-    "You're trying to access the galaxy $galaxy that doesn't exist anymore."
+    "You're trying to access a galaxy called '$galaxy' that doesn't exist."
 )
 
 open class DoesAlreadyExistEx(val type: String, val value: String) : OwnException(
-    "does-already-exist-exception",
+    "does-already-exist",
     "The $type '$value' does already exist."
 )
 
@@ -66,7 +71,7 @@ class InvalidTextEx(
     reason: String?
 ) : OwnException(
     "invalid-text",
-    "The $textType \"$value'\" is not valid ${if (reason != null) "because $reason" else "" }."
+    "The $textType \"$value\" is not valid ${if (reason != null) "because $reason" else "" }."
 )
 
 class NameAlreadyExistsEx(value: String) : OwnException(

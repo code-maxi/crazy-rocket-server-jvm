@@ -23,8 +23,6 @@ import server.galaxy.GalaxyS
 import server.user.UserS
 
 object KtorServer {
-    lateinit var gameCalculation: CoroutineScope
-    lateinit var otherWorks: CoroutineScope
     fun create() {
         log("starting server...")
         embeddedServer(Netty, port = 1234) {

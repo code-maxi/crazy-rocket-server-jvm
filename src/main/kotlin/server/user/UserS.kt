@@ -47,7 +47,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
     private fun galaxyInitialized() = this.galaxy != null
 
-    fun getMyGalaxy() = galaxy ?: throw GalaxyHasNotBeenInitializedEx()
+    private fun getMyGalaxy() = galaxy ?: throw GalaxyHasNotBeenInitializedEx()
 
     private suspend fun sendDirectly(v: SendFormat) { session.send(Frame.Text(Gson().toJson(v))) }
     suspend fun send(v: SendFormat) { if (galaxyInitialized()) sendQueue.add(v) else sendDirectly(v) }
@@ -68,7 +68,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
     }
 
     suspend fun sendGalaxyData(gal: GalaxyS) {
-        send(SendFormat("prev-galaxy-data", GalaxyPrevI(props, gal.data())))
+        sendDirectly(SendFormat("prev-galaxy-data", GalaxyPrevI(props, gal.data())))
     }
 
     private suspend fun setPrevGalaxy(prev: String) {
@@ -98,9 +98,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
                 setPrevGalaxy(prev.galaxy)
             }
             "join-galaxy" -> {
-                println()
-
-                val result = resultCatch("join-galaxy-response", {
+                val result = resultCatch("join-galaxy-result", {
                     val join = Gson().fromJson(a.value.toString(), JoinGalaxyI::class.java)
 
                     log("User '${join.userName}' wants to join the galaxy '${join.galaxyName}.'")
@@ -108,8 +106,12 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
                     GalaxyS.joinGalaxy(join, this)
 
+                    log("User successfully joined!")
+
                     ResponseResult(true, data = props)
-                }, mapOf("null-pointer" to WrongRequestEx(a.value)), true)
+                }, mapOf("json-syntax" to WrongRequestEx(a.value)), true)
+
+                log("Join galaxy result: $result")
 
                 sendDirectly(SendFormat(
                     "join-galaxy-result",
@@ -117,6 +119,9 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
                 ))
             }
             "start-game" -> {
+
+                log("Want to start game...")
+
                 val result = resultCatch("start-game-result", {
                     val admin = Gson().fromJson(a.value.toString(), GalaxyAdminI::class.java)
                     getMyGalaxy().startGame(admin.password)
@@ -126,6 +131,10 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
                         data = GameStartI(Game.LISTINING_KEYS)
                     )
                 }, mapOf("class-cast" to WrongRequestEx(a.value)), true)
+
+                log("start game result...")
+                log(result.toString())
+                log("")
 
                 sendDirectly(SendFormat(
                     "start-game-result",

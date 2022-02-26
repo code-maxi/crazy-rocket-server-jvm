@@ -1,9 +1,8 @@
 package server
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
+import CreateNewGalaxyI
+import GalaxyConfigI
+import kotlinx.coroutines.*
 import org.apache.http.impl.client.HttpClients
 import server.galaxy.GalaxyS
 
@@ -12,13 +11,8 @@ fun main(args: Array<String>) {
         "server" -> {
             runBlocking {
                 //GalaxyS.readGalaxyState()
+                GalaxyS.createGalaxy(CreateNewGalaxyI("test", "test-p", GalaxyConfigI(1.0, 100.0, 2, 100, 100)))
                 KtorServer.create()
-
-                KtorServer.gameCalculation = CoroutineScope(Dispatchers.Main)
-
-                coroutineScope {
-                    KtorServer.otherWorks = this
-                }
             }
 
             //SocketServer(1116)

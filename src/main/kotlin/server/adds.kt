@@ -134,8 +134,8 @@ object Text {
     private const val LOG_HEADER_WIDTH = 18
     fun checkValidName(text: String, errorType: String, minLetters: Int, maxLetters: Int) {
         if (text.length <= minLetters) throw InvalidTextEx(errorType, text, "it's too short.")
-        else if (text.length <= maxLetters) throw InvalidTextEx(errorType, text, "it's too long.")
-        else if (!text.matches("\\w+".toRegex())) throw InvalidTextEx(errorType, text, "it's too short.")
+        else if (text.length >= maxLetters) throw InvalidTextEx(errorType, text, "it's too long.")
+        else if (!text.matches("[\\w\\-]+".toRegex())) throw InvalidTextEx(errorType, text, "it can only contain letters, numbers and hyphens..")
     }
     fun coloredLog(
         from: String,

@@ -27,7 +27,11 @@ class GalaxyS(
     var props = GalaxyPropsI(name, "queue")
     private val users = hashMapOf<String, UserS>()
     private var game: Game? = null
-    private val teams = hashMapOf<TeamColor, ArrayList<String>>()
+    private val teams = hashMapOf<TeamColor, ArrayList<String>>(
+        TeamColor.RED to arrayListOf(),
+        TeamColor.BLUE to arrayListOf(),
+        TeamColor.GREEN to arrayListOf()
+    )
 
     //val clientAnswerChannel = Channel<ClientAnswerI>()
 
@@ -40,8 +44,8 @@ class GalaxyS(
         TeamI(
             TeamPropsI(
                 props.name,
-                it.key.color,
-                it.key.name
+                it.key.name,
+                it.key.color
             ),
             it.value.toTypedArray()
         )
@@ -61,7 +65,7 @@ class GalaxyS(
     }
 
     suspend fun joinUser(u: UserS, joinData: JoinGalaxyI) {
-        Text.checkValidName(u.props.name, "user name", 3, 15)
+        Text.checkValidName(joinData.userName, "user name", 3, 20)
 
         if (users.values.any { it.props.name == joinData.userName })
             throw NameAlreadyExistsEx(joinData.userName)
@@ -78,21 +82,20 @@ class GalaxyS(
         teams[teamColor]!!.add(u.id)
         u.onSuccessfullyJoined(this, joinData)
 
-        sendGalaxyData()
+        sendGalaxyDataToClients()
     }
 
     fun sendGame(message: SendFormat, u: UserPropsI) { sendGameQueue.add(message to u) }
 
     suspend fun deleteUser(u: UserS) {
         users.remove(u.props.id)
-        sendGalaxyData()
+        sendGalaxyDataToClients()
     }
 
-    private suspend fun sendGalaxyData() {
-        if (game == null) {
-            users.forEach { it.value.sendGalaxyData(this) }
-            UserS.userQueue.forEach { if (it.value.prevGalaxy == props.name) it.value.sendGalaxyData(this) }
-            // TODO: send only preview clients
+    private suspend fun sendGalaxyDataToClients() {
+        users.forEach { it.value.sendGalaxyData(this) }
+        UserS.userQueue.forEach {
+            if (it.value.prevGalaxy == props.name) it.value.sendGalaxyData(this)
         }
     }
 
@@ -106,7 +109,9 @@ class GalaxyS(
             onRocketCreated = { rocket -> users[rocket.userProps.id]?.myRocket = rocket }
         ))
 
-        sendAllClients(SendFormat("game-created"))
+        props = props.copy(state = "running")
+
+        sendGalaxyDataToClients()
 
         log("Game setup! 2")
     }
@@ -165,7 +170,7 @@ class GalaxyS(
 
     private fun checkMyPassword(password: String) {
         if (!checkGalaxyPassword(props.name, password))
-            throw InvalidPasswordEx(password, props.name)
+            throw InvalidPasswordEx(props.name)
     }
 
     private suspend fun sendAllClients(s: SendFormat) {
@@ -182,10 +187,16 @@ class GalaxyS(
         fun checkGalaxyPassword(galaxy: String, password: String) = galaxyPasswords[galaxy] == password
         fun galaxyPassword(galaxy: String) = galaxyPasswords[galaxy]
 
+        fun log(text: String, color: Ansi? = null) {
+            coloredLog("Galaxy Static", text, color, name = Ansi.PURPLE)
+        }
+
         fun createGalaxy(g: CreateNewGalaxyI) {
             return if (!galaxies.contains(g.name)) {
                 galaxies[g.name] = GalaxyS(g.name, g.config)
                 galaxyPasswords[g.name] = g.password
+
+                log("Galaxy \"${g.name}\" successfully created.")
                 //saveGalaxyState()
             }
             else throw NameAlreadyExistsEx(g.name)
@@ -197,7 +208,7 @@ class GalaxyS(
                     galaxies.remove(g.name)
                     galaxyPasswords.remove(g.name)
                     //saveGalaxyState()
-                } else throw InvalidPasswordEx(g.password, g.name)
+                } else throw InvalidPasswordEx(g.name)
             } else throw GalaxyDoesNotExist(g.name)
         }
 
