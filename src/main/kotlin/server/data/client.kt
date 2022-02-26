@@ -9,8 +9,9 @@ data class UserViewI(
 
 data class UserPropsI(
     val name: String,
-    val galaxy: String?,
-    val id: String
+    val id: String,
+    val galaxy: String? = null,
+    val teamColor: String? = null
 )
 
 data class ClientDataI(

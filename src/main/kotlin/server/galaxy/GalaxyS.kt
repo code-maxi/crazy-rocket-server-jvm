@@ -1,42 +1,55 @@
 package server.galaxy
 
 import CreateNewGalaxyI
+import GalaxyConfigI
 import GalaxyPasswordI
-import GalaxyPasswordArrI
 import GalaxyPropsI
 import GalaxyI
 import JoinGalaxyI
 import SendFormat
-import com.google.gson.Gson
+import TeamColor
+import TeamI
+import TeamPropsI
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
 import server.Ansi
-import server.FileA.createIf
-import server.FileA.file
-import server.KtorServer
 import server.Text
 import server.Text.coloredLog
 import server.data.*
 import server.game.Game
 import server.game.GameConfig
 import server.user.UserS
-import java.io.File
+import stringToTeamColor
 
 class GalaxyS(
-    var props: GalaxyPropsI
+    name: String,
+    private val config: GalaxyConfigI
 ) {
+    var props = GalaxyPropsI(name, "queue")
     private val users = hashMapOf<String, UserS>()
-    var game: Game? = null
-    var state = "frozen"
+    private var game: Game? = null
+    private val teams = hashMapOf<TeamColor, ArrayList<String>>()
+
     //val clientAnswerChannel = Channel<ClientAnswerI>()
 
     private val sendGameQueue = arrayListOf<Pair<SendFormat, UserPropsI>>()
-
     private fun userList() = users.values.toTypedArray()
+
+    fun getGame() = game ?: throw GameNotInitializedEx(props.name)
+
+    private fun teamData() = teams.map {
+        TeamI(
+            TeamPropsI(
+                props.name,
+                it.key.color,
+                it.key.name
+            ),
+            it.value.toTypedArray()
+        )
+    }.toTypedArray()
 
     fun data() = GalaxyI(
         userList().map { it.props }.toTypedArray(),
-        props, state
+        props, teamData()
     )
 
     init {
@@ -47,17 +60,25 @@ class GalaxyS(
         coloredLog("Galaxy [${props.name}]", text, color, name = Ansi.CYAN)
     }
 
-    suspend fun joinUser(u: UserS) {
-        if (users[u.props.id] != null)
-             throw DoesAlreadyExistEx("name", u.props.name)
-        else {
-            if (Text.validNameText(u.props.name, "user name", 3, 15)) {
-                u.galaxy = this
-                users[u.props.id] = u
-                u.onSuccessfullyJoined()
-                sendGalaxyData()
-            }
-        }
+    suspend fun joinUser(u: UserS, joinData: JoinGalaxyI) {
+        Text.checkValidName(u.props.name, "user name", 3, 15)
+
+        if (users.values.any { it.props.name == joinData.userName })
+            throw NameAlreadyExistsEx(joinData.userName)
+
+        val teamColor = stringToTeamColor(joinData.teamColor)
+
+        if (!teams.containsKey(teamColor))
+            throw TeamColorDoesNotExistEx(joinData.teamColor)
+
+        if (teams[teamColor]!!.size >= config.maxUsersInTeam)
+            throw TeamIsFull(teamColor.teamName, config.maxUsersInTeam)
+
+        users[u.props.id] = u
+        teams[teamColor]!!.add(u.id)
+        u.onSuccessfullyJoined(this, joinData)
+
+        sendGalaxyData()
     }
 
     fun sendGame(message: SendFormat, u: UserPropsI) { sendGameQueue.add(message to u) }
@@ -69,7 +90,8 @@ class GalaxyS(
 
     private suspend fun sendGalaxyData() {
         if (game == null) {
-            sendAllClients(SendFormat("galaxy-data", data()))
+            users.forEach { it.value.sendGalaxyData(this) }
+            UserS.userQueue.forEach { if (it.value.prevGalaxy == props.name) it.value.sendGalaxyData(this) }
             // TODO: send only preview clients
         }
     }
@@ -79,7 +101,7 @@ class GalaxyS(
 
         checkMyPassword(password)
 
-        game = Game(props.level, data().users, GameConfig(
+        game = Game(config, GameConfig(
             sendUser = { id, sendFormat -> users[id]?.onMessageFromGame(sendFormat) },
             onRocketCreated = { rocket -> users[rocket.userProps.id]?.myRocket = rocket }
         ))
@@ -90,12 +112,19 @@ class GalaxyS(
     }
 
     fun startGame(password: String) {
+        checkMyPassword(password)
         if (game == null) {
             GlobalScope.launch {
                 setupGame(password)
                 gameLoop()
             }
         } else throw GameIsAlreadyRunning()
+    }
+
+    fun joinGame(user: UserS) {
+        if (users.containsKey(user.id)) {
+            getGame().addUserRocket(user.props) { user.myRocket = it }
+        }
     }
 
     fun registerClientData(data: ClientDataRequestI) {
@@ -140,7 +169,7 @@ class GalaxyS(
     }
 
     private suspend fun sendAllClients(s: SendFormat) {
-        userList().forEach { it.send(s) }
+        users.forEach { it.value.send(s) }
     }
 
     companion object {
@@ -153,6 +182,35 @@ class GalaxyS(
         fun checkGalaxyPassword(galaxy: String, password: String) = galaxyPasswords[galaxy] == password
         fun galaxyPassword(galaxy: String) = galaxyPasswords[galaxy]
 
+        fun createGalaxy(g: CreateNewGalaxyI) {
+            return if (!galaxies.contains(g.name)) {
+                galaxies[g.name] = GalaxyS(g.name, g.config)
+                galaxyPasswords[g.name] = g.password
+                //saveGalaxyState()
+            }
+            else throw NameAlreadyExistsEx(g.name)
+        }
+
+        fun deleteGalaxy(g: GalaxyPasswordI) {
+            if (galaxies[g.name] != null) {
+                if (galaxyPasswords[g.name] == g.password) {
+                    galaxies.remove(g.name)
+                    galaxyPasswords.remove(g.name)
+                    //saveGalaxyState()
+                } else throw InvalidPasswordEx(g.password, g.name)
+            } else throw GalaxyDoesNotExist(g.name)
+        }
+
+        suspend fun joinGalaxy(join: JoinGalaxyI, user: UserS) {
+            return try { galaxies[join.galaxyName]!!.joinUser(user, join) }
+              catch (ex: NullPointerException) { throw GalaxyDoesNotExist(join.userName) }
+        }
+
+        fun getGalaxies() = galaxyList().toTypedArray()
+
+        fun getGalaxy(key: String) = galaxies[key] ?: throw GalaxyDoesNotExist(key)
+
+        /*
         private fun saveGalaxyState() {
             val home = File(System.getProperty("user.home"))
             val confFolder = createIf(home, ".config", "d")
@@ -160,7 +218,7 @@ class GalaxyS(
             val galaxyFile = createIf(crazyRocketFolder, "galaxies.json", "f")
 
             val ob = GalaxyPasswordArrI(
-                galaxyList().map { it.data().params }.toTypedArray(),
+                galaxyList().map { it.data().props }.toTypedArray(),
                 galaxyPasswords.map { GalaxyPasswordI(it.key, it.value) }.toTypedArray()
             )
 
@@ -182,35 +240,10 @@ class GalaxyS(
             galaxyPassword.passwords.forEach { galaxyPasswords[it.name] = it.password }
 
             galaxyPassword.items.map { GalaxyI(arrayOf(), it, "frozen") }.forEach {
-                if (galaxies[it.params.name] == null) galaxies[it.params.name] = GalaxyS(it.params)
-                else throw NameAlreadyExistsEx(it.params.name)
+                if (galaxies[it.props.name] == null) galaxies[it.props.name] = GalaxyS(it.props)
+                else throw NameAlreadyExistsEx(it.props.name)
             }
         }
-
-        fun createGalaxy(g: CreateNewGalaxyI) {
-            return if (galaxies[g.name] == null) {
-                galaxies[g.name] = (GalaxyS(GalaxyPropsI(g.name, 1)))
-                galaxyPasswords[g.name] = g.password
-                saveGalaxyState()
-            }
-            else throw NameAlreadyExistsEx(g.name)
-        }
-
-        fun deleteGalaxy(g: GalaxyPasswordI) {
-            if (galaxies[g.name] != null) {
-                if (galaxyPasswords[g.name] == g.password) {
-                    galaxies.remove(g.name)
-                    galaxyPasswords.remove(g.name)
-                    saveGalaxyState()
-                } else throw InvalidPasswordEx(g.password, g.name)
-            } else throw DoesNotExistEx("Galaxy", g.name)
-        }
-
-        suspend fun joinGalaxy(join: JoinGalaxyI, user: UserS) {
-            return try { galaxies[join.galaxyName]!!.joinUser(user) }
-              catch (ex: NullPointerException) { throw DoesNotExistEx("Galaxy", join.userName) }
-        }
-
-        fun getGalaxies() = galaxyList().toTypedArray()
+        */
     }
 }

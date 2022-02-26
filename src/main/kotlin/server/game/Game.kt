@@ -1,5 +1,6 @@
 package server.game
 
+import GalaxyConfigI
 import SendFormat
 import server.data.*
 import server.game.objects.Asteroid
@@ -11,18 +12,17 @@ data class GameConfig(
 )
 
 class Game(
-    level: Int,
-    startUsers: Array<UserPropsI>,
+    config: GalaxyConfigI,
     private val gameConfig: GameConfig
 ) : GameClassI {
     private val objects = hashMapOf<String, GameObjectI>()
     private var idCount = Long.MAX_VALUE
-    lateinit var settings: GameSettings
+    lateinit var settings: GamePropsI
 
     fun objectList() = objects.values.toTypedArray()
 
     init {
-        loadLevel(level, startUsers)
+        loadLevel(1)
     }
 
     private fun newID(): String {
@@ -65,9 +65,13 @@ class Game(
 
         return rocket
     }
+    fun addUserRocket(u: UserPropsI, onFinish: (r: Rocket) -> Unit) {
+        val r = addRocket(u)
+        onFinish(r)
+    }
 
-    private fun loadLevel(l: Int, startUser: Array<UserPropsI>) {
-        settings = GameSettings(l, 5000, 5000)
+    private fun loadLevel(l: Int) {
+        settings = GamePropsI(l, 5000, 5000)
         for (i in 0..10) {
             addObject {
                 Asteroid(
@@ -78,10 +82,6 @@ class Game(
                     it
                 )
             }
-        }
-        startUser.forEach {
-            val r = addRocket(it)
-            gameConfig.onRocketCreated(r)
         }
     }
 

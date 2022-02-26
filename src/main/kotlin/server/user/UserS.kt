@@ -3,13 +3,16 @@ package server.user
 import server.data.ClientDataI
 import server.data.ClientKeyboardI
 import GalaxyAdminI
+import GalaxyPrevI
 import JoinGalaxyI
+import PrevGalaxyRequestI
 import ResponseResult
 import SendFormat
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import io.ktor.http.cio.websocket.*
 import server.Ansi
+import server.Error.resultCatch
 import server.Logable
 import server.Text.coloredLog
 import server.data.*
@@ -20,42 +23,84 @@ import server.game.objects.Rocket
 
 class UserS(private val session: DefaultWebSocketSession) : Logable {
     val id = newID()
-    var props = UserPropsI("UNDEFINED", null, id)
-    private var inGame = false
+
+    var props = UserPropsI("UNDEFINED", id)
+
     private val sendQueue = arrayListOf<SendFormat>()
     private var sendWholeDataCount = 0
     private var dataRequest: ClientDataRequestI? = null
 
-    init {
-        log("initialized.")
-    }
-
-    suspend fun onClose() {
-        galaxy.deleteUser(this)
-        log("Closed.")
-    }
+    var prevGalaxy: String? = null
 
     private var clientData = ClientDataI(
         keyboard = ClientKeyboardI(arrayOf()),
         screenSize = VectorI.zero()
     )
 
-    lateinit var galaxy: GalaxyS
+    private var galaxy: GalaxyS? = null
     var myRocket: Rocket? = null
 
-    private fun galaxyInitialized() = this::galaxy.isInitialized
+    init {
+        log("initialized.")
+        userQueue[id] = this
+    }
+
+    private fun galaxyInitialized() = this.galaxy != null
+
+    fun getMyGalaxy() = galaxy ?: throw GalaxyHasNotBeenInitializedEx()
 
     private suspend fun sendDirectly(v: SendFormat) { session.send(Frame.Text(Gson().toJson(v))) }
     suspend fun send(v: SendFormat) { if (galaxyInitialized()) sendQueue.add(v) else sendDirectly(v) }
+
+
+    suspend fun catchOwnExAndSend(callback: () -> Unit) {
+        try { callback() }
+        catch (ex: OwnException) { send(SendFormat("error-occurred", ex.exceptionData)) }
+    }
+
+    private suspend fun sendResultCatch(
+        header: String,
+        callback: suspend () -> ResponseResult,
+        onError: Map<String, OwnException> = mapOf()
+    ) {
+        val res = resultCatch(header, callback, onError)
+        send(SendFormat(header, res))
+    }
+
+    suspend fun sendGalaxyData(gal: GalaxyS) {
+        send(SendFormat("prev-galaxy-data", GalaxyPrevI(props, gal.data())))
+    }
+
+    private suspend fun setPrevGalaxy(prev: String) {
+        sendResultCatch("prev-galaxy-result", {
+            val prevData = GalaxyPrevI(props, GalaxyS.getGalaxy(prev).data())
+            prevGalaxy = prev
+            ResponseResult(true, data = prevData)
+        })
+    }
+
+    fun onSuccessfullyJoined(gal: GalaxyS, join: JoinGalaxyI) {
+        galaxy = gal
+        props = props.copy(
+            name = join.userName,
+            teamColor = join.teamColor,
+            galaxy = join.galaxyName
+        )
+        clientData = clientData.copy(screenSize = join.screenSize)
+    }
 
     suspend fun onMessage(a: SendFormat) {
         //log("Receiving: $a")
 
         when(a.header) {
+            "prev-galaxy" -> {
+                val prev = Gson().fromJson(a.value.toString(), PrevGalaxyRequestI::class.java)
+                setPrevGalaxy(prev.galaxy)
+            }
             "join-galaxy" -> {
                 println()
 
-                val result = try {
+                val result = resultCatch("join-galaxy-response", {
                     val join = Gson().fromJson(a.value.toString(), JoinGalaxyI::class.java)
 
                     log("User '${join.userName}' wants to join the galaxy '${join.galaxyName}.'")
@@ -63,16 +108,8 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
                     GalaxyS.joinGalaxy(join, this)
 
-                    props = props.copy(name = join.userName)
-                    clientData = clientData.copy(screenSize = join.screenSize)
-
                     ResponseResult(true, data = props)
-                }
-                catch (ex: ClassCastException) { WrongRequestEx(a.value).responseResult() }
-                catch (ex: OwnException) { ex.responseResult() }
-
-                log("join-galaxy-result: $result")
-                println()
+                }, mapOf("null-pointer" to WrongRequestEx(a.value)), true)
 
                 sendDirectly(SendFormat(
                     "join-galaxy-result",
@@ -80,32 +117,39 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
                 ))
             }
             "start-game" -> {
-                val result = try {
+                val result = resultCatch("start-game-result", {
                     val admin = Gson().fromJson(a.value.toString(), GalaxyAdminI::class.java)
-                    galaxy.startGame(admin.password)
+                    getMyGalaxy().startGame(admin.password)
+
                     ResponseResult(
                         true,
                         data = GameStartI(Game.LISTINING_KEYS)
                     )
-                }
-                catch (ex: ClassCastException) { WrongRequestEx(a.value).responseResult() }
-                catch (ex: OwnException) { ex.responseResult() }
+                }, mapOf("class-cast" to WrongRequestEx(a.value)), true)
 
                 sendDirectly(SendFormat(
                     "start-game-result",
                     result
                 ))
             }
+            "join-game" -> {
+                val result = resultCatch("start-game-result", {
+                    getMyGalaxy().joinGame(this)
+                    ResponseResult(true)
+                }, print = true)
+
+                sendDirectly(SendFormat(
+                    "join-game-result",
+                    result
+                ))
+            }
             "client-data-request" -> {
                 try {
                     dataRequest = Gson().fromJson(a.value.toString(), ClientDataRequestI::class.java)
-                    dataRequest?.let {
-                        if (galaxyInitialized()) galaxy.registerClientData(it)
-                    }
+                    dataRequest?.let { getMyGalaxy().registerClientData(it) }
                 }
-                catch (ex: JsonSyntaxException) {
-                    JsonParseEx(a.value.toString(), "ClientDataRequestI").printError()
-                }
+                catch (ex: JsonSyntaxException) { JsonParseEx(a.value.toString(), "ClientDataRequestI").printError() }
+                catch (ex: OwnException) { ex.printError() }
             }
         }
     }
@@ -115,10 +159,10 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
     }
 
     suspend fun onGameCalculated(
-        settings: GameSettings,
+        settings: GamePropsI,
         objectsArray: Array<GameObjectI>
     ) {
-        if (dataRequest != null) {
+        if (dataRequest != null && galaxy != null) {
             if (sendWholeDataCount < WHOLE_DATA_INTERVAL) sendWholeDataCount ++
             else sendWholeDataCount = 0
 
@@ -131,14 +175,13 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
                 }.toTypedArray()
             }
 
-            //log("Sending Game-Data! objects: ${objectsArray.joinToString()}")
             sendDirectly(
                 SendFormat(
                     "game-data",
                     GameDataForSendingI(
-                        settings = settings,
+                        props = settings,
                         objects = objects.map { it.data() }.toTypedArray(),
-                        galaxy = galaxy.data(),
+                        galaxy = getMyGalaxy().data(),
                         messages = sendQueue.toTypedArray(),
                         fullData = fullData,
                         userView = this.myRocket?.userView(),
@@ -152,8 +195,6 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
         }
     }
 
-    fun isInGame() = inGame
-
     private fun viewRect(): GeoI {
         val screen = this.clientData.screenSize * 1.5 * (1/this.myRocket!!.zoom)
         return GeoI(
@@ -163,22 +204,19 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
         )
     }
 
-    /*suspend fun sendData(
-        fullData: Boolean,
-        settings: GameSettings,
-        objectsArray: Array<GameObjectI>
-    ) {
+    suspend fun onClose() {
+        galaxy?.deleteUser(this)
+        log("Closed.")
+    }
 
-    }*/
-
-    fun onSuccessfullyJoined() {
-        props = props.copy(galaxy = galaxy.props.name)
-        log("successfully logged in!")
+    override fun log(str: String, color: Ansi?) {
+        coloredLog("User ${props.name}", str, color, name = Ansi.GREEN)
     }
 
     companion object {
         private var idCounter = Int.MIN_VALUE
         const val WHOLE_DATA_INTERVAL = 20
+        val userQueue = hashMapOf<String, UserS>()
 
         fun newID(): String {
             idCounter ++
@@ -186,9 +224,4 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
             return idCounter.toString()
         }
     }
-
-    override fun log(str: String, color: Ansi?) {
-        coloredLog("User ${props.name}", str, color, name = Ansi.GREEN)
-    }
-
 }

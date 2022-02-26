@@ -1,24 +1,64 @@
+import server.data.TeamColorDoesNotExistEx
 import server.data.UserPropsI
 import server.data.VectorI
 
 data class SendFormat(val header: String, val value: Any? = null)
 
+// Team
+
+enum class TeamColor(val color: String, val teamName: String) {
+    RED("red", "RED"),
+    BLUE("blue", "BLUE"),
+    YELLOW("yellow", "YELLOW"),
+    GREEN("green", "GREEN")
+}
+
+fun stringToTeamColor(color: String) = TeamColor.values().find { it.color == color } ?: throw TeamColorDoesNotExistEx(color)
+
+data class TeamPropsI(
+    val galaxy: String,
+    val name: String,
+    val color: String
+)
+
+data class TeamI(
+    val props: TeamPropsI,
+    val userIds: Array<String>
+)
+
 // Galaxy
+
+data class PrevGalaxyRequestI(
+    val galaxy: String
+)
 
 data class GalaxyPropsI(
     val name: String,
-    val level: Int
+    val state: String
+)
+
+data class GalaxyConfigI(
+    val asteroidSpeed: Double,
+    val asteroidAmount: Double,
+    val maxUsersInTeam: Int,
+    val width: Int,
+    val height: Int
+)
+
+data class GalaxyI( // data sent to login client
+    val users: Array<UserPropsI>,
+    val props: GalaxyPropsI,
+    val teams: Array<TeamI>
+)
+
+data class GalaxyPrevI(
+    val myUser: UserPropsI,
+    val galaxy: GalaxyI
 )
 
 data class GalaxyPasswordArrI(
     val items: Array<GalaxyPropsI>,
     val passwords: Array<GalaxyPasswordI>
-)
-
-data class GalaxyI( // data sent to login client
-    val users: Array<UserPropsI>,
-    val params: GalaxyPropsI,
-    val state: String // "frozen" or "queue" or "running"
 )
 
 data class GalaxyPasswordI(
@@ -28,7 +68,8 @@ data class GalaxyPasswordI(
 
 data class CreateNewGalaxyI(
     val name: String,
-    val password: String
+    val password: String,
+    val config: GalaxyConfigI
 )
 
 data class GalaxyAdminI(
@@ -39,7 +80,8 @@ data class GalaxyAdminI(
 data class JoinGalaxyI(
     val userName: String,
     val screenSize: VectorI,
-    val galaxyName: String
+    val galaxyName: String,
+    val teamColor: String
 )
 
 data class GalaxyPaswordArrI(
@@ -55,12 +97,13 @@ data class GalaxyDataI(
 
 data class ResponseResult(
     val successfully: Boolean,
+    val header: String? = null,
     val data: Any? = null,
     val message: String? = null,
     val errorType: String? = null
 )
 
-data class OwnExceptionData(
+data class OwnExceptionDataI(
     val type: String,
     val message: String
 )

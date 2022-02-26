@@ -1,6 +1,7 @@
 package server
 
 import JsonStatusI
+import ResponseResult
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.sun.net.httpserver.HttpExchange
@@ -11,6 +12,7 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.util.EntityUtils
 import server.data.InvalidTextEx
+import server.data.OwnException
 import server.data.inRange
 import java.io.File
 import java.io.InputStreamReader
@@ -130,11 +132,10 @@ object Game {
 
 object Text {
     private const val LOG_HEADER_WIDTH = 18
-    fun validNameText(text: String, errorType: String, minLetters: Int, maxLetters: Int): Boolean {
-        if (text.length <= 3) throw InvalidTextEx(errorType, text, "it's too short.")
-        else if (text.length <= 7) throw InvalidTextEx(errorType, text, "it's too long.")
+    fun checkValidName(text: String, errorType: String, minLetters: Int, maxLetters: Int) {
+        if (text.length <= minLetters) throw InvalidTextEx(errorType, text, "it's too short.")
+        else if (text.length <= maxLetters) throw InvalidTextEx(errorType, text, "it's too long.")
         else if (!text.matches("\\w+".toRegex())) throw InvalidTextEx(errorType, text, "it's too short.")
-        else return true
     }
     fun coloredLog(
         from: String,
@@ -151,6 +152,20 @@ object Text {
         else str
     private fun sizeString(str: String, size: Int) =
         maxSizeString(str, size).let { "$it${Array(size - it.length) { " " }.joinToString("")}" }
+}
+
+object Error {
+    suspend fun resultCatch(
+        header: String,
+        callback: suspend () -> ResponseResult,
+        onError: Map<String, OwnException> = mapOf(),
+        print: Boolean = false
+    ): ResponseResult =
+        try { val call = callback(); call.copy(header = header) }
+        catch (ex: OwnException) { ex.responseResult(header, print) }
+        catch (ex: NullPointerException) { onError["null-pointer"]!!.responseResult(header, print) }
+        catch (ex: JsonSyntaxException) { onError["json-syntax"]!!.responseResult(header, print) }
+        catch (ex: ClassCastException) { onError["class-cast"]!!.responseResult(header, print) }
 }
 
 enum class Ansi(val color: String) {

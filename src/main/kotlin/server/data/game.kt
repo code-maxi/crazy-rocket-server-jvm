@@ -64,19 +64,19 @@ data class RocketFireSettingsI(
     val img: String
 )
 
-data class GameSettings(
+data class GamePropsI(
     val level: Int,
     val width: Int,
     val height: Int
 )
 
 data class GameDataI(
-    val settings: GameSettings,
+    val props: GamePropsI,
     val objects: Array<TypeObjectI>
 )
 
 data class GameDataForSendingI(
-    val settings: GameSettings,
+    val props: GamePropsI,
     val objects: Array<TypeObjectI>,
     val galaxy: GalaxyI,
     val messages: Array<SendFormat>,

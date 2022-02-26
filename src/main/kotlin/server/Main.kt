@@ -11,7 +11,7 @@ fun main(args: Array<String>) {
     when (args[0]) {
         "server" -> {
             runBlocking {
-                GalaxyS.readGalaxyState()
+                //GalaxyS.readGalaxyState()
                 KtorServer.create()
 
                 KtorServer.gameCalculation = CoroutineScope(Dispatchers.Main)

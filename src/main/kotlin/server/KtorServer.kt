@@ -33,14 +33,16 @@ object KtorServer {
                 get("/") {
 
                 }
+
                 get("/get-galaxies") {
                     log("request to /create-galaxy/{galaxy}...")
 
                     val response = Gson().toJson(JsonListI(GalaxyS.getGalaxies()))
                     call.respondText(response, ContentType.Application.Json, HttpStatusCode.OK)
                 }
+
                 post("/create-galaxy") {
-                    val res = try {
+                    val res = Error.resultCatch("create-galaxy-http-response", {
                         val json = call.receiveText()
                         log("request to /create-galaxy/{galaxy}: $json", Ansi.CYAN)
                         val parsed = Gson().fromJson(json, CreateNewGalaxyI::class.java)
@@ -48,28 +50,30 @@ object KtorServer {
                         GalaxyS.createGalaxy(parsed)
 
                         ResponseResult(true, message = "The Galaxy was successfully created!")
-                    }
-                    catch (ex: NullPointerException) { MissingParameters("URL-Parameter", "galaxy").printAndReponseResult() }
-                    catch (ex: JsonParseException) { JsonParseEx(call.parameters["galaxy"]!!, "CreateNewGalaxyI").printAndReponseResult() }
-                    catch (ex: OwnException) { ex.printAndReponseResult() }
+                    }, mapOf(
+                        "null-pointer" to MissingParameters("URL-Parameter", "galaxy"),
+                        "json-syntax" to JsonParseEx(call.parameters["galaxy"]!!, "CreateNewGalaxyI")
+                    ), true)
 
                     call.respondText(Gson().toJson(res), ContentType.Application.Json)
                 }
+
                 post("/delete-galaxy") {
-                    val res = try {
+                    val res = Error.resultCatch("create-galaxy-http-response", {
                         val param = call.receiveText()
                         val parsed = Gson().fromJson(param, GalaxyPasswordI::class.java)
 
                         GalaxyS.deleteGalaxy(parsed)
 
                         ResponseResult(true, message = "The Galaxy was successfully deleted!")
-                    }
-                    catch (ex: NullPointerException) { MissingParameters("URL-Parameter", "galaxy").printAndReponseResult() }
-                    catch (ex: JsonParseException) { JsonParseEx(call.parameters["galaxy"]!!, "GalaxyPasswordI").printAndReponseResult() }
-                    catch (ex: OwnException) { ex.printAndReponseResult() }
+                    }, mapOf(
+                        "null-pointer" to MissingParameters("URL-Parameter", "galaxy"),
+                        "json-syntax" to JsonParseEx(call.parameters["galaxy"]!!, "GalaxyPasswordI")
+                    ), true)
 
                     call.respondText(Gson().toJson(res), ContentType.Application.Json)
                 }
+
                 webSocket("/socket") {
                     val user = UserS(this)
                     try {
