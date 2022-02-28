@@ -4,6 +4,7 @@ import CreateNewGalaxyI
 import GalaxyConfigI
 import kotlinx.coroutines.*
 import org.apache.http.impl.client.HttpClients
+import server.adds.Network
 import server.galaxy.GalaxyS
 
 fun main(args: Array<String>) {

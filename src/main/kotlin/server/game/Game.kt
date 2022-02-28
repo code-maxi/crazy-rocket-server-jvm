@@ -2,6 +2,7 @@ package server.game
 
 import GalaxyConfigI
 import SendFormat
+import server.adds.vec
 import server.data.*
 import server.game.objects.Asteroid
 import server.game.objects.Rocket

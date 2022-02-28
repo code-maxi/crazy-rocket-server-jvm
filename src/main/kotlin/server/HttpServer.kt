@@ -8,6 +8,8 @@ import JsonStatusI
 import com.google.gson.Gson
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import server.adds.ArrayA
+import server.adds.Network
 import server.data.OwnException
 import server.galaxy.GalaxyS
 import java.net.InetSocketAddress

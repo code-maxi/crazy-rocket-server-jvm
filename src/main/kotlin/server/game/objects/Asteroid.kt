@@ -1,7 +1,7 @@
 package server.game.objects
 
 import server.data.AsteroidOI
-import server.data.VectorI
+import server.adds.VectorI
 
 class Asteroid(
     val size: Int,

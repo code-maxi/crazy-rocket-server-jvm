@@ -1,6 +1,7 @@
 package server.data
 
 import SendFormat
+import server.adds.VectorI
 
 data class UserViewI(
     val eye: VectorI,

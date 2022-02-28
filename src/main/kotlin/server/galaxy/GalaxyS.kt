@@ -11,9 +11,9 @@ import TeamColor
 import TeamI
 import TeamPropsI
 import kotlinx.coroutines.*
-import server.Ansi
-import server.Text
-import server.Text.coloredLog
+import server.adds.Ansi
+import server.adds.Text
+import server.adds.Text.coloredLog
 import server.data.*
 import server.game.Game
 import server.game.GameConfig

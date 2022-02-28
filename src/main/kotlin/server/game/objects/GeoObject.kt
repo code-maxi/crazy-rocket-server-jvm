@@ -1,10 +1,9 @@
 package server.game.objects
 
 import server.data.GameObjectI
-import server.data.GeoI
-import server.data.VectorI
-import server.data.vec
-import server.game.Game
+import server.adds.GeoI
+import server.adds.VectorI
+import server.adds.vec
 
 abstract class GeoObject(
     var pos: VectorI,

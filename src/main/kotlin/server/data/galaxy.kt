@@ -1,6 +1,6 @@
 import server.data.TeamColorDoesNotExistEx
 import server.data.UserPropsI
-import server.data.VectorI
+import server.adds.VectorI
 
 data class SendFormat(val header: String, val value: Any? = null)
 

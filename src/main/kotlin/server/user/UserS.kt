@@ -11,10 +11,12 @@ import SendFormat
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import io.ktor.http.cio.websocket.*
-import server.Ansi
-import server.Error.resultCatch
-import server.Logable
-import server.Text.coloredLog
+import server.adds.Ansi
+import server.adds.Error.resultCatch
+import server.adds.Logable
+import server.adds.Text.coloredLog
+import server.adds.GeoI
+import server.adds.VectorI
 import server.data.*
 import server.galaxy.GalaxyS
 import server.game.Game

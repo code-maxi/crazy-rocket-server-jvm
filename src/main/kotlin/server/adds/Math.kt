@@ -1,4 +1,4 @@
-package server.data
+package server.adds
 
 import kotlin.math.cos
 import kotlin.math.sin
@@ -22,7 +22,7 @@ data class VectorI(val x: Double, val y: Double) {
 
     fun addAll(vararg vs: VectorI): VectorI {
         var o = this.copy()
-        vs.forEach { v -> o = o + v }
+        vs.forEach { v -> o += v }
         return o
     }
 
@@ -35,20 +35,9 @@ data class VectorI(val x: Double, val y: Double) {
     }
 }
 
-fun vec(a: Double, b: Double, al: Boolean = false) = if (al) VectorI.fromAL(a,b) else VectorI(a,b)
+fun vec(a: Double, b: Double, al: Boolean = false) = if (al) VectorI.fromAL(a,b) else VectorI(a, b)
 
-data class GeoI(
-    val pos: VectorI = VectorI.zero(),
-    val width: Double = 0.0,
-    val height: Double = 0.0,
-    val ang: Double = 0.0
-) {
-    fun size() = vec(width, height)
-    infix fun touchesRect(that: GeoI): Boolean {
-        return (that.pos.x + that.width > this.pos.x || that.pos.x < this.pos.x + this.width)
-                && (that.pos.y + that.height > this.pos.y || that.pos.y < this.pos.y + this.height)
-    }
+object RocketMath {
+    fun inRange(z1: Double, z2: Double, d: Double) =
+        z1 <= z2 + d/2 && z1 >= z2 - d/2
 }
-
-fun inRange(z1: Double, z2: Double, d: Double) =
-    z1 <= z2 + d/2 && z1 >= z2 - d/2

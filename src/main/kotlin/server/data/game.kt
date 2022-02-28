@@ -2,8 +2,9 @@ package server.data
 
 import GalaxyI
 import SendFormat
-import server.Ansi
-import server.Text
+import server.adds.Ansi
+import server.adds.Text
+import server.adds.GeoI
 import server.game.Game
 
 // Objects

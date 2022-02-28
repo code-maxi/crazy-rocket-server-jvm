@@ -1,5 +1,9 @@
 package server.game.objects
 
+import server.adds.GeoI
+import server.adds.RocketMath.inRange
+import server.adds.VectorI
+import server.adds.vec
 import server.data.ClientKeyboardI
 import server.data.UserViewI
 import server.data.*
@@ -103,7 +107,8 @@ class Rocket(
                         - geo.height/2
                         + geo.height
                         * fireShown * 0.9 - 0.5
-            ))
+            )
+            )
 
             if (on && fireShown != 1.0) fireShown = 1.0
             else if (!on && fireShown != 0.0) fireShown = 0.0
