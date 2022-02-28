@@ -87,7 +87,8 @@ object KtorServer {
                     } catch (e: ClosedReceiveChannelException) {
                         user.onClose()
                     } catch (e: Throwable) {
-                        println("onError ${closeReason.await()}")
+                        log("Websocket-Error: User closed!")
+                        user.onClose()
                         e.printStackTrace()
                     }
                 }

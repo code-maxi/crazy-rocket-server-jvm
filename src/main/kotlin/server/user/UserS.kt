@@ -160,6 +160,9 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
                 catch (ex: JsonSyntaxException) { JsonParseEx(a.value.toString(), "ClientDataRequestI").printError() }
                 catch (ex: OwnException) { ex.printError() }
             }
+            "close-connection" -> {
+                this.onClose()
+            }
         }
     }
 
@@ -214,8 +217,9 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
     }
 
     suspend fun onClose() {
-        galaxy?.deleteUser(this)
-        log("Closed.")
+        log("Closing Connection.")
+        galaxy?.closeUser(this)
+        userQueue.remove(props.id)
     }
 
     override fun log(str: String, color: Ansi?) {

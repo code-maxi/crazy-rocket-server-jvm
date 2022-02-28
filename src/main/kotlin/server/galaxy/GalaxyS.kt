@@ -87,8 +87,12 @@ class GalaxyS(
 
     fun sendGame(message: SendFormat, u: UserPropsI) { sendGameQueue.add(message to u) }
 
-    suspend fun deleteUser(u: UserS) {
+    suspend fun closeUser(u: UserS) {
         users.remove(u.props.id)
+        u.props.teamColor?.let {
+            val teamColor = stringToTeamColor(it)
+            teams[teamColor]?.remove(u.props.id)
+        }
         sendGalaxyDataToClients()
     }
 
