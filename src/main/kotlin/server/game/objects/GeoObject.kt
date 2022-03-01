@@ -2,15 +2,15 @@ package server.game.objects
 
 import server.data.GameObjectI
 import server.adds.GeoI
-import server.adds.VectorI
+import server.adds.RocketVector
 import server.adds.vec
 
 abstract class GeoObject(
-    var pos: VectorI,
+    var pos: RocketVector,
     var width: Double,
     var height: Double,
     var ang: Double,
-    var velocity: VectorI,
+    var velocity: RocketVector,
     id: String
 ): GameObjectI(id) {
     //protected var effects = arrayListOf<GeoObjectEffect<T>>()

@@ -7,9 +7,11 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import server.adds.Ansi
 import server.adds.Text.coloredLog
+import server.adds.RocketVector
 
-abstract class OwnException(type: String, message: String) : Exception() {
+abstract class OwnException(type: String, message: String) : Exception(message) {
     val exceptionData = OwnExceptionDataI(type, message)
+
     fun responseResult(header: String? = null, print: Boolean = false): ResponseResult {
         val result = ResponseResult(
             false,
@@ -110,6 +112,26 @@ class JsonParseEx(str: String, format: String) : OwnException(
 class MissingParameters(paramType: String, vararg parameters: String) : OwnException(
     "missing-parameters",
     "You have to specify the $paramType ${if (parameters.size > 1) "s" else ""} ${parameters.joinToString(",")}"
+)
+
+class NegativeCoordinateInSizeVector(vector: RocketVector) : OwnException(
+    "negative-coordinate-in-size-vector",
+    "One the coordinates in the vector $vector is negative."
+)
+
+class NoPointsInPolygonListEx : OwnException(
+    "no-points-in-polygon",
+    "There are no Points in the Polygon."
+)
+
+class CannotCheckPointOnLine : OwnException(
+    "can-not-check-point-on-line",
+    "Checking wether a line contains a point doesn't make sense."
+)
+
+class TooLittlePointsInPolygonEx(pointsSize: Int) : OwnException(
+    "too-little-points-in-poligon",
+    "There are to little points ($pointsSize) in polygon."
 )
 
 fun parseSendFormat(str: String): SendFormat {

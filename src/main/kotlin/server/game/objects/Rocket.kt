@@ -2,14 +2,14 @@ package server.game.objects
 
 import server.adds.GeoI
 import server.adds.RocketMath.inRange
-import server.adds.VectorI
+import server.adds.RocketVector
 import server.adds.vec
 import server.data.ClientKeyboardI
 import server.data.UserViewI
 import server.data.*
 
 class Rocket(
-    pos: VectorI,
+    pos: RocketVector,
     val userProps: UserPropsI,
     id: String,
 ) : GeoObject(pos, 0.0, 0.0, 0.0, vec(0.05, 0.05), id) {
@@ -17,7 +17,7 @@ class Rocket(
     private lateinit var type: RocketType
     private var fires = listOf<RocketFire>()
 
-    var eye: VectorI
+    var eye: RocketVector
     var zoom = 1.0
     var zoomTarget = 1.0
 

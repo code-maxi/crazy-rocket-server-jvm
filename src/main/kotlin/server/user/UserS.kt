@@ -16,7 +16,7 @@ import server.adds.Error.resultCatch
 import server.adds.Logable
 import server.adds.Text.coloredLog
 import server.adds.GeoI
-import server.adds.VectorI
+import server.adds.RocketVector
 import server.data.*
 import server.galaxy.GalaxyS
 import server.game.Game
@@ -36,7 +36,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
     private var clientData = ClientDataI(
         keyboard = ClientKeyboardI(arrayOf()),
-        screenSize = VectorI.zero()
+        screenSize = RocketVector.zero()
     )
 
     private var galaxy: GalaxyS? = null
