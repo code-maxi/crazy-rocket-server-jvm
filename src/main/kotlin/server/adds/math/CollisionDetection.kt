@@ -1,8 +1,8 @@
 package server.adds.math
 
 import server.adds.math.geom.shapes.CrazyCircle
-import server.adds.math.geom.shapes.RocketLine
-import server.adds.math.geom.shapes.RocketPolygon
+import server.adds.math.geom.shapes.CrazyLine
+import server.adds.math.geom.shapes.CrazyPolygon
 import server.adds.math.geom.shapes.CrazyRect
 import kotlin.math.max
 import kotlin.math.min
@@ -58,7 +58,7 @@ object CollisionDetection {
         return vec(cx, cy)
     }
 
-    fun circleLineCollision(circle: CrazyCircle, line: RocketLine): Boolean {
+    fun circleLineCollision(circle: CrazyCircle, line: CrazyLine): Boolean {
         val closestPoint = closestPointOnLine(
             line.a.x, line.a.y,
             line.b.x, line.b.y,
@@ -80,16 +80,16 @@ object CollisionDetection {
         return rect2 containsPoint circ.pos
     }
 
-    fun circlePolygonCollision(circ: CrazyCircle, polygon: RocketPolygon): Boolean {
+    fun circlePolygonCollision(circ: CrazyCircle, polygon: CrazyPolygon): Boolean {
         val popoints = polygon.getMyPoints()
         for (i in 0..(popoints.size - 2)) {
-            val line = RocketLine(popoints[i], popoints[i + 1])
+            val line = CrazyLine(popoints[i], popoints[i + 1])
             if (!circleLineCollision(circ, line)) return false
         }
         return true
     }
 
-    fun polygonPolygonCollision(polygon1: RocketPolygon, polygon2: RocketPolygon): Boolean {
+    fun polygonPolygonCollision(polygon1: CrazyPolygon, polygon2: CrazyPolygon): Boolean {
         for (p in polygon1.getMyPoints()) { if (polygon2 containsPoint p) return true }
         for (p in polygon2.getMyPoints()) { if (polygon1 containsPoint p) return true }
         return false

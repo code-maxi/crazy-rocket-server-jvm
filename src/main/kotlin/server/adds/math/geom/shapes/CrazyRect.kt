@@ -1,14 +1,16 @@
 package server.adds.math.geom.shapes
 
 import javafx.scene.canvas.GraphicsContext
+import server.adds.math.CollisionDetection
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
+import server.adds.math.geom.debug.DebugTransform
 import server.adds.math.vec
 import server.data_containers.NegativeCoordinateInSizeVector
 
 class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugConfig = ShapeDebugConfig()) : CrazyShape(GeomType.RECT, config) {
     init {
-        if (pos.x < 0.0 && pos.x < 0.0) throw NegativeCoordinateInSizeVector(size)
+        if (size.x < 0.0 || size.y < 0.0) throw NegativeCoordinateInSizeVector(size)
     }
 
     override fun surroundedRect() = this
@@ -22,7 +24,7 @@ class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugC
     override infix fun containsPoint(point: CrazyVector) =
         point.x >= pos.x && point.y >= pos.y && point.x <= pos.x + size.x && point.y <= pos.y + size.y
 
-    fun toPolygon() = RocketPolygon(
+    fun toPolygon() = CrazyPolygon(
         arrayOf(
             pos, vec(pos.x + size.x, pos.y),
             pos + size, vec(pos.x, pos.y + size.y)
@@ -32,10 +34,14 @@ class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugC
     fun width() = size.x
     fun height() = size.y
 
-    override fun paintDebug(g2: GraphicsContext) {
-        super.paintDebug(g2)
+    infix fun touchesRect(that: CrazyRect) = CollisionDetection.rectRectCollision(this, that)
 
-        g2.fillRect(pos.x, pos.y, size.x, size.y)
-        g2.strokeRect(pos.x, pos.y, size.x, size.y)
+    override fun paintDebug(g2: GraphicsContext, transform: DebugTransform) {
+        super.paintDebug(g2, transform)
+
+        val screenPos = transform.screen(pos)
+
+        if (config.fillOpacity != null) g2.fillRect(screenPos.x, screenPos.y, size.x * transform.zoom, size.y * transform.zoom)
+        if (config.stroke) g2.strokeRect(screenPos.x, screenPos.y, size.x * transform.zoom, size.y * transform.zoom)
     }
 }

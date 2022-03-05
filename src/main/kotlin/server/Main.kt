@@ -5,10 +5,15 @@ import GalaxyConfigI
 import kotlinx.coroutines.*
 import org.apache.http.impl.client.HttpClients
 import server.adds.Network
+import server.adds.math.geom.tests.GeomTest
 import server.galaxy.GalaxyS
+import tornadofx.launch
 
 fun main(args: Array<String>) {
     when (args[0]) {
+        "debugger" -> {
+            launch<GeomTest>()
+        }
         "server" -> {
             runBlocking {
                 //GalaxyS.readGalaxyState()

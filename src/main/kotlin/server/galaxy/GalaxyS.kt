@@ -82,7 +82,7 @@ class GalaxyS(
         teams[teamColor]!!.add(u.id)
         u.onSuccessfullyJoined(this, joinData)
 
-        sendGalaxyDataToClients()data
+        sendGalaxyDataToClients()
     }
 
     fun sendGame(message: SendFormat, u: UserPropsI) { sendGameQueue.add(message to u) }

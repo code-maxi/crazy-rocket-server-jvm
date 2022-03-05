@@ -185,7 +185,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
             if (!fullData && myRocket != null) {
                 objects = objects.filter {
-                    it !is GeoObject || it.getGeo() touchesRect viewRect()
+                    it !is GeoObject || it.getGeo().rect() touchesRect viewRect().rect()
                 }.toTypedArray()
             }
 

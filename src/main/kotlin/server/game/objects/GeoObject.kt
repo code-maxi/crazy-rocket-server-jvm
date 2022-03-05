@@ -3,6 +3,7 @@ package server.game.objects
 import server.data_containers.GameObjectI
 import server.adds.math.geom.GeoI
 import server.adds.math.CrazyVector
+import server.adds.math.geom.shapes.CrazyRect
 import server.adds.math.vec
 
 abstract class GeoObject(

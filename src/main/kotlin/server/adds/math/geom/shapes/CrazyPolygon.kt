@@ -1,12 +1,13 @@
 package server.adds.math.geom.shapes
 
 import javafx.scene.canvas.GraphicsContext
-import server.adds.JavaFXGraphics
+import server.adds.CrazyGraphics
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
+import server.adds.math.geom.debug.DebugTransform
 import server.data_containers.TooLittlePointsInPolygonEx
 
-open class RocketPolygon(
+open class CrazyPolygon(
     private val points: Array<CrazyVector>,
     config: ShapeDebugConfig = ShapeDebugConfig()
 ) : CrazyShape(GeomType.POLYGON, config) {
@@ -43,18 +44,18 @@ open class RocketPolygon(
     override fun surroundedRect() = surroundedRect
 
     override fun transform(trans: CrazyTransform) =
-        RocketPolygon(points.map { it transformTo trans }.toTypedArray())
+        CrazyPolygon(points.map { it transformTo trans }.toTypedArray())
 
     override fun containsPoint(point: CrazyVector): Boolean {
         for (i in 0..(getMyPoints().size-2)) {
-            val line = RocketLine(getMyPoints()[i], getMyPoints()[i + 1])
+            val line = CrazyLine(getMyPoints()[i], getMyPoints()[i + 1])
             if (!(line pointRightOnLine point)) return false
         }
         return true
     }
 
-    override fun paintDebug(g2: GraphicsContext) {
-        super.paintDebug(g2)
+    override fun paintDebug(g2: GraphicsContext, transform: DebugTransform) {
+        super.paintDebug(g2, transform)
 
         g2.beginPath()
 
@@ -64,11 +65,13 @@ open class RocketPolygon(
         }
 
         g2.closePath()
-        g2.fill()
-        g2.stroke()
+        if (config.fillOpacity != null) g2.fill()
+        if (config.stroke) g2.stroke()
 
         points.forEach {
-            JavaFXGraphics.paintPoint(g2, it, color = config.color, paintCoords = config.paintCoords)
+            CrazyGraphics.paintPoint(g2, transform.screen(it), color = config.color, paintCoords = config.paintCoords)
         }
+
+        if (config.paintSurroundedRect) paintSurroundedRect(g2, transform)
     }
 }
