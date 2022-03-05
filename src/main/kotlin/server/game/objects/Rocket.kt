@@ -4,7 +4,7 @@ import server.adds.math.geom.GeoI
 import server.adds.math.RocketMath.inRange
 import server.adds.math.CrazyVector
 import server.adds.math.vec
-import server.data_containers.ClientKeyboardI
+import server.data_containers.KeyboardI
 import server.data_containers.UserViewI
 import server.data_containers.*
 
@@ -13,7 +13,7 @@ class Rocket(
     val userProps: UserPropsI,
     id: String,
 ) : GeoObject(pos, 0.0, 0.0, 0.0, vec(0.05, 0.05), id) {
-    private var keyboard = ClientKeyboardI()
+    private var keyboard = KeyboardI()
     private lateinit var type: RocketType
     private var fires = listOf<RocketFire>()
 
@@ -36,7 +36,7 @@ class Rocket(
         zoomTarget = type.defaultZoom
     }
 
-    fun setKeyboard(k: ClientKeyboardI) {
+    fun setKeyboard(k: KeyboardI) {
         keyboard = k
     }
 

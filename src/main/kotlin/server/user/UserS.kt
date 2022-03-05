@@ -1,7 +1,7 @@
 package server.user
 
 import server.data_containers.ClientDataI
-import server.data_containers.ClientKeyboardI
+import server.data_containers.KeyboardI
 import GalaxyAdminI
 import GalaxyPrevI
 import JoinGalaxyI
@@ -35,7 +35,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
     var prevGalaxy: String? = null
 
     private var clientData = ClientDataI(
-        keyboard = ClientKeyboardI(arrayOf()),
+        keyboard = KeyboardI(arrayOf()),
         screenSize = CrazyVector.zero()
     )
 

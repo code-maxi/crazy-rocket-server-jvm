@@ -1,9 +1,9 @@
 package server.adds.math
 
-import server.adds.math.geom.shapes.RocketCircle
+import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.RocketLine
 import server.adds.math.geom.shapes.RocketPolygon
-import server.adds.math.geom.shapes.RocketRect
+import server.adds.math.geom.shapes.CrazyRect
 import kotlin.math.max
 import kotlin.math.min
 
@@ -58,7 +58,7 @@ object CollisionDetection {
         return vec(cx, cy)
     }
 
-    fun circleLineCollision(circle: RocketCircle, line: RocketLine): Boolean {
+    fun circleLineCollision(circle: CrazyCircle, line: RocketLine): Boolean {
         val closestPoint = closestPointOnLine(
             line.a.x, line.a.y,
             line.b.x, line.b.y,
@@ -67,20 +67,20 @@ object CollisionDetection {
         return closestPoint distance circle.pos <= circle.radius
     }
 
-    fun rectRectCollision(rect1: RocketRect, rect2: RocketRect) =
+    fun rectRectCollision(rect1: CrazyRect, rect2: CrazyRect) =
         (rect2.pos.x + rect2.size.x > rect1.pos.x || rect2.pos.x < rect1.pos.x + rect1.size.x)
         && (rect2.pos.y + rect2.size.y > rect1.pos.y || rect2.pos.y < rect1.pos.y + rect1.size.y)
 
-    fun circleCircleCollision(circ1: RocketCircle, circ2: RocketCircle) =
+    fun circleCircleCollision(circ1: CrazyCircle, circ2: CrazyCircle) =
         circ1.pos distance circ2.pos <= circ1.radius + circ2.radius
 
-    fun circleRectCollision(circ: RocketCircle, rect: RocketRect): Boolean {
+    fun circleRectCollision(circ: CrazyCircle, rect: CrazyRect): Boolean {
         val circSize = CrazyVector.square(circ.radius)
-        val rect2 = RocketRect(rect.pos - circSize, rect.size + (circSize * 2.0))
+        val rect2 = CrazyRect(rect.pos - circSize, rect.size + (circSize * 2.0))
         return rect2 containsPoint circ.pos
     }
 
-    fun circlePolygonCollision(circ: RocketCircle, polygon: RocketPolygon): Boolean {
+    fun circlePolygonCollision(circ: CrazyCircle, polygon: RocketPolygon): Boolean {
         val popoints = polygon.getMyPoints()
         for (i in 0..(popoints.size - 2)) {
             val line = RocketLine(popoints[i], popoints[i + 1])

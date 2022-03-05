@@ -16,11 +16,11 @@ data class UserPropsI(
 )
 
 data class ClientDataI(
-    val keyboard: ClientKeyboardI,
+    val keyboard: KeyboardI,
     val screenSize: CrazyVector
 )
 
-data class ClientKeyboardI(val keys: Array<ClientKeyI> = arrayOf()) {
+data class KeyboardI(val keys: Array<ClientKeyI> = arrayOf()) {
     fun key(search: String) = keys.find { it.key == search }?.active ?: false
 }
 
@@ -36,7 +36,7 @@ data class ClientKeyI(
 
 data class ClientDataRequestI(
     val userProps: UserPropsI,
-    val keyboard: ClientKeyboardI?,
+    val keyboard: KeyboardI?,
     val mouse: ClientMouseI?,
     val messages: Array<SendFormat>?
 )

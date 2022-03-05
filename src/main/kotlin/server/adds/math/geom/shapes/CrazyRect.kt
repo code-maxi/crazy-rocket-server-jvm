@@ -1,22 +1,22 @@
 package server.adds.math.geom.shapes
 
+import javafx.scene.canvas.GraphicsContext
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
-import server.adds.math.geom.CrazyShape
 import server.adds.math.vec
 import server.data_containers.NegativeCoordinateInSizeVector
 
-class RocketRect(val pos: CrazyVector, val size: CrazyVector) : CrazyShape(GeomType.RECT) {
+class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugConfig = ShapeDebugConfig()) : CrazyShape(GeomType.RECT, config) {
     init {
         if (pos.x < 0.0 && pos.x < 0.0) throw NegativeCoordinateInSizeVector(size)
     }
 
-    override fun sourroundedRect() = this
+    override fun surroundedRect() = this
 
     override fun transform(trans: CrazyTransform): CrazyShape {
         val tlCorner = pos transformTo trans
         val brCorner = (pos + size) transformTo trans
-        return RocketRect(tlCorner, brCorner - tlCorner)
+        return CrazyRect(tlCorner, brCorner - tlCorner)
     }
 
     override infix fun containsPoint(point: CrazyVector) =
@@ -31,4 +31,11 @@ class RocketRect(val pos: CrazyVector, val size: CrazyVector) : CrazyShape(GeomT
 
     fun width() = size.x
     fun height() = size.y
+
+    override fun paintDebug(g2: GraphicsContext) {
+        super.paintDebug(g2)
+
+        g2.fillRect(pos.x, pos.y, size.x, size.y)
+        g2.strokeRect(pos.x, pos.y, size.x, size.y)
+    }
 }

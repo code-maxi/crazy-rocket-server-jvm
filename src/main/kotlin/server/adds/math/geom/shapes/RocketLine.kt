@@ -2,7 +2,6 @@ package server.adds.math.geom.shapes
 
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
-import server.adds.math.geom.CrazyShape
 import server.adds.math.vec
 import server.data_containers.CannotCheckPointOnLine
 
@@ -10,7 +9,7 @@ class RocketLine(val a: CrazyVector, val b: CrazyVector) : CrazyShape(GeomType.L
     private fun ltRectCorner() = vec(if (a.x < b.x) a.x else b.x, if (a.y < b.y) a.y else b.y)
     private fun brRectCorner() = vec(if (a.x > b.x) a.x else b.x, if (a.y > b.y) a.y else b.y)
 
-    override fun sourroundedRect() = RocketRect(
+    override fun surroundedRect() = CrazyRect(
         ltRectCorner(),
         brRectCorner() - ltRectCorner()
     )

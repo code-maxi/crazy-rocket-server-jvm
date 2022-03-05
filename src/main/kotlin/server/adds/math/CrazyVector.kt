@@ -1,5 +1,6 @@
 package server.adds.math
 
+import java.text.DecimalFormat
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -56,6 +57,11 @@ data class CrazyVector(val x: Double, val y: Double) {
         transPoint += trans.translate
 
         return transPoint
+    }
+
+    fun niceString(): String {
+        val format = DecimalFormat("#.##")
+        return "(${format.format(x)} | ${format.format(y)})"
     }
 
     companion object {
