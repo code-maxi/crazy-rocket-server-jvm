@@ -11,10 +11,10 @@ import TeamColor
 import TeamI
 import TeamPropsI
 import kotlinx.coroutines.*
-import server.adds.Ansi
-import server.adds.Text
-import server.adds.Text.coloredLog
-import server.data.*
+import server.adds.text.Ansi
+import server.adds.text.Text
+import server.adds.text.Text.coloredLog
+import server.data_containers.*
 import server.game.Game
 import server.game.GameConfig
 import server.user.UserS
@@ -82,7 +82,7 @@ class GalaxyS(
         teams[teamColor]!!.add(u.id)
         u.onSuccessfullyJoined(this, joinData)
 
-        sendGalaxyDataToClients()
+        sendGalaxyDataToClients()data
     }
 
     fun sendGame(message: SendFormat, u: UserPropsI) { sendGameQueue.add(message to u) }

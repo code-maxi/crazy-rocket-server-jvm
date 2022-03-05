@@ -10,7 +10,7 @@ import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import server.adds.ArrayA
 import server.adds.Network
-import server.data.OwnException
+import server.data_containers.OwnException
 import server.galaxy.GalaxyS
 import java.net.InetSocketAddress
 

@@ -2,7 +2,7 @@ package server.adds
 
 import ResponseResult
 import com.google.gson.JsonSyntaxException
-import server.data.OwnException
+import server.data_containers.OwnException
 
 object Error {
     suspend fun resultCatch(

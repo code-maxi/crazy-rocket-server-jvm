@@ -1,4 +1,4 @@
-package server.data
+package server.data_containers
 
 enum class RocketType(
     val id: String,

@@ -2,8 +2,8 @@ package server.game
 
 import GalaxyConfigI
 import SendFormat
-import server.adds.vec
-import server.data.*
+import server.adds.math.vec
+import server.data_containers.*
 import server.game.objects.Asteroid
 import server.game.objects.Rocket
 

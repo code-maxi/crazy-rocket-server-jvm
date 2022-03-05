@@ -1,13 +1,13 @@
-package server.data
+package server.data_containers
 
 import OwnExceptionDataI
 import ResponseResult
 import SendFormat
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import server.adds.Ansi
-import server.adds.Text.coloredLog
-import server.adds.RocketVector
+import server.adds.text.Ansi
+import server.adds.text.Text.coloredLog
+import server.adds.math.CrazyVector
 
 abstract class OwnException(type: String, message: String) : Exception(message) {
     val exceptionData = OwnExceptionDataI(type, message)
@@ -114,7 +114,7 @@ class MissingParameters(paramType: String, vararg parameters: String) : OwnExcep
     "You have to specify the $paramType ${if (parameters.size > 1) "s" else ""} ${parameters.joinToString(",")}"
 )
 
-class NegativeCoordinateInSizeVector(vector: RocketVector) : OwnException(
+class NegativeCoordinateInSizeVector(vector: CrazyVector) : OwnException(
     "negative-coordinate-in-size-vector",
     "One the coordinates in the vector $vector is negative."
 )

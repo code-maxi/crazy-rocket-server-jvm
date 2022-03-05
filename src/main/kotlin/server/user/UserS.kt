@@ -1,7 +1,7 @@
 package server.user
 
-import server.data.ClientDataI
-import server.data.ClientKeyboardI
+import server.data_containers.ClientDataI
+import server.data_containers.ClientKeyboardI
 import GalaxyAdminI
 import GalaxyPrevI
 import JoinGalaxyI
@@ -11,13 +11,13 @@ import SendFormat
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import io.ktor.http.cio.websocket.*
-import server.adds.Ansi
+import server.adds.text.Ansi
 import server.adds.Error.resultCatch
-import server.adds.Logable
-import server.adds.Text.coloredLog
-import server.adds.GeoI
-import server.adds.RocketVector
-import server.data.*
+import server.adds.text.Logable
+import server.adds.text.Text.coloredLog
+import server.adds.math.geom.GeoI
+import server.adds.math.CrazyVector
+import server.data_containers.*
 import server.galaxy.GalaxyS
 import server.game.Game
 import server.game.objects.GeoObject
@@ -36,7 +36,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
     private var clientData = ClientDataI(
         keyboard = ClientKeyboardI(arrayOf()),
-        screenSize = RocketVector.zero()
+        screenSize = CrazyVector.zero()
     )
 
     private var galaxy: GalaxyS? = null

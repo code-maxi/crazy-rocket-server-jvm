@@ -1,10 +1,10 @@
-package server.data
+package server.data_containers
 
 import GalaxyI
 import SendFormat
-import server.adds.Ansi
-import server.adds.Text
-import server.adds.GeoI
+import server.adds.text.Ansi
+import server.adds.text.Text
+import server.adds.math.geom.GeoI
 import server.game.Game
 
 // Objects

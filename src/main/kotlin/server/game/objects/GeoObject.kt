@@ -1,16 +1,16 @@
 package server.game.objects
 
-import server.data.GameObjectI
-import server.adds.GeoI
-import server.adds.RocketVector
-import server.adds.vec
+import server.data_containers.GameObjectI
+import server.adds.math.geom.GeoI
+import server.adds.math.CrazyVector
+import server.adds.math.vec
 
 abstract class GeoObject(
-    var pos: RocketVector,
+    var pos: CrazyVector,
     var width: Double,
     var height: Double,
     var ang: Double,
-    var velocity: RocketVector,
+    var velocity: CrazyVector,
     id: String
 ): GameObjectI(id) {
     //protected var effects = arrayListOf<GeoObjectEffect<T>>()

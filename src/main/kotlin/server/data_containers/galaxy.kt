@@ -1,6 +1,6 @@
-import server.data.TeamColorDoesNotExistEx
-import server.data.UserPropsI
-import server.adds.RocketVector
+import server.data_containers.TeamColorDoesNotExistEx
+import server.data_containers.UserPropsI
+import server.adds.math.CrazyVector
 
 data class SendFormat(val header: String, val value: Any? = null)
 
@@ -79,7 +79,7 @@ data class GalaxyAdminI(
 
 data class JoinGalaxyI(
     val userName: String,
-    val screenSize: RocketVector,
+    val screenSize: CrazyVector,
     val galaxyName: String,
     val teamColor: String
 )

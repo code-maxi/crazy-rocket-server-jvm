@@ -1,10 +1,10 @@
-package server.data
+package server.data_containers
 
 import SendFormat
-import server.adds.RocketVector
+import server.adds.math.CrazyVector
 
 data class UserViewI(
-    val eye: RocketVector,
+    val eye: CrazyVector,
     val zoom: Double
 )
 
@@ -17,7 +17,7 @@ data class UserPropsI(
 
 data class ClientDataI(
     val keyboard: ClientKeyboardI,
-    val screenSize: RocketVector
+    val screenSize: CrazyVector
 )
 
 data class ClientKeyboardI(val keys: Array<ClientKeyI> = arrayOf()) {
@@ -25,7 +25,7 @@ data class ClientKeyboardI(val keys: Array<ClientKeyI> = arrayOf()) {
 }
 
 data class ClientMouseI(
-    val pos: RocketVector,
+    val pos: CrazyVector,
     val pressed: Boolean
 )
 

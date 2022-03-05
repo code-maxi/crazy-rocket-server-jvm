@@ -1,7 +1,6 @@
-package server.adds
+package server.adds.text
 
-import server.adds.Ansi
-import server.data.InvalidTextEx
+import server.data_containers.InvalidTextEx
 
 object Text {
     private const val LOG_HEADER_WIDTH = 18
@@ -31,19 +30,3 @@ object Text {
         maxSizeString(str, size).let { "$it${Array(size - it.length) { " " }.joinToString("")}" }
 }
 
-enum class Ansi(val color: String) {
-    RESET("\u001b[0m"),
-    BLACK("\u001b[30m"),
-    RED("\u001b[31m"),
-    GREEN("\u001b[32m"),
-    YELLOW("\u001b[33m"),
-    BLUE("\u001b[34m"),
-    PURPLE("\u001b[35m"),
-    CYAN("\u001b[36m"),
-    WHITE("\u001b[37m"),
-    BOLD("\u001b[1m")
-}
-
-interface Logable {
-    fun log(str: String, color: Ansi? = null)
-}

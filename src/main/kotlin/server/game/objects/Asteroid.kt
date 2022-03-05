@@ -1,13 +1,13 @@
 package server.game.objects
 
-import server.data.AsteroidOI
-import server.adds.RocketVector
+import server.data_containers.AsteroidOI
+import server.adds.math.CrazyVector
 
 class Asteroid(
     val size: Int,
-    pos: RocketVector,
+    pos: CrazyVector,
     ang: Double,
-    velocity: RocketVector,
+    velocity: CrazyVector,
     id: String
 ) : GeoObject(pos, 0.0, 0.0, ang, velocity, id) {
     var live = 1.0
