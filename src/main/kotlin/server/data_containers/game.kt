@@ -5,6 +5,7 @@ import SendFormat
 import server.adds.text.Ansi
 import server.adds.text.Text
 import server.adds.math.geom.GeoI
+import server.adds.math.geom.debug.DebugObjectI
 import server.game.Game
 
 // Objects
@@ -105,7 +106,7 @@ interface GameClassI {
      suspend fun calc(s: Double)
 }
 
-abstract class GameObjectI(val id: String) : GameClassI {
+abstract class GameObjectI(val id: String) : GameClassI, DebugObjectI {
     private lateinit var game: Game
 
     protected fun getGame() = game

@@ -8,23 +8,10 @@ import server.adds.math.geom.debug.DebugTransform
 import server.adds.math.vec
 import server.data_containers.CannotCheckPointOnLine
 
-class CrazyLine(p1: CrazyVector, p2: CrazyVector, config: ShapeDebugConfig = ShapeDebugConfig()) : CrazyShape(GeomType.LINE, config) {
-    val a: CrazyVector
-    val b: CrazyVector
+class CrazyLine(val a: CrazyVector, val b: CrazyVector, config: ShapeDebugConfig? = null) : CrazyShape(GeomType.LINE, config) {
 
     private fun ltRectCorner() = vec(if (a.x < b.x) a.x else b.x, if (a.y < b.y) a.y else b.y)
     private fun brRectCorner() = vec(if (a.x > b.x) a.x else b.x, if (a.y > b.y) a.y else b.y)
-
-    init {
-        if (p1.x < p2.x) {
-            a = p1
-            b = p2
-        }
-        else {
-            a = p2
-            b = p1
-        }
-    }
 
     override fun surroundedRect() = CrazyRect(
         ltRectCorner(),
@@ -46,17 +33,20 @@ class CrazyLine(p1: CrazyVector, p2: CrazyVector, config: ShapeDebugConfig = Sha
         return vec1 scalar vec2 < 0.0
     }
 
-    override fun paintDebug(g2: GraphicsContext, transform: DebugTransform) {
-        super.paintDebug(g2, transform)
-
+    override fun paintSelf(g2: GraphicsContext, transform: DebugTransform, config: ShapeDebugConfig) {
         val sa = transform.screen(a)
-        val sb= transform.screen(b)
+        val sb = transform.screen(b)
 
-        g2.strokeLine(sa.x, sa.y, sb.x, sb.y)
+        if (!config.drawLineAsVector) {
+            g2.strokeLine(sa.x, sa.y, sb.x, sb.y)
 
-        CrazyGraphics.paintPoint(g2, sa, name = "A", paintCoords = config.paintCoords)
-        CrazyGraphics.paintPoint(g2, sb, name = "B", paintCoords = config.paintCoords)
-
-        if (config.paintSurroundedRect) paintSurroundedRect(g2, transform)
+            CrazyGraphics.paintPoint(g2, sa, name = "A", paintCoords = config.paintCoords)
+            CrazyGraphics.paintPoint(g2, sb, name = "B", paintCoords = config.paintCoords)
+        }
+        else {
+            CrazyGraphics.drawVectorArrow(g2, sa, sb - sa)
+        }
     }
+
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig) = CrazyLine(a, b, shapeDebugConfig)
 }

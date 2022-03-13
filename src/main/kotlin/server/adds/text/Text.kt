@@ -26,7 +26,7 @@ object Text {
     fun maxSizeString(str: String, maxSize: Int) =
         if (str.length > maxSize) "${str.substring(0, maxSize - 3)}..."
         else str
-    private fun sizeString(str: String, size: Int) =
+    fun sizeString(str: String, size: Int) =
         maxSizeString(str, size).let { "$it${Array(size - it.length) { " " }.joinToString("")}" }
 }
 

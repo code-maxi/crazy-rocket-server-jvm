@@ -1,46 +1,65 @@
 package server.adds.math.geom.debug
 
 import javafx.application.Platform
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.geometry.HPos
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.Cursor
+import javafx.scene.Node
 import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
+import javafx.scene.canvas.GraphicsContext
+import javafx.scene.control.CheckBox
+import javafx.scene.control.Label
+import javafx.scene.control.TextArea
 import javafx.scene.input.*
 import javafx.scene.layout.BorderPane
+import javafx.scene.layout.GridPane
+import javafx.scene.layout.Priority
+import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
+import javafx.scene.text.Font
 import javafx.stage.Stage
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import server.adds.CrazyGraphicStyle
+import server.adds.CrazyGraphics
 import server.adds.math.CrazyVector
+import server.adds.math.geom.shapes.CrazyRect
+import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.vec
+import server.adds.text.Ansi
+import server.adds.text.Logable
+import server.adds.text.Text
 import tornadofx.*
+import java.text.DecimalFormat
 import javax.swing.Timer
+import kotlin.math.abs
 
 
-abstract class GeomDebugger(private val configData: GeomDebuggerConfig) : App() {
+abstract class GeomDebugger(private val configData: GeomDebuggerConfig) : App(), Logable {
     private lateinit var canvas: Canvas
-
-    private var transform = DebugTransform()
 
     private var keyboard = hashMapOf<KeyCode, Boolean>()
 
     private var mouse: CrazyVector? = null
     private var canvasSize = CrazyVector.zero()
 
-    private var objects = arrayOf<GeomDebuggerObject>()
-    private var actSpeed = 1.0
-    private var revertActSpeed = false
+    private var objects = arrayOf<DebugObjectI>()
 
-    private var eye = CrazyVector.zero()
+    protected val transformEyeModule = configData.transformEyeModule?.let { TransformEyeModule(it) }
+    protected val timerModule = configData.timerModule?.let { TimerModule(it) }
+    protected val debugObjectModule = configData.debugObjectModule?.let { DebugObjectModule(it) }
 
-    private var oldEyePos = CrazyVector.zero()
-    private var oldMousePos = CrazyVector.zero()
+    private var paintNecessary = true
 
-    private val timer = Timer(configData.stepSpeed) {
-        step()
-    }
+    private var smallDrag = false
 
     private val root = BorderPane().apply {
-        paddingAll = 10.0
+        paddingAll = 15.0
+
         center {
             pane {
                 useMaxSize = true
@@ -48,134 +67,76 @@ abstract class GeomDebugger(private val configData: GeomDebuggerConfig) : App() 
                     widthProperty().bind(this@pane.widthProperty())
                     heightProperty().bind(this@pane.heightProperty())
 
-                    widthProperty().onChange { canvasSize = canvasSize.copy(x = it); setEye(eye); paint() }
-                    heightProperty().onChange { canvasSize = canvasSize.copy(y = it); setEye(eye); paint() }
-
-                    setOnMouseEntered {
-                        mouse = transform.world(vec(it.x, it.y))
+                    widthProperty().onChange {
+                        canvasSize = canvasSize.copy(x = it)
                         paint()
                     }
-                    setOnMouseExited {
-                        mouse = null
-                        scene.cursor = Cursor.DEFAULT
-                        paint()
-                    }
-                    setOnMouseMoved {
-                        mouse = transform.world(vec(it.x, it.y))
+                    heightProperty().onChange {
+                        canvasSize = canvasSize.copy(y = it)
                         paint()
                     }
 
-                    setOnMousePressed {
-                        oldEyePos = eye.copy()
-                        oldMousePos = vec(it.x, it.y)
-                        scene.cursor = Cursor.MOVE
-                        println("Drag entered!")
+                    setOnMouseEntered { mouseEvent(it, MouseEventType.ENTER) }
+                    setOnMouseExited { mouseEvent(it, MouseEventType.EXIT) }
+                    setOnMousePressed { mouseEvent(it, MouseEventType.PRESS) }
+                    setOnMouseDragged { mouseEvent(it, MouseEventType.DRAG) }
+                    setOnMouseReleased { mouseEvent(it, MouseEventType.RELEASE) }
+                    setOnMouseMoved { mouseEvent(it, MouseEventType.MOVE) }
 
-                        paint()
-
-                        onMousePressed(it)
-                    }
-
-                    setOnMouseDragged {
-                        val delta = vec(it.x, it.y) - oldMousePos
-                        setEye(oldEyePos - delta / transform.zoom)
-
-                        paint()
-                    }
-                    setOnMouseReleased {
-                        scene.cursor = Cursor.DEFAULT
-                    }
-
-                    setOnScroll { zoomAdd(it.deltaY / 200.0) }
+                    setOnScroll { scrollEvent(it) }
 
                     canvas = this
                 }
             }
         }
-        bottom {
-            vbox {
+
+        val custom = customGui()
+        if (timerModule != null || debugObjectModule != null || custom != null) bottom {
+            hbox {
+                spacing = 20.0
+                alignment = Pos.TOP_CENTER
                 paddingTop = 10.0
-                fitToParentWidth()
-                spacing = 10.0
 
-                hbox {
-                    alignment = Pos.CENTER
-                    spacing = 10.0
-                    val actStepB = button("Act Step") {
-                        isDisable = true
-                        action { step() }
-                    }
-                    button("Timer Stop") {
-                        action {
-                            text = if (text == "Timer Stop") {
-                                timer.stop()
-                                actStepB.isDisable = false
-                                "Timer Start"
-                            } else {
-                                timer.start()
-                                actStepB.isDisable = true
-                                "Timer Stop"
-                            }
-                        }
-                    }
-                    checkbox("Reverse") {
-                        selectedProperty().onChange { revertActSpeed = it }
-                    }
-                }
-
-                hbox {
-                    alignment = Pos.CENTER
-                    spacing = 10.0
-                    label("Timer-Speed")
-                    slider(20.0, 2000.0, configData.stepSpeed, Orientation.HORIZONTAL) {
-                        majorTickUnit = 100.0
-                        isShowTickMarks = true
-                        isShowTickLabels = true
-                        valueProperty().onChange { timer.delay = it.toInt() }
-                        minWidth = 500.0
-                    }
-                }
-
-                hbox {
-                    alignment = Pos.CENTER
-                    spacing = 10.0
-                    label("Act-Speed")
-                    slider(0.0, 10.0, actSpeed, Orientation.HORIZONTAL) {
-                        majorTickUnit = 1.0
-                        isShowTickMarks = true
-                        isShowTickLabels = true
-                        minWidth = 500.0
-                        valueProperty().onChange { actSpeed = it }
-                    }
-                }
+                custom?.let { add(it) }
+                timerModule?.component?.let { add(it) }
+                debugObjectModule?.component?.let { add(it) }
             }
         }
     }
 
-    init { timer.start() }
-
     fun isKeyPressed(key: KeyCode) = keyboard[key] ?: false
-    fun getMouse() = mouse
+    private fun getMouse() = mouse
 
-    private fun setEye(e: CrazyVector) {
-        eye = e
-        transform = transform.copy(eye = eye - canvasSize/2.0)
+    fun eyeTransform() = transformEyeModule?.getTrans() ?: DebugTransform(unit = configData.unit, canvasSize = canvasSize)
+
+    override fun log(str: String, color: Ansi?) {
+        Text.coloredLog(configData.title, str, color, Ansi.YELLOW, configData.title.length+1)
     }
 
-    private fun step() {
-        beforeAct()
-        objects = act(actSpeed * if (revertActSpeed) -1.0 else 1.0)
-        paint()
+    protected fun step(f: Double) {
+        GlobalScope.launch {
+            objects = act(f)
+            debugObjectModule?.updateSelectedObject()
+            if (paintNecessary) paint()
+        }
     }
 
     private fun paint() {
         Platform.runLater {
-            val gc = canvas.graphicsContext2D
+            val g2 = canvas.graphicsContext2D
 
-            gc.fill = Color.WHITE
-            gc.fillRect(0.0, 0.0, canvasSize.x, canvasSize.y)
+            g2.fill = Color.WHITE
+            g2.fillRect(0.0, 0.0, canvasSize.x, canvasSize.y)
 
-            for (o in objects) o.paintDebug(gc, transform)
+            for (o in objects) {
+                val surroundedRect = o.surroundedRect()
+
+                if (surroundedRect.transform(eyeTransform().screenTrans()) as CrazyRect touchesRect CrazyRect(CrazyVector.zero(), canvasSize)) {
+                    debugObjectModule?.paintObjectDebug(g2, o, surroundedRect)
+
+                    o.paintDebug(g2, eyeTransform(), canvasSize)
+                }
+            }
         }
     }
 
@@ -190,29 +151,312 @@ abstract class GeomDebugger(private val configData: GeomDebuggerConfig) : App() 
         stage.scene = scene
 
         stage.title = configData.title
-        stage.width = 800.0
-        stage.height = 700.0
+        stage.width = 1200.0
+        stage.height = 900.0
 
         stage.show()
     }
 
-    private fun zoomAdd(s: Double) { transform = transform.copy(zoom = transform.zoom + s) }
+    open fun mouseEvent(it: MouseEvent, type: MouseEventType) {
+        mouse = eyeTransform().world(vec(it.x, it.y))
 
-    open fun beforeAct() {
-        if (isKeyPressed(KeyCode.PLUS)) zoomAdd(0.1)
-        if (isKeyPressed(KeyCode.MINUS)) zoomAdd(-0.1)
+        when (type) {
+            MouseEventType.PRESS -> {
+                smallDrag = false
+            }
+            MouseEventType.EXIT -> {
+                mouse = null
+                canvas.scene.cursor = Cursor.DEFAULT
+                paintNecessary = true
+            }
+            MouseEventType.DRAG -> { paintNecessary = false }
+            MouseEventType.RELEASE -> { paintNecessary = true }
+            MouseEventType.ENTER -> { paintNecessary = true }
+        }
+
+        transformEyeModule?.mouseEvent(it, type) ?: run { smallDrag = true }
+        debugObjectModule?.mouseEvent(it, type)
+
+        paint()
     }
 
     open fun onKeyPressed(it: KeyEvent) {
         println("${it.code} Pressed!")
         keyboard[it.code] = true
     }
+
     open fun onKeyReleased(it: KeyEvent) {
         println("${it.code} Released!")
         keyboard[it.code] = false
     }
 
-    open fun onMousePressed(mouse: MouseEvent) {}
+    open fun scrollEvent(it: ScrollEvent) {
+        transformEyeModule?.scrollEvent(it)
+        paint()
+    }
 
-    abstract fun act(s: Double): Array<GeomDebuggerObject>
+    open fun customGui(): Node? { return null }
+
+    abstract suspend fun act(s: Double): Array<DebugObjectI>
+
+    inner class TransformEyeModule(val moduleConfig: TransformEyeModuleConfig) : DebuggerModuleI {
+        private var oldEyePos = CrazyVector.zero()
+        private var oldMousePos = CrazyVector.zero()
+        var transform = DebugTransform(zoom = configData.unit)
+
+        var active = true
+
+        private fun zoomAdd(s: Double) {
+            transform = transform.copy(zoom = transform.zoom + s)
+        }
+
+        fun setEyePos(v: CrazyVector) { transform = transform.copy(eye = v) }
+        fun setEyeScale(s: Double) { transform = transform.copy(zoom = s) }
+
+        fun getTrans() = transform.copy(canvasSize = canvasSize)
+
+        fun mouseEvent(it: MouseEvent, type: MouseEventType) {
+            if (active && moduleConfig.dragAndDrop) {
+                when (type) {
+                    MouseEventType.PRESS -> {
+                        oldEyePos = transform.eye
+                        oldMousePos = transform.world(vec(it.x, it.y))
+                        canvas.scene.cursor = Cursor.MOVE
+                    }
+                    MouseEventType.DRAG -> {
+                        val delta = transform.world(vec(it.x, it.y)) - oldMousePos
+                        transform = transform.copy(eye = oldEyePos - delta)
+                    }
+                    MouseEventType.RELEASE -> {
+                        canvas.scene.cursor = Cursor.DEFAULT
+                        if (transform.screen(oldMousePos) distance vec(it.x, it.y) < 10.0) {
+                            smallDrag = true
+                        }
+                    }
+                }
+            }
+        }
+
+        fun scrollEvent(it: ScrollEvent) {
+            if (active && moduleConfig.scroll) zoomAdd(it.deltaY / 700.0 * transform.zoom)
+        }
+    }
+
+    inner class TimerModule(val moduleConfig: TimerModuleConfig) : DebuggerModuleI {
+        private var actFactor = 1.0
+        private var reverseStep = false
+        private lateinit var reverseCheckbox: CheckBox
+
+        private val timerRunning = SimpleBooleanProperty()
+
+        private val timer = Timer(moduleConfig.startStepSpeed) { step(getActFactor()) }
+
+        init {
+            if (moduleConfig.sofortStartTimer) GlobalScope.launch {
+                delay(500)
+                timerRunning.value = true
+            }
+
+            timerRunning.onChange {
+                if (it) timer.start()
+                else timer.stop()
+                println(it)
+            }
+        }
+
+        private fun getActFactor() = actFactor * if (reverseStep) -1.0 else 1.0
+
+        val component = GridPane().apply {
+            vgap = 15.0
+            hgap = 10.0
+            alignment = Pos.TOP_CENTER
+
+            row {
+                hbox {
+                    alignment = Pos.CENTER
+                    spacing = 10.0
+
+                    gridpaneConstraints {
+                        columnSpan = 2
+                    }
+
+                    button("Act Step Back") {
+                        disableProperty().bind(timerRunning)
+                        action {
+                            step(abs(getActFactor()) * -1)
+                        }
+                    }
+
+                    button("Act Step Forward") {
+                        disableProperty().bind(timerRunning)
+                        action { step(abs(getActFactor())) }
+                    }
+
+                    button {
+                        timerRunning.onChange {
+                            Platform.runLater { text = if (it) "Timer Stop" else "Timer Run" }
+                        }
+                        action { timerRunning.value = !timerRunning.value }
+                    }
+                    checkbox("Reverse") {
+                        selectedProperty().onChange { reverseStep = it }
+                        disableProperty().bind(timerRunning.not())
+                    }
+                }
+            }
+
+            row {
+                val timerSpeedLabel = label {
+                    gridpaneConstraints { hAlignment = HPos.RIGHT }
+                }
+
+                slider(0.02, 2.0, (moduleConfig.startStepSpeed.toDouble() / 1000.0), Orientation.HORIZONTAL) {
+                    majorTickUnit = 0.2
+                    isShowTickMarks = true
+                    isShowTickLabels = true
+
+                    minWidth = 400.0
+
+                    val setValues = { it: Double ->
+                        timer.delay = (it * 1000).toInt()
+                        timerSpeedLabel.text = "Timer Speed (${DecimalFormat("0.00").format(it)} s)"
+                    }
+                    setValues(value)
+                    valueProperty().onChange { setValues(it) }
+                    disableProperty().bind(timerRunning.not())
+                }
+            }
+
+            row {
+                alignment = Pos.CENTER
+
+                val actFactorLabel = label {
+                    gridpaneConstraints { hAlignment = HPos.RIGHT }
+                }
+
+                slider(0.0, 9.0, actFactor, Orientation.HORIZONTAL) {
+                    majorTickUnit = 1.0
+                    isShowTickMarks = true
+                    isShowTickLabels = true
+
+                    minWidth = 400.0
+
+                    val setValues = { it: Double ->
+                        actFactor = it
+                        actFactorLabel.text = "Act Factor (${DecimalFormat("0.00").format(it)})"
+                    }
+                    setValues(value)
+
+                    valueProperty().onChange { setValues(it) }
+                }
+            }
+        }
+    }
+
+    inner class DebugObjectModule(val moduleConfig: DebugObjectModuleConfig) : DebuggerModuleI {
+        private var selectedObjectId: String? = null
+        private var selectedObjectPos: CrazyVector? = null
+        private var soOptionsComponent: TextArea
+        private var soLabel: Label
+        private var paintDebug = SimpleBooleanProperty(true)
+
+        fun updateSelectedObject(id: String? = selectedObjectId) {
+            val selectedObject = objects.find { o -> o.debugOptions()?.id?.let { it == id } ?: false }
+
+            if (selectedObjectId != id || selectedObject?.debugOptions()?.itemsToString() != soOptionsComponent.text) {
+                Platform.runLater {
+                    soLabel.text = if (selectedObject == null) "Es wurde kein Objekt ausgewählt, das DebugOptions definiert." else "Es wurde das Objekt \"${selectedObject.debugOptions()?.name}\" ausgewählt."
+                    soOptionsComponent.text = selectedObject?.debugOptions()?.itemsToString() ?: ""
+                }
+            }
+
+            selectedObjectPos = selectedObject?.surroundedRect()?.center()
+            selectedObjectId = selectedObject?.debugOptions()?.id
+            paint()
+        }
+
+        fun paintObjectDebug(g2: GraphicsContext, o: DebugObjectI, surroundedRect: CrazyRect) {
+            val id = o.debugOptions()?.id
+
+            if (id != null && id == selectedObjectId) {
+                CrazyGraphics.setCrazyStyle(g2, CrazyGraphicStyle(
+                    strokeColor = Color.RED,
+                    lineWidth = 3.0
+                ))
+
+                val padding = CrazyVector.square(10)
+                var transformedRect = surroundedRect.transform(eyeTransform().screenTrans()) as CrazyRect
+                transformedRect = CrazyRect(
+                    transformedRect.pos - padding,
+                    transformedRect.size + padding * 2
+                )
+
+                CrazyGraphics.paintCornersAroundRect(g2, transformedRect, 20.0)
+            }
+
+            if (paintDebug.value) o.debugOptions()?.let {
+                surroundedRect.setConfig(
+                    ShapeDebugConfig(
+                        CrazyGraphicStyle(
+                            strokeColor = Color.RED,
+                            lineWidth = 2.0,
+                            lineDash = doubleArrayOf(5.0, 5.0),
+                            fillOpacity = null
+                        )
+                    )
+                ).paintDebug(g2, eyeTransform(), canvasSize)
+
+                CrazyGraphics.paintTextRect(
+                    g2, eyeTransform().screen(surroundedRect.pos), it.name,
+                    center = vec(0.0, 1.1),
+                    style = CrazyGraphicStyle(
+                        fillOpacity = 0.0
+                    ),
+                    padding = vec(0.0, 0.0)
+                )
+            }
+        }
+
+        val component = VBox().apply {
+            spacing = 10.0
+            soLabel = label()
+            soOptionsComponent = textarea {
+                font = Font.font("monospace", 15.0)
+                isEditable = false
+                vgrow = Priority.ALWAYS
+                minWidth = 450.0
+            }
+            hbox {
+                spacing = 10.0
+                alignment = Pos.CENTER_LEFT
+                if (transformEyeModule != null) button("Zu Objekt Springen") {
+                    action {
+                        selectedObjectPos?.let {
+                            transformEyeModule.transform = transformEyeModule.transform.copy(eye = it)
+                            paint()
+                        }
+                    }
+                }
+                checkbox("Paint Debug", paintDebug) {
+                    action { paint() }
+                }
+            }
+        }
+
+        fun mouseEvent(it: MouseEvent, type: MouseEventType) {
+            when (type) {
+                MouseEventType.RELEASE -> {
+                    if (smallDrag) {
+                        getMouse()?.let { m ->
+                            objects.forEach {
+                                if (it.surroundedRect() containsPoint m) {
+                                    updateSelectedObject(it.debugOptions()?.id)
+                                }
+                            }
+                        } ?: run { updateSelectedObject(null) }
+                    }
+                }
+            }
+        }
+    }
 }

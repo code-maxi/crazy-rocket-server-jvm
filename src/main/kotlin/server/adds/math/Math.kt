@@ -1,15 +1,14 @@
 package server.adds.math
 
-import server.adds.math.CrazyVector
-
 data class CrazyTransform(
     val rotate: Double? = null,
     val scale: Double = 1.0,
     val center: CrazyVector? = null,
-    val translate: CrazyVector = CrazyVector.zero()
+    val translateBefore: CrazyVector? = null,
+    val translateAfter: CrazyVector? = null
 )
 
-fun vec(a: Double, b: Double, al: Boolean = false) = if (al) CrazyVector.fromAL(a,b) else CrazyVector(a, b)
+fun vec(a: Number, b: Number, al: Boolean = false) = if (al) CrazyVector.fromAL(a.toDouble(),b.toDouble()) else CrazyVector(a.toDouble(), b.toDouble())
 
 object RocketMath {
     fun inRange(z1: Double, z2: Double, d: Double) =

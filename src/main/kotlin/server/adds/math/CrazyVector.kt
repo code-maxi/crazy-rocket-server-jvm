@@ -1,6 +1,8 @@
 package server.adds.math
 
+import server.adds.math.geom.shapes.CrazyLine
 import java.text.DecimalFormat
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -8,13 +10,14 @@ import kotlin.math.sqrt
 data class CrazyVector(val x: Double, val y: Double) {
     operator fun plus(v: CrazyVector) = CrazyVector(this.x + v.x, this.y + v.y)
     operator fun minus(v: CrazyVector) = CrazyVector(this.x - v.x, this.y - v.y)
-    operator fun times(s: Double) = CrazyVector(this.x * s, this.y * s)
+    operator fun times(s: Number) = CrazyVector(this.x * s.toDouble(), this.y * s.toDouble())
     operator fun times(v: CrazyVector) = CrazyVector(this.x * v.x, this.y * v.y)
     operator fun div(s: Double) = CrazyVector(this.x / s, this.y / s)
     operator fun div(v: CrazyVector) = CrazyVector(this.x / v.x, this.y / v.y)
     operator fun unaryMinus() = this * -1.0
 
     fun length() = sqrt(this.x * this.x + this.y * this.y)
+    fun angle() = atan2(y, x)
     fun e() = CrazyVector(1 / this.x, 1 / this.y)
     fun abs() = CrazyVector(kotlin.math.abs(this.x), kotlin.math.abs(this.y))
 
@@ -45,6 +48,8 @@ data class CrazyVector(val x: Double, val y: Double) {
     infix fun transformTo(trans: CrazyTransform): CrazyVector {
         var transPoint = this
 
+        trans.translateBefore?.let { transPoint += it }
+
         trans.center?.let { center ->
             transPoint -= center
             transPoint *= trans.scale
@@ -54,7 +59,7 @@ data class CrazyVector(val x: Double, val y: Double) {
             transPoint += center
         }
 
-        transPoint += trans.translate
+        trans.translateAfter?.let { transPoint += it }
 
         return transPoint
     }
@@ -64,9 +69,11 @@ data class CrazyVector(val x: Double, val y: Double) {
         return "(${format.format(x)} | ${format.format(y)})"
     }
 
+    fun toLine(pos: CrazyVector) = CrazyLine(pos, pos + this)
+
     companion object {
         fun zero() = CrazyVector(0.0, 0.0)
-        fun square(s: Double) = CrazyVector(s, s)
+        fun square(s: Number) = CrazyVector(s.toDouble(), s.toDouble())
         fun fromAL(a: Double, l: Double) = CrazyVector(cos(a) * l, sin(a) * l)
     }
 }

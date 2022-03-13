@@ -1,15 +1,18 @@
 package server.adds.math.geom.shapes
 
 import javafx.scene.paint.Color
-import javafx.scene.paint.Paint
+import server.adds.CrazyGraphicStyle
+import server.adds.math.geom.debug.DebugObjectOptions
 
 data class ShapeDebugConfig(
-    val color: Color = Color.color(1.0, 0.0, 0.0),
+    val crazyStyle: CrazyGraphicStyle = CrazyGraphicStyle(
+        fillColor = Color.LIGHTBLUE,
+        fillOpacity = 0.3,
+        strokeColor = Color.BLUE,
+        lineWidth = 2.0
+    ),
     val paintCoords: Boolean = false,
-    val lineWidth: Double = 3.0,
-    val fillOpacity: Double? = 0.3,
-    val stroke: Boolean = true,
-    val lineDashes: DoubleArray = doubleArrayOf(),
     val paintSurroundedRect: Boolean = false,
-    val name: String? = null
+    val debugOptions: DebugObjectOptions? = null,
+    val drawLineAsVector: Boolean = false
 )

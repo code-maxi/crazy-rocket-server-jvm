@@ -9,7 +9,7 @@ import server.data_containers.TooLittlePointsInPolygonEx
 
 open class CrazyPolygon(
     private val points: Array<CrazyVector>,
-    config: ShapeDebugConfig = ShapeDebugConfig()
+    config: ShapeDebugConfig? = null
 ) : CrazyShape(GeomType.POLYGON, config) {
 
     private val surroundedRect: CrazyRect
@@ -54,9 +54,7 @@ open class CrazyPolygon(
         return true
     }
 
-    override fun paintDebug(g2: GraphicsContext, transform: DebugTransform) {
-        super.paintDebug(g2, transform)
-
+    override fun paintSelf(g2: GraphicsContext, transform: DebugTransform, config: ShapeDebugConfig) {
         g2.beginPath()
 
         points.forEachIndexed { i, p ->
@@ -65,13 +63,16 @@ open class CrazyPolygon(
         }
 
         g2.closePath()
-        if (config.fillOpacity != null) g2.fill()
-        if (config.stroke) g2.stroke()
+        if (config.crazyStyle.fillOpacity != null) g2.fill()
+        if (config.crazyStyle.strokeOpacity != null) g2.stroke()
 
         points.forEach {
-            CrazyGraphics.paintPoint(g2, transform.screen(it), color = config.color, paintCoords = config.paintCoords)
+            CrazyGraphics.paintPoint(
+                g2, transform.screen(it),
+                paintCoords = config.paintCoords
+            )
         }
-
-        if (config.paintSurroundedRect) paintSurroundedRect(g2, transform)
     }
+
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig) = CrazyPolygon(points, shapeDebugConfig)
 }

@@ -3,6 +3,7 @@ package server.game.objects
 import server.adds.math.geom.GeoI
 import server.adds.math.RocketMath.inRange
 import server.adds.math.CrazyVector
+import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.vec
 import server.data_containers.KeyboardI
 import server.data_containers.UserViewI
@@ -63,6 +64,10 @@ class Rocket(
         log("")*/
 
         super.calc(s)
+    }
+
+    override fun collider(): CrazyShape {
+        TODO("Not yet implemented")
     }
 
     override fun data() = RocketOI(

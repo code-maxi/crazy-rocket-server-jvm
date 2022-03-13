@@ -17,14 +17,10 @@ class Game(
     private val gameConfig: GameConfig
 ) : GameClassI {
     private val objects = hashMapOf<String, GameObjectI>()
-    private var idCount = Long.MAX_VALUE
+    private var idCount = Int.MAX_VALUE
     lateinit var settings: GamePropsI
 
     fun objectList() = objects.values.toTypedArray()
-
-    init {
-        loadLevel(1)
-    }
 
     private fun newID(): String {
         idCount --
@@ -71,7 +67,7 @@ class Game(
         onFinish(r)
     }
 
-    private fun loadLevel(l: Int) {
+    fun loadLevel(l: Int) {
         settings = GamePropsI(l, 5000, 5000)
         for (i in 0..10) {
             addObject {

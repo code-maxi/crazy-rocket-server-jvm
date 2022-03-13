@@ -7,12 +7,13 @@ import org.apache.http.impl.client.HttpClients
 import server.adds.Network
 import server.adds.math.geom.tests.GeomTest
 import server.galaxy.GalaxyS
+import server.game.debug.GameDebugger
 import tornadofx.launch
 
 fun main(args: Array<String>) {
     when (args[0]) {
         "debugger" -> {
-            launch<GeomTest>()
+            launch<GameDebugger>()
         }
         "server" -> {
             runBlocking {
