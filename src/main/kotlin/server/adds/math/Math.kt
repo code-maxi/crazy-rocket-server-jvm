@@ -1,14 +1,24 @@
 package server.adds.math
 
 data class CrazyTransform(
-    val rotate: Double? = null,
-    val scale: Double = 1.0,
-    val center: CrazyVector? = null,
     val translateBefore: CrazyVector? = null,
+    val rotate: Double? = null,
+    val scale: CrazyVector = vec(1, 1),
+    val center: CrazyVector? = null,
     val translateAfter: CrazyVector? = null
 )
 
 fun vec(a: Number, b: Number, al: Boolean = false) = if (al) CrazyVector.fromAL(a.toDouble(),b.toDouble()) else CrazyVector(a.toDouble(), b.toDouble())
+
+data class CrazyMatrix(val a: Double, val b: Double, val c: Double, val d: Double) {
+    operator fun times(s: Double) = CrazyMatrix(a * s, b * s, c * s, d * s)
+    operator fun times(v: CrazyVector) = CrazyVector(
+        a*v.x + b*v.y,
+        c*v.x + d*v.y
+    )
+
+    fun inverse() = CrazyMatrix(d, -b, -c , a) * (1/(a*d - b*c))
+}
 
 object RocketMath {
     fun inRange(z1: Double, z2: Double, d: Double) =

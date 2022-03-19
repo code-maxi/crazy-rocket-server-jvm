@@ -8,7 +8,7 @@ import server.adds.math.geom.debug.DebugTransform
 import server.adds.math.vec
 import server.data_containers.NegativeCoordinateInSizeVector
 
-class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugConfig = ShapeDebugConfig()) : CrazyShape(GeomType.RECT, config) {
+class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugConfig? = ShapeDebugConfig()) : CrazyShape(ShapeType.RECT, config) {
     init {
         if (size.x < 0.0 || size.y < 0.0) throw NegativeCoordinateInSizeVector(size)
     }
@@ -45,5 +45,8 @@ class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugC
         if (config.crazyStyle.strokeOpacity != null) g2.strokeRect(screenPos.x, screenPos.y, size.x * transform.zoom, size.y * transform.zoom)
     }
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig) = CrazyRect(pos, size, shapeDebugConfig)
+    fun copy(pos: CrazyVector = this.pos, size: CrazyVector = this.size, config: ShapeDebugConfig? = this.config) =
+        CrazyRect(pos, size, config)
+
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyRect(pos, size, shapeDebugConfig)
 }

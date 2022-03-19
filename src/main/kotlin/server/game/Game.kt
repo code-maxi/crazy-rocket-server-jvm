@@ -5,11 +5,13 @@ import SendFormat
 import server.adds.math.vec
 import server.data_containers.*
 import server.game.objects.Asteroid
+import server.game.objects.GameObjectI
 import server.game.objects.Rocket
 
 data class GameConfig(
     val sendUser: (id: String, send: SendFormat) -> Unit,
-    val onRocketCreated: (rocket: Rocket) -> Unit
+    val onRocketCreated: (rocket: Rocket) -> Unit,
+    val debug: Boolean = false
 )
 
 class Game(
@@ -51,7 +53,7 @@ class Game(
 
     fun killObject(id: String) { objects.remove(id) }
 
-    private fun addRocket(u: UserPropsI): Rocket {
+    fun addRocket(u: UserPropsI): Rocket {
         checkOtherId(u.id)
 
         val rocket = Rocket(
@@ -69,7 +71,7 @@ class Game(
 
     fun loadLevel(l: Int) {
         settings = GamePropsI(l, 5000, 5000)
-        for (i in 0..10) {
+        /*for (i in 0..10) {
             addObject {
                 Asteroid(
                     (Math.random() * 3.0).toInt() + 1,
@@ -79,7 +81,7 @@ class Game(
                     it
                 )
             }
-        }
+        }*/
     }
 
     override suspend fun calc(s: Double) {

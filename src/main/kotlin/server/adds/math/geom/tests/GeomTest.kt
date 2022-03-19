@@ -5,7 +5,7 @@ import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.vec
 
-class GeomTest : GeomDebugger(GeomDebuggerConfig(
+class GeomTest : CrazyDebugger(GeomDebuggerConfig(
     unit = 3.0,
     transformEyeModule = TransformEyeModuleConfig(),
     timerModule = TimerModuleConfig(),

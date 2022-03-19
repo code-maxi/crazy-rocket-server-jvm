@@ -8,43 +8,50 @@ import server.adds.math.geom.debug.DebugTransform
 import server.data_containers.TooLittlePointsInPolygonEx
 
 open class CrazyPolygon(
-    private val points: Array<CrazyVector>,
-    config: ShapeDebugConfig? = null
-) : CrazyShape(GeomType.POLYGON, config) {
+    val points: Array<CrazyVector>,
+    config: ShapeDebugConfig? = null,
+    surroundedRectP: CrazyRect? = null
+) : CrazyShape(ShapeType.POLYGON, config) {
 
     private val surroundedRect: CrazyRect
 
     init {
         if (points.size < 3) throw TooLittlePointsInPolygonEx(points.size)
 
-        var lowestXCoordinate: Double? = null
-        var lowestYCoordinate: Double? = null
+        if (surroundedRectP != null) surroundedRect = surroundedRectP
+        else {
+            var lowestXCoordinate: Double? = null
+            var lowestYCoordinate: Double? = null
 
-        var highestXCoordinate: Double? = null
-        var highestYCoordinate: Double? = null
+            var highestXCoordinate: Double? = null
+            var highestYCoordinate: Double? = null
 
-        points.forEach {
-            if (lowestXCoordinate == null || it.x < lowestXCoordinate!!) lowestXCoordinate = it.x
-            if (lowestYCoordinate == null || it.y < lowestYCoordinate!!) lowestYCoordinate = it.y
-            if (highestXCoordinate == null || it.x < highestXCoordinate!!) highestXCoordinate = it.x
-            if (highestYCoordinate == null || it.y < highestYCoordinate!!) highestYCoordinate = it.y
+            points.forEach {
+                if (lowestXCoordinate == null || it.x < lowestXCoordinate!!) lowestXCoordinate = it.x
+                if (lowestYCoordinate == null || it.y < lowestYCoordinate!!) lowestYCoordinate = it.y
+                if (highestXCoordinate == null || it.x < highestXCoordinate!!) highestXCoordinate = it.x
+                if (highestYCoordinate == null || it.y < highestYCoordinate!!) highestYCoordinate = it.y
+            }
+
+            val ltRectCorner = CrazyVector(lowestXCoordinate!!, lowestYCoordinate!!)
+            val brRectCorner = CrazyVector(highestXCoordinate!!, highestYCoordinate!!)
+
+            surroundedRect = CrazyRect(
+                ltRectCorner,
+                brRectCorner - ltRectCorner
+            )
         }
 
-        val ltRectCorner = CrazyVector(lowestXCoordinate!!, lowestYCoordinate!!)
-        val brRectCorner = CrazyVector(highestXCoordinate!!, highestYCoordinate!!)
-
-        surroundedRect = CrazyRect(
-            ltRectCorner,
-            brRectCorner - ltRectCorner
-        )
     }
 
     open fun getMyPoints() = points
 
+    fun pointsWithEnd() = this.points + this.points.last()
+
     override fun surroundedRect() = surroundedRect
 
     override fun transform(trans: CrazyTransform) =
-        CrazyPolygon(points.map { it transformTo trans }.toTypedArray())
+        CrazyPolygon(points.map { it transformTo trans }.toTypedArray(), config)
 
     override fun containsPoint(point: CrazyVector): Boolean {
         for (i in 0..(getMyPoints().size-2)) {
@@ -74,5 +81,10 @@ open class CrazyPolygon(
         }
     }
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig) = CrazyPolygon(points, shapeDebugConfig)
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyPolygon(points, shapeDebugConfig)
+
+    fun copy(points: Array<CrazyVector> = this.points, config: ShapeDebugConfig? = this.config) =
+        CrazyPolygon(points, config)
+
+    fun convert(f: (CrazyVector) -> CrazyVector) = copy(points = points.map { f(it) }.toTypedArray())
 }

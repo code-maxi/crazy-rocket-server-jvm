@@ -11,5 +11,5 @@ data class DebugTransform(
 ) {
     fun screen(vec: CrazyVector) = (vec - eye) * zoom * unit + canvasSize/2.0
     fun world(vec: CrazyVector) = (vec - canvasSize/2.0) / zoom / unit + eye
-    fun screenTrans() = CrazyTransform(center = eye, scale = zoom * unit, translateAfter = canvasSize/2.0 - eye)
+    fun screenTrans() = CrazyTransform(center = eye, scale = CrazyVector.square(zoom * unit), translateAfter = canvasSize/2.0 - eye)
 }

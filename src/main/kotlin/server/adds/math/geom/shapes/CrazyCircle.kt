@@ -10,7 +10,7 @@ class CrazyCircle(
     val radius: Double,
     val pos: CrazyVector,
     config: ShapeDebugConfig? = null
-) : CrazyShape(GeomType.CIRCLE, config) {
+) : CrazyShape(ShapeType.CIRCLE, config) {
 
     override fun surroundedRect() = CrazyRect(
         pos - CrazyVector.square(radius),
@@ -18,7 +18,7 @@ class CrazyCircle(
     )
 
     override fun transform(trans: CrazyTransform) = CrazyCircle(
-        radius * trans.scale,
+        radius * trans.scale.x,
         pos transformTo trans
     )
 
@@ -34,6 +34,9 @@ class CrazyCircle(
         CrazyGraphics.paintPoint(g2, screenPos, paintCoords = config.paintCoords)
     }
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig) = CrazyCircle(radius, pos, shapeDebugConfig)
+    fun copy(radius: Double = this.radius, pos: CrazyVector = this.pos, config: ShapeDebugConfig? = this.config) =
+        CrazyCircle(radius, pos, config)
+
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyCircle(radius, pos, shapeDebugConfig)
     //override fun transform(trans: GeomTransform) = RocketCircle(radius * trans.scaling, pos + trans.pos)
 }

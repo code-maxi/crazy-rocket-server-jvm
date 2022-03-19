@@ -32,7 +32,12 @@ data class ClientMouseI(
 data class ClientKeyI(
     val key: String,
     val active: Boolean
-)
+) {
+    fun convertJavaFXKey()  = copy(key = when (key) {
+
+        else -> "unknown-key: $key"
+    })
+}
 
 data class ClientDataRequestI(
     val userProps: UserPropsI,

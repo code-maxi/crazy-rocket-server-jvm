@@ -1,24 +1,23 @@
 package server.game.objects
 
 import javafx.scene.canvas.GraphicsContext
-import server.data_containers.GameObjectI
 import server.adds.math.geom.GeoI
 import server.adds.math.CrazyVector
 import server.adds.math.geom.debug.DebugObjectOptions
 import server.adds.math.geom.debug.DebugTransform
-import server.adds.math.geom.shapes.CrazyRect
 import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.vec
+import server.data_containers.GameObjectType
 import java.text.DecimalFormat
 
 abstract class GeoObject(
-    var pos: CrazyVector,
-    var width: Double,
-    var height: Double,
-    var ang: Double,
-    var velocity: CrazyVector,
-    id: String
-): GameObjectI(id) {
+    var pos: CrazyVector = CrazyVector.zero(),
+    var size: CrazyVector = CrazyVector.square(1),
+    var ang: Double = 0.0,
+    var velocity: CrazyVector = CrazyVector.zero(),
+    id: String,
+    type: GameObjectType
+): GameObjectI(id, type) {
     //protected var effects = arrayListOf<GeoObjectEffect<T>>()
 
     abstract fun collider(): CrazyShape
@@ -44,7 +43,7 @@ abstract class GeoObject(
         pos += velocity * s
     }
 
-    fun getGeo() = GeoI(pos, width, height, ang)
+    fun getGeo() = GeoI(pos, size.x, size.y, ang)
 }
 
 /*

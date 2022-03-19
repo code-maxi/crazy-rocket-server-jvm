@@ -2,11 +2,7 @@ package server.data_containers
 
 import GalaxyI
 import SendFormat
-import server.adds.text.Ansi
-import server.adds.text.Text
 import server.adds.math.geom.GeoI
-import server.adds.math.geom.debug.DebugObjectI
-import server.game.Game
 
 // Objects
 
@@ -106,19 +102,15 @@ interface GameClassI {
      suspend fun calc(s: Double)
 }
 
-abstract class GameObjectI(val id: String) : GameClassI, DebugObjectI {
-    private lateinit var game: Game
-
-    protected fun getGame() = game
-    fun setGame(g: Game) { game = g }
-
-    fun log(text: String, color: Ansi? = null) {
-        Text.coloredLog("GO ($id) ${data().type}", text, color = color, name = Ansi.PURPLE, maxSize = 25)
-    }
-
-    abstract override fun data(): TypeObjectI
-}
-
 data class GameStartI(
     val listeningKeys: Array<String>
 )
+
+enum class GameObjectType(val text: String) {
+    ASTEROID("asteroid"),
+    ROCKET("rocket");
+
+    companion object {
+        fun textType(t: String) = values().find { it.text == t }
+    }
+}

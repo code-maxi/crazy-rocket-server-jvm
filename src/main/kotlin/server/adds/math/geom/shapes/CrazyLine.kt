@@ -2,13 +2,23 @@ package server.adds.math.geom.shapes
 
 import javafx.scene.canvas.GraphicsContext
 import server.adds.CrazyGraphics
+import server.adds.math.CrazyMatrix
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
 import server.adds.math.geom.debug.DebugTransform
 import server.adds.math.vec
 import server.data_containers.CannotCheckPointOnLine
 
-class CrazyLine(val a: CrazyVector, val b: CrazyVector, config: ShapeDebugConfig? = null) : CrazyShape(GeomType.LINE, config) {
+data class CrazyLineIntersectionData(
+    val intersection: CrazyVector,
+    val factor1: Double,
+    val factor2: Double,
+    val onLine1: Boolean,
+    val onLine2: Boolean,
+    val collides: Boolean
+)
+
+class CrazyLine(val a: CrazyVector, val b: CrazyVector, config: ShapeDebugConfig? = null) : CrazyShape(ShapeType.LINE, config) {
 
     private fun ltRectCorner() = vec(if (a.x < b.x) a.x else b.x, if (a.y < b.y) a.y else b.y)
     private fun brRectCorner() = vec(if (a.x > b.x) a.x else b.x, if (a.y > b.y) a.y else b.y)
@@ -48,5 +58,37 @@ class CrazyLine(val a: CrazyVector, val b: CrazyVector, config: ShapeDebugConfig
         }
     }
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig) = CrazyLine(a, b, shapeDebugConfig)
+    fun leftPoint() = if (a.x < b.x) a else b
+    fun rightPoint() = if (a.x > b.x) a else b
+
+    fun delta() = b - a
+
+    fun copy(a: CrazyVector = this.a, b: CrazyVector = this.b, config: ShapeDebugConfig? = this.config) =
+        CrazyLine(a, b, config)
+
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyLine(a, b, shapeDebugConfig)
+
+    infix fun intersection(that: CrazyLine): CrazyLineIntersectionData {
+        val d1 = this.a - this.b
+        val d2 = that.a - that.b
+
+        val factorVec = CrazyMatrix(
+            d1.x, -d2.x,
+            d1.y, -d2.y
+        ).inverse() * (that.a - this.a)
+
+        val onLine1 = factorVec.x in 0.0..1.0
+        val onLine2 = factorVec.y in 0.0..1.0
+
+        return CrazyLineIntersectionData(
+            intersection = this.a + d1 * factorVec.x,
+            factor1 = factorVec.x,
+            factor2 = factorVec.y,
+            onLine1 = onLine1,
+            onLine2 = onLine2,
+            collides = onLine1 && onLine2
+        )
+    }
+
+    fun toVec() = b - a
 }

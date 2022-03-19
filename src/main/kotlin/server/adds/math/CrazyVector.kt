@@ -2,10 +2,7 @@ package server.adds.math
 
 import server.adds.math.geom.shapes.CrazyLine
 import java.text.DecimalFormat
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
+import kotlin.math.*
 
 data class CrazyVector(val x: Double, val y: Double) {
     operator fun plus(v: CrazyVector) = CrazyVector(this.x + v.x, this.y + v.y)
@@ -31,6 +28,11 @@ data class CrazyVector(val x: Double, val y: Double) {
     }
 
     fun normalRight() = CrazyVector(this.y, -this.x)
+
+    infix fun rotate(angle: Double) = vec(
+        x * cos(angle) - y * sin(angle),
+        x * sin(angle) + y * cos(angle)
+    )
 
     fun rotateAroundOtherPoint(center: CrazyVector, angle: Double): CrazyVector {
         val x1 = this.x - center.x;
@@ -70,6 +72,8 @@ data class CrazyVector(val x: Double, val y: Double) {
     }
 
     fun toLine(pos: CrazyVector) = CrazyLine(pos, pos + this)
+
+    fun angleTo(that: CrazyVector) = acos((this scalar that) / (this.length() * that.length()))
 
     companion object {
         fun zero() = CrazyVector(0.0, 0.0)

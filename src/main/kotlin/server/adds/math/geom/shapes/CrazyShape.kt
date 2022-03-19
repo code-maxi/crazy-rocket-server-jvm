@@ -1,23 +1,19 @@
 package server.adds.math.geom.shapes
 
 import javafx.scene.canvas.GraphicsContext
-import javafx.scene.paint.Color
-import server.adds.CrazyGraphicStyle
 import server.adds.CrazyGraphics
+import server.adds.math.CollisionDetection
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
 import server.adds.math.geom.debug.DebugTransform
 import server.adds.math.geom.debug.DebugObjectI
-import server.adds.math.vec
 
-abstract class CrazyShape(val type: GeomType, private val config: ShapeDebugConfig?) : DebugObjectI {
-    infix fun collides(o: CrazyShape) {
-
-    }
+abstract class CrazyShape(val type: ShapeType, val config: ShapeDebugConfig?) : DebugObjectI {
+    infix fun collides(that: CrazyShape) = CollisionDetection.shapeShapeCollision(this, that)
 
     private fun shapeConfig() = config ?: ShapeDebugConfig()
 
-    abstract fun setConfig(shapeDebugConfig: ShapeDebugConfig): CrazyShape
+    abstract fun setConfig(shapeDebugConfig: ShapeDebugConfig?): CrazyShape
     abstract fun transform(trans: CrazyTransform): CrazyShape
     abstract infix fun containsPoint(point: CrazyVector): Boolean
 

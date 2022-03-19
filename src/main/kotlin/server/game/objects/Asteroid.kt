@@ -8,38 +8,31 @@ import server.adds.math.CrazyVector
 import server.adds.math.geom.debug.DebugTransform
 import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.CrazyLine
-import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.geom.shapes.ShapeDebugConfig
+import server.data_containers.GameObjectType
 
 class Asteroid(
-    val size: Int,
-    pos: CrazyVector,
-    ang: Double,
-    velocity: CrazyVector,
+    val size: Double,
+    private val turnSpeed: Double,
+    var pos: CrazyVector,
+    var ang: Double,
+    private var velocity: CrazyVector,
     id: String
-) : GeoObject(pos, 0.0, 0.0, ang, velocity, id) {
-    var live = 1.0
-    val turnSpeed = Math.random() * 0.03 + 0.01
-
-    init {
-        val rSize = size * 50.0
-        width = rSize
-        height= rSize
-    }
+) : ColliderObject(id, GameObjectType.ASTEROID) {
+    var live = 100.0
 
     override suspend fun calc(s: Double) {
         ang += turnSpeed
-
-        super.calc(s)
     }
 
-    override fun collider() = CrazyCircle(size * 50.0, pos)
+    override fun collider() = CrazyCircle(size, pos)
+
+    override fun shapeDebugConfig() = ShapeDebugConfig(
+        paintSurroundedRect = true
+    )
 
     override fun paintDebug(g2: GraphicsContext, transform: DebugTransform, canvasSize: CrazyVector) {
-        collider().setConfig(ShapeDebugConfig(
-            paintSurroundedRect = true,
-            debugOptions = debugOptions()
-        )).paintDebug(g2, transform, canvasSize)
+        super.paintDebug(g2, transform, canvasSize)
 
         CrazyLine(pos, pos + velocity * 10.0, ShapeDebugConfig(
             CrazyGraphicStyle(strokeColor = Color.GREEN, lineWidth = 2.0),
@@ -47,7 +40,5 @@ class Asteroid(
         )).paintDebug(g2, transform, canvasSize)
     }
 
-    override fun data() = AsteroidOI(
-        live, size, id, getGeo()
-    )
+    override fun data() = TODO("Data must be initialized first.")
 }

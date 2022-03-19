@@ -39,10 +39,10 @@ import javax.swing.Timer
 import kotlin.math.abs
 
 
-abstract class GeomDebugger(private val configData: GeomDebuggerConfig) : App(), Logable {
+abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App(), Logable {
     private lateinit var canvas: Canvas
 
-    private var keyboard = hashMapOf<KeyCode, Boolean>()
+    val keyboard = hashMapOf<KeyCode, Boolean>()
 
     private var mouse: CrazyVector? = null
     private var canvasSize = CrazyVector.zero()
@@ -105,7 +105,7 @@ abstract class GeomDebugger(private val configData: GeomDebuggerConfig) : App(),
     }
 
     fun isKeyPressed(key: KeyCode) = keyboard[key] ?: false
-    private fun getMouse() = mouse
+    fun getMouse() = mouse
 
     fun eyeTransform() = transformEyeModule?.getTrans() ?: DebugTransform(unit = configData.unit, canvasSize = canvasSize)
 
@@ -181,12 +181,10 @@ abstract class GeomDebugger(private val configData: GeomDebuggerConfig) : App(),
     }
 
     open fun onKeyPressed(it: KeyEvent) {
-        println("${it.code} Pressed!")
         keyboard[it.code] = true
     }
 
     open fun onKeyReleased(it: KeyEvent) {
-        println("${it.code} Released!")
         keyboard[it.code] = false
     }
 
@@ -359,6 +357,8 @@ abstract class GeomDebugger(private val configData: GeomDebuggerConfig) : App(),
         private var soOptionsComponent: TextArea
         private var soLabel: Label
         private var paintDebug = SimpleBooleanProperty(true)
+
+        fun getSelectedObject() = selectedObjectId
 
         fun updateSelectedObject(id: String? = selectedObjectId) {
             val selectedObject = objects.find { o -> o.debugOptions()?.id?.let { it == id } ?: false }

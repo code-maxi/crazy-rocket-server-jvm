@@ -20,6 +20,7 @@ import server.adds.math.CrazyVector
 import server.data_containers.*
 import server.galaxy.GalaxyS
 import server.game.Game
+import server.game.objects.GameObjectI
 import server.game.objects.GeoObject
 import server.game.objects.Rocket
 

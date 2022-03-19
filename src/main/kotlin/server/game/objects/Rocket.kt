@@ -1,8 +1,10 @@
 package server.game.objects
 
+import server.adds.math.CrazyTransform
 import server.adds.math.geom.GeoI
 import server.adds.math.RocketMath.inRange
 import server.adds.math.CrazyVector
+import server.adds.math.geom.shapes.CrazyPolygon
 import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.vec
 import server.data_containers.KeyboardI
@@ -13,9 +15,9 @@ class Rocket(
     pos: CrazyVector,
     val userProps: UserPropsI,
     id: String,
-) : GeoObject(pos, 0.0, 0.0, 0.0, vec(0.05, 0.05), id) {
+) : GeoObject(pos, CrazyVector.zero(), 0.0, CrazyVector.zero(), id, GameObjectType.ROCKET) {
     private var keyboard = KeyboardI()
-    private lateinit var type: RocketType
+    private lateinit var rocketType: RocketType
     private var fires = listOf<RocketFire>()
 
     var eye: CrazyVector
@@ -30,16 +32,24 @@ class Rocket(
     fun userView() = UserViewI(eye, zoom)
 
     private fun setRocketType(t: RocketType) {
-        type = t
-        fires = type.fires.map { RocketFire(it) }
-        width = type.width
-        height = type.height
-        zoomTarget = type.defaultZoom
+        rocketType = t
+        fires = rocketType.fires.map { RocketFire(it) }
+        /*width = rocketType.width
+        height = rocketType.height*/
+        zoomTarget = rocketType.defaultZoom
     }
 
     fun setKeyboard(k: KeyboardI) {
         keyboard = k
     }
+
+    override fun collider() = CrazyPolygon(
+        arrayOf(
+            vec(-0.5, 0.5),
+            vec(0.0, -0.5),
+            vec(0.5, 0.5)
+        )
+    ).convert { (it * size) rotate ang }
 
     override suspend fun calc(s: Double) {
         val arrowUp = keyboard.key("ArrowUp")
@@ -52,11 +62,11 @@ class Rocket(
         }*/
 
         if (arrowRight || arrowLeft)
-            ang += (if (arrowRight) 1 else -1) * type.turningSpeed * s
+            ang += (if (arrowRight) 1 else -1) * rocketType.turningSpeed * s
 
-        if (arrowUp) velocity += vec(ang, type.acceleratingSpeed, true) * s
+        if (arrowUp) velocity += vec(ang, rocketType.acceleratingSpeed, true) * s
 
-        eye += (pos - eye) * type.eyeLazy * s
+        eye += (pos - eye) * rocketType.eyeLazy * s
 
         /*log("$velocity")
         log("$pos")
@@ -66,17 +76,13 @@ class Rocket(
         super.calc(s)
     }
 
-    override fun collider(): CrazyShape {
-        TODO("Not yet implemented")
-    }
-
     override fun data() = RocketOI(
         userProps = userProps,
         geo = getGeo(),
         id = id,
         view = UserViewI(eye, zoom),
         style = RocketStyleI(
-            img = type.img,
+            img = rocketType.img,
             fires = fires.map { it.data() }.toTypedArray()
         )
     )
