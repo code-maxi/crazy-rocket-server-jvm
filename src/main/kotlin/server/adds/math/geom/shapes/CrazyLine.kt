@@ -1,6 +1,7 @@
 package server.adds.math.geom.shapes
 
 import javafx.scene.canvas.GraphicsContext
+import javafx.scene.paint.Color
 import server.adds.CrazyGraphics
 import server.adds.math.CrazyMatrix
 import server.adds.math.CrazyTransform
@@ -18,7 +19,11 @@ data class CrazyLineIntersectionData(
     val collides: Boolean
 )
 
-class CrazyLine(val a: CrazyVector, val b: CrazyVector, config: ShapeDebugConfig? = null) : CrazyShape(ShapeType.LINE, config) {
+class CrazyLine(
+    val a: CrazyVector,
+    val b: CrazyVector,
+    config: ShapeDebugConfig? = null,
+) : CrazyShape(ShapeType.LINE, config) {
 
     private fun ltRectCorner() = vec(if (a.x < b.x) a.x else b.x, if (a.y < b.y) a.y else b.y)
     private fun brRectCorner() = vec(if (a.x > b.x) a.x else b.x, if (a.y > b.y) a.y else b.y)
@@ -58,8 +63,12 @@ class CrazyLine(val a: CrazyVector, val b: CrazyVector, config: ShapeDebugConfig
         }
     }
 
+    fun drawAsVector(color: Color = Color.BLUE) = setConfig(shapeConfig().copy(drawLineAsVector = true, crazyStyle = ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = color, strokeColor = color, lineWidth = 2.0)))
+
     fun leftPoint() = if (a.x < b.x) a else b
     fun rightPoint() = if (a.x > b.x) a else b
+
+    fun rightLine() = copy(a, a + (a - b).normalRight())
 
     fun delta() = b - a
 
@@ -68,9 +77,16 @@ class CrazyLine(val a: CrazyVector, val b: CrazyVector, config: ShapeDebugConfig
 
     override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyLine(a, b, shapeDebugConfig)
 
+    infix fun isPointRight(pos: CrazyVector) = (b - a).normalRight() scalar (pos - a) > 0
+
+    infix fun normalLineFrom(pos: CrazyVector): CrazyLine {
+        val rightOnLine = isPointRight(pos)
+        return CrazyLine(pos, pos + delta().normalRight().e() * (if (rightOnLine) -1 else 1))
+    }
+
     infix fun intersection(that: CrazyLine): CrazyLineIntersectionData {
-        val d1 = this.a - this.b
-        val d2 = that.a - that.b
+        val d1 = this.b - this.a
+        val d2 = that.b - that.a
 
         val factorVec = CrazyMatrix(
             d1.x, -d2.x,
@@ -89,6 +105,8 @@ class CrazyLine(val a: CrazyVector, val b: CrazyVector, config: ShapeDebugConfig
             collides = onLine1 && onLine2
         )
     }
+
+    fun modifyDelta(f: (CrazyVector) -> CrazyVector) = copy(a, f(b - a))
 
     fun toVec() = b - a
 }

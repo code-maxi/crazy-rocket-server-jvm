@@ -27,15 +27,25 @@ class CollisionTest : CrazyDebugger(
 ) {
     private val shapeMap = hashMapOf(
         "Circle 1" to ShapeMapItem(CrazyCircle(1.0, CrazyVector.zero())),
-        "Polygon 1" to ShapeMapItem(CrazyPolygon(
+        /*"Polygon 1" to ShapeMapItem(CrazyPolygon(
             arrayOf(
                 vec(0, 0),
                 vec(1, 2),
                 vec(-1, 2)
             )
         )),
-        "Rect 1" to ShapeMapItem(CrazyRect(CrazyVector.zero(), vec(2, 1))),
+        "Rect 1" to ShapeMapItem(CrazyRect(CrazyVector.zero(), vec(2, 1))),*/
         "Line 1" to ShapeMapItem(CrazyLine(-vec(0.5,1), vec(0.5,1))),
+        /*"Circle 2" to ShapeMapItem(CrazyCircle(1.0, CrazyVector.zero())),
+        "Polygon 2" to ShapeMapItem(CrazyPolygon(
+            arrayOf(
+                vec(0, 0),
+                vec(1, 2),
+                vec(-1, 2)
+            )
+        )),
+        "Rect 2" to ShapeMapItem(CrazyRect(CrazyVector.zero(), vec(2, 1))),
+        "Line 2" to ShapeMapItem(CrazyLine(-vec(0.5,1), vec(0.5,1))),*/
     )
 
     var selectedShape: String? = null
@@ -65,7 +75,7 @@ class CollisionTest : CrazyDebugger(
                 "Scale" to DecimalFormat("##.##").format(it.value.transform.scale.x),
                 "Angle" to DecimalFormat("##.##").format(it.value.transform.rotate!!),
                 "Translate" to (it.value.transform.translateAfter?.niceString() ?: "null")
-            ) + shapeMap.map { ot ->
+            ) + shapeMap.filter { o -> o.key != it.key }.map { ot ->
                 "Collides \"" + ot.key + "\"?" to (ot.value.shape collides it.value.shape).toString()
             }).associate { p -> p.first to p.second }
 

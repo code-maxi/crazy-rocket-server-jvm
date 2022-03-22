@@ -27,9 +27,7 @@ class Asteroid(
 
     override fun collider() = CrazyCircle(size, pos)
 
-    override fun shapeDebugConfig() = ShapeDebugConfig(
-        paintSurroundedRect = true
-    )
+    override fun shapeDebugConfig() = ShapeDebugConfig()
 
     override fun paintDebug(g2: GraphicsContext, transform: DebugTransform, canvasSize: CrazyVector) {
         super.paintDebug(g2, transform, canvasSize)

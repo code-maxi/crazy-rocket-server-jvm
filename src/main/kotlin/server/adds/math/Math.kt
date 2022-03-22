@@ -1,5 +1,7 @@
 package server.adds.math
 
+import java.text.DecimalFormat
+
 data class CrazyTransform(
     val translateBefore: CrazyVector? = null,
     val rotate: Double? = null,
@@ -24,6 +26,10 @@ object RocketMath {
     fun inRange(z1: Double, z2: Double, d: Double) =
         z1 <= z2 + d/2 && z1 >= z2 - d/2
 }
+
+fun Double.debugString() = DecimalFormat("###################.##").format(this)
+
+fun Double.toDegrees() = this * (180.0/Math.PI)
 
 /*
 // Java program to implement

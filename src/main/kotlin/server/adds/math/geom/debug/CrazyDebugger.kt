@@ -162,6 +162,7 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
 
         when (type) {
             MouseEventType.PRESS -> {
+                log(objects.map { it.debugOptions() }.joinToString(", "))
                 smallDrag = false
             }
             MouseEventType.EXIT -> {
@@ -201,6 +202,7 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
         private var oldEyePos = CrazyVector.zero()
         private var oldMousePos = CrazyVector.zero()
         var transform = DebugTransform(zoom = configData.unit)
+        private var oldTransform = transform
 
         var active = true
 
@@ -214,20 +216,21 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
         fun getTrans() = transform.copy(canvasSize = canvasSize)
 
         fun mouseEvent(it: MouseEvent, type: MouseEventType) {
-            if (active && moduleConfig.dragAndDrop) {
+            if (active && moduleConfig.dragAndDrop && it.button == MouseButton.MIDDLE) {
                 when (type) {
                     MouseEventType.PRESS -> {
                         oldEyePos = transform.eye
-                        oldMousePos = transform.world(vec(it.x, it.y))
+                        oldTransform = transform
+                        oldMousePos = oldTransform.world(vec(it.x, it.y))
                         canvas.scene.cursor = Cursor.MOVE
                     }
                     MouseEventType.DRAG -> {
-                        val delta = transform.world(vec(it.x, it.y)) - oldMousePos
+                        val delta = oldTransform.world(vec(it.x, it.y)) - oldMousePos
                         transform = transform.copy(eye = oldEyePos - delta)
                     }
                     MouseEventType.RELEASE -> {
                         canvas.scene.cursor = Cursor.DEFAULT
-                        if (transform.screen(oldMousePos) distance vec(it.x, it.y) < 10.0) {
+                        if (transform.screen(oldMousePos) distance vec(it.x, it.y) < 3.0) {
                             smallDrag = true
                         }
                     }
@@ -260,6 +263,13 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                 else timer.stop()
                 println(it)
             }
+        }
+
+        fun stop() {
+            timerRunning.value = false
+        }
+        fun runAgin() {
+            timerRunning.value = true
         }
 
         private fun getActFactor() = actFactor * if (reverseStep) -1.0 else 1.0
@@ -363,7 +373,10 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
         fun updateSelectedObject(id: String? = selectedObjectId) {
             val selectedObject = objects.find { o -> o.debugOptions()?.id?.let { it == id } ?: false }
 
-            if (selectedObjectId != id || selectedObject?.debugOptions()?.itemsToString() != soOptionsComponent.text) {
+            if (
+                selectedObjectId != id
+                || (selectedObject?.debugOptions()?.itemsToString() ?: "") != soOptionsComponent.text
+            ) {
                 Platform.runLater {
                     soLabel.text = if (selectedObject == null) "Es wurde kein Objekt ausgewählt, das DebugOptions definiert." else "Es wurde das Objekt \"${selectedObject.debugOptions()?.name}\" ausgewählt."
                     soOptionsComponent.text = selectedObject?.debugOptions()?.itemsToString() ?: ""
@@ -444,16 +457,18 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
         }
 
         fun mouseEvent(it: MouseEvent, type: MouseEventType) {
-            when (type) {
+            if (it.button == MouseButton.PRIMARY) when (type) {
                 MouseEventType.RELEASE -> {
-                    if (smallDrag) {
-                        getMouse()?.let { m ->
-                            objects.forEach {
-                                if (it.surroundedRect() containsPoint m) {
-                                    updateSelectedObject(it.debugOptions()?.id)
-                                }
+                    getMouse()?.let { m ->
+                        var selectedObjectId: String? = null
+                        for (o in objects) {
+                            if (o.surroundedRect() containsPoint m) {
+                                o.debugOptions()?.id?.let { selectedObjectId = it }
                             }
-                        } ?: run { updateSelectedObject(null) }
+                        }
+                        updateSelectedObject(selectedObjectId)
+                    } ?: run {
+                        updateSelectedObject(null)
                     }
                 }
             }

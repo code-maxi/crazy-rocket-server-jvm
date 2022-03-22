@@ -5,14 +5,17 @@ import server.adds.CrazyGraphicStyle
 import server.adds.math.geom.debug.DebugObjectOptions
 
 data class ShapeDebugConfig(
-    val crazyStyle: CrazyGraphicStyle = CrazyGraphicStyle(
-        fillColor = Color.LIGHTBLUE,
-        fillOpacity = 0.3,
-        strokeColor = Color.BLUE,
-        lineWidth = 2.0
-    ),
+    val crazyStyle: CrazyGraphicStyle = DEFAULT_CRAZY_STYLE,
     val paintCoords: Boolean = false,
-    val paintSurroundedRect: Boolean = false,
     val debugOptions: DebugObjectOptions? = null,
     val drawLineAsVector: Boolean = false
-)
+) {
+    companion object {
+        val DEFAULT_CRAZY_STYLE = CrazyGraphicStyle(
+            fillColor = Color.LIGHTBLUE,
+            fillOpacity = 0.3,
+            strokeColor = Color.BLUE,
+            lineWidth = 2.0
+        )
+    }
+}

@@ -22,7 +22,6 @@ class GeomTest : CrazyDebugger(GeomDebuggerConfig(
                 vec(20, 70),
                 ShapeDebugConfig(
                     paintCoords = true,
-                    paintSurroundedRect = false,
                     drawLineAsVector = true,
                     debugOptions = DebugObjectOptions(
                         name="Vektor",

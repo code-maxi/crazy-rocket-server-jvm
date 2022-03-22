@@ -4,9 +4,11 @@ import server.adds.math.geom.shapes.*
 
 object CollisionDetection {
     private fun circleLineCollision(circle: CrazyCircle, line: CrazyLine): Boolean {
+        if (circle containsPoint line.a || circle containsPoint line.b) return true
+
         val line2 = CrazyLine(circle.pos, circle.pos + line.delta().normalRight().e())
         val ints = line intersection line2
-        return ints.onLine1
+        return ints.onLine1 && ints.intersection distance circle.pos < circle.radius
     }
 
     fun rectRectCollision(rect1: CrazyRect, rect2: CrazyRect) =

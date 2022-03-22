@@ -15,7 +15,10 @@ data class CrazyVector(val x: Double, val y: Double) {
 
     fun length() = sqrt(this.x * this.x + this.y * this.y)
     fun angle() = atan2(y, x)
-    fun e() = CrazyVector(1 / this.x, 1 / this.y)
+    fun e(): CrazyVector {
+        val length = length()
+        return CrazyVector(this.x / length, this.y / length)
+    }
     fun abs() = CrazyVector(kotlin.math.abs(this.x), kotlin.math.abs(this.y))
 
     infix fun distance(v: CrazyVector) = (v - this).length()
@@ -73,11 +76,20 @@ data class CrazyVector(val x: Double, val y: Double) {
 
     fun toLine(pos: CrazyVector) = CrazyLine(pos, pos + this)
 
-    fun angleTo(that: CrazyVector) = acos((this scalar that) / (this.length() * that.length()))
+    infix fun isVecRight(that: CrazyVector) = this.normalRight() scalar that > 0
+
+    infix fun angleTo(that: CrazyVector) = acos((this scalar that) / (this.length() * that.length()))
 
     companion object {
         fun zero() = CrazyVector(0.0, 0.0)
         fun square(s: Number) = CrazyVector(s.toDouble(), s.toDouble())
         fun fromAL(a: Double, l: Double) = CrazyVector(cos(a) * l, sin(a) * l)
+
+        fun ricochet(center: CrazyVector, pos: CrazyVector, velocity: CrazyVector): CrazyVector {
+            val removing = (center - pos) scalar velocity > 0
+            if (removing) return velocity
+            val angle = (pos - center) angleTo velocity
+            return (-velocity) rotate (-2 * angle)
+        }
     }
 }
