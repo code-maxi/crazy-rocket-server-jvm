@@ -50,15 +50,14 @@ class CircleRicochetOnLineTest : CrazyDebugger(
 
             if (!isObjectRemoving) {
                 if (cpa) {
-                    //timerModule!!.stop()
                     circleVelocity = CrazyVector.ricochet(line.a, circle.pos, cVelocity)
                     line = line.setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = Color.YELLOW)) as CrazyLine
-                } else if (cpb) {
-                    //timerModule!!.stop()
+                }
+                else if (cpb) {
                     circleVelocity = CrazyVector.ricochet(line.b, circle.pos, cVelocity)
                     line = line.setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = Color.GREEN)) as CrazyLine
-                } else {
-                    //timerModule!!.stop()
+                }
+                else {
                     val orthogonalTouch = ints.onLine1 && circle containsPoint ints.intersection
 
                     if (orthogonalTouch) {
