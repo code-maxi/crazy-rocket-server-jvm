@@ -39,7 +39,7 @@ class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugC
     infix fun touchesRect(that: CrazyRect) = CollisionDetection.rectRectCollision(this, that)
 
     override fun paintSelf(g2: GraphicsContext, transform: DebugTransform, config: ShapeDebugConfig) {
-        val screenPos = transform.screen(pos)
+        val screenPos = transform.screen(pos) - vec(0, size.y * transform.zoom)
 
         if (config.crazyStyle.fillOpacity != null) g2.fillRect(screenPos.x, screenPos.y, size.x * transform.zoom, size.y * transform.zoom)
         if (config.crazyStyle.strokeOpacity != null) g2.strokeRect(screenPos.x, screenPos.y, size.x * transform.zoom, size.y * transform.zoom)

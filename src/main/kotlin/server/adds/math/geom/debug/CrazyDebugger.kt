@@ -221,11 +221,11 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                     MouseEventType.PRESS -> {
                         oldEyePos = transform.eye
                         oldTransform = transform
-                        oldMousePos = oldTransform.world(vec(it.x, it.y))
+                        oldMousePos = oldTransform.world(vec(it.x, -it.y))
                         canvas.scene.cursor = Cursor.MOVE
                     }
                     MouseEventType.DRAG -> {
-                        val delta = oldTransform.world(vec(it.x, it.y)) - oldMousePos
+                        val delta = oldTransform.world(vec(it.x, -it.y)) - oldMousePos
                         transform = transform.copy(eye = oldEyePos - delta)
                     }
                     MouseEventType.RELEASE -> {
@@ -398,10 +398,15 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                 ))
 
                 val padding = CrazyVector.square(10)
-                var transformedRect = surroundedRect.transform(eyeTransform().screenTrans()) as CrazyRect
-                transformedRect = CrazyRect(
-                    transformedRect.pos - padding,
-                    transformedRect.size + padding * 2
+                val rectCornerBL = eyeTransform().screen(surroundedRect.pos) - padding
+                val rectCornerTR = eyeTransform().screen(surroundedRect.pos + surroundedRect.size) + padding*2
+                val rectSize = (rectCornerBL - rectCornerTR).abs()
+
+                log(rectSize.niceString())
+
+                val transformedRect = CrazyRect(
+                    rectCornerBL - vec(0, rectSize.y),
+                    rectSize
                 )
 
                 CrazyGraphics.paintCornersAroundRect(g2, transformedRect, 20.0)

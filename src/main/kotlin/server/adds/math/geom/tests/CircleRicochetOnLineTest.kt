@@ -29,7 +29,7 @@ class CircleRicochetOnLineTest : CrazyDebugger(
     override suspend fun act(s: Double): Array<DebugObjectI> {
         val cPos = circlePos
         val cVelocity = circleVelocity?.times(s)
-        var line = CrazyLine(vec(4, -2), vec(5, 4))
+        var line = CrazyLine(vec(5, -2), vec(4, 4))
 
         val circle = cPos?.let { CrazyCircle(circleRadius, it) }
 
@@ -41,33 +41,39 @@ class CircleRicochetOnLineTest : CrazyDebugger(
             val cpa = circle containsPoint line.a
             val cpb = circle containsPoint line.b
 
-            val isPosRight = line isPointRight circle.pos
-            val isVelocityRight = line.toVec().normalRight() scalar cVelocity > 0
-            val isObjectRemoving = (!isVelocityRight && !isPosRight) || (isVelocityRight && isPosRight)
+            val posRightOfThat = line isPointRight circle.pos
 
-            val valRightOfNormal = (-line.delta()) scalar (cVelocity) > 0
-            val wrongWay = (isPosRight && valRightOfNormal) || (!isPosRight && !valRightOfNormal)
+            val lineVec = line.toVec()
 
-            if (!isObjectRemoving) {
+            val velocityRightOfThat = lineVec.normalRight() scalar cVelocity > 0
+            val velocityRemoving = velocityRightOfThat == posRightOfThat
+            val velocityRightOfNormal = -lineVec scalar cVelocity > 0
+
+            val angleFac = (if (posRightOfThat) -1 else 1) * (if (velocityRightOfNormal) -1 else 1)
+            val angle = (line2.toVec() angleTo cVelocity) * angleFac
+
+            //if (!velocityRemoving) {
                 if (cpa) {
-                    circleVelocity = CrazyVector.ricochet(line.a, circle.pos, cVelocity)
+                    circleVelocity = cVelocity.ricochetMyVelocity((circle.pos - line.a).normalRight(), false)
                     line = line.setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = Color.YELLOW)) as CrazyLine
                 }
                 else if (cpb) {
-                    circleVelocity = CrazyVector.ricochet(line.b, circle.pos, cVelocity)
+                    circleVelocity = cVelocity.ricochetMyVelocity((circle.pos - line.b).normalRight(), false)
                     line = line.setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = Color.GREEN)) as CrazyLine
                 }
                 else {
                     val orthogonalTouch = ints.onLine1 && circle containsPoint ints.intersection
 
-                    if (orthogonalTouch) {
-                        val angle = (line2.toVec() angleTo cVelocity)
+                    if (orthogonalTouch && !velocityRemoving) {
+
                         line = line.setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = Color.RED)) as CrazyLine
 
-                        circleVelocity = (-cVelocity) rotate (2 * angle * (if (wrongWay) -1 else 1))
+                        //circleVelocity = (-cVelocity) rotate (2 * angle * (if (wrongWay) -1 else 1))
+                        //circleVelocity = cVelocity.ricochetMyVelocity(line.toVec(), posRightOfThat)
+                        circleVelocity = -cVelocity rotate (2 * angle)
                     }
                 }
-            }
+            //}
 
             circlePos = circlePos?.plus(cVelocity)
 
@@ -76,10 +82,12 @@ class CircleRicochetOnLineTest : CrazyDebugger(
                 "Contains Point B" to cpb.toString(),
                 "On Line" to ints.onLine1.toString(),
                 "Velocity Angle vs. Normal Angle" to (line2.toVec() angleTo cVelocity).toDegrees().debugString(),
-                "Is Pos Right" to isPosRight.toString(),
-                "Is Object Removing" to isObjectRemoving.toString(),
-                "Is Vel Right Normal" to isVelocityRight.toString(),
-                "Wrong way?" to wrongWay.toString()
+                "Is Pos Right" to posRightOfThat.toString(),
+                "Is Vel Right Of Line" to velocityRightOfThat.toString(),
+                "Is Vel Right of Normal" to velocityRightOfNormal.toString(),
+                "Is Object Removing" to velocityRemoving.toString(),
+                "Angle-Fac" to angleFac.toString(),
+                "Angle" to angle.toDegrees().debugString()
             )
 
 
@@ -90,7 +98,7 @@ class CircleRicochetOnLineTest : CrazyDebugger(
                         debugOptions
                     )
                 ),
-                (cVelocity*5).toLine(circle.pos).drawAsVector(),
+                (cVelocity*20).toLine(circle.pos).drawAsVector(),
                 line2.drawAsVector(Color.BLACK),
                 CrazyDebugVector(ints.intersection, CrazyDebugVectorOptions(size = 15.0, extraName = "I")),
                 line.setDebugConfig(
@@ -98,7 +106,9 @@ class CircleRicochetOnLineTest : CrazyDebugger(
                         "Line", "line",
                         debugOptions
                     )
-                )
+                ),
+                line.rightLine().drawAsVector(Color.GREEN),
+                line.rightLine().rightLine().drawAsVector(Color.GREEN)
             )
         }
 

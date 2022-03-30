@@ -13,13 +13,16 @@ data class CrazyVector(val x: Double, val y: Double) {
     operator fun div(v: CrazyVector) = CrazyVector(this.x / v.x, this.y / v.y)
     operator fun unaryMinus() = this * -1.0
 
+    infix fun mulX(s: Number) = CrazyVector(x*s.toDouble(), y)
+    infix fun mulY(s: Number) = CrazyVector(x, y*s.toDouble())
+
     fun length() = sqrt(this.x * this.x + this.y * this.y)
     fun angle() = atan2(y, x)
     fun e(): CrazyVector {
         val length = length()
         return CrazyVector(this.x / length, this.y / length)
     }
-    fun abs() = CrazyVector(kotlin.math.abs(this.x), kotlin.math.abs(this.y))
+    fun abs() = CrazyVector(abs(this.x), abs(this.y))
 
     infix fun distance(v: CrazyVector) = (v - this).length()
     infix fun scalar(v: CrazyVector) = this.x * v.x + this.y * v.y
@@ -31,6 +34,7 @@ data class CrazyVector(val x: Double, val y: Double) {
     }
 
     fun normalRight() = CrazyVector(this.y, -this.x)
+    fun normalLeft() = CrazyVector(-this.y, this.x)
 
     infix fun rotate(angle: Double) = vec(
         x * cos(angle) - y * sin(angle),
@@ -79,6 +83,19 @@ data class CrazyVector(val x: Double, val y: Double) {
     infix fun isVecRight(that: CrazyVector) = this.normalRight() scalar that > 0
 
     infix fun angleTo(that: CrazyVector) = acos((this scalar that) / (this.length() * that.length()))
+
+    fun ricochetMyVelocity(that: CrazyVector, posRightOfThat: Boolean): CrazyVector {
+        val velocityRightOfThat = that.normalRight() scalar this > 0
+        val velocityRemoving = velocityRightOfThat == posRightOfThat
+
+        return if (!velocityRemoving) {
+            val velocityRightOfNormal = -that scalar this > 0
+            val angleFac = (if (posRightOfThat) -1 else 1) * (if (velocityRightOfNormal) -1 else 1)
+            val angle = (that angleTo this)
+            (-this) rotate (2 * angle * angleFac)
+        } else this
+    }
+
 
     companion object {
         fun zero() = CrazyVector(0.0, 0.0)

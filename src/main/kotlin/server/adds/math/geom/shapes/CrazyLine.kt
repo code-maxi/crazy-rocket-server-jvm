@@ -25,12 +25,12 @@ class CrazyLine(
     config: ShapeDebugConfig? = null,
 ) : CrazyShape(ShapeType.LINE, config) {
 
-    private fun ltRectCorner() = vec(if (a.x < b.x) a.x else b.x, if (a.y < b.y) a.y else b.y)
-    private fun brRectCorner() = vec(if (a.x > b.x) a.x else b.x, if (a.y > b.y) a.y else b.y)
+    private fun lbRectCorner() = vec(if (a.x < b.x) a.x else b.x, if (a.y < b.y) a.y else b.y)
+    private fun rtRectCorner() = vec(if (a.x > b.x) a.x else b.x, if (a.y > b.y) a.y else b.y)
 
     override fun surroundedRect() = CrazyRect(
-        ltRectCorner(),
-        brRectCorner() - ltRectCorner()
+        lbRectCorner(),
+        rtRectCorner() - lbRectCorner()
     )
 
     override fun transform(trans: CrazyTransform) = CrazyLine(
@@ -68,7 +68,7 @@ class CrazyLine(
     fun leftPoint() = if (a.x < b.x) a else b
     fun rightPoint() = if (a.x > b.x) a else b
 
-    fun rightLine() = copy(a, a + (a - b).normalRight())
+    fun rightLine() = copy(a, a + (b - a).normalRight())
 
     fun delta() = b - a
 
