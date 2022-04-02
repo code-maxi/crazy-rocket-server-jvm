@@ -19,10 +19,10 @@ import server.adds.math.geom.GeoI
 import server.adds.math.CrazyVector
 import server.data_containers.*
 import server.galaxy.GalaxyS
-import server.game.Game
-import server.game.objects.GameObjectI
+import server.game.CrazyGame
+import server.game.objects.AbstractGameObject
 import server.game.objects.GeoObject
-import server.game.objects.Rocket
+import server.game.objects.CrazyRocket
 
 class UserS(private val session: DefaultWebSocketSession) : Logable {
     val id = newID()
@@ -36,12 +36,12 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
     var prevGalaxy: String? = null
 
     private var clientData = ClientDataI(
-        keyboard = KeyboardI(arrayOf()),
+        keyboard = KeyboardI(listOf()),
         screenSize = CrazyVector.zero()
     )
 
     private var galaxy: GalaxyS? = null
-    var myRocket: Rocket? = null
+    var myRocket: CrazyRocket? = null
 
     init {
         log("initialized.")
@@ -131,7 +131,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
                     ResponseResult(
                         true,
-                        data = GameStartI(Game.LISTINING_KEYS)
+                        data = GameStartI(CrazyGame.LISTINING_KEYS)
                     )
                 }, mapOf("class-cast" to WrongRequestEx(a.value)), true)
 
@@ -175,7 +175,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
     suspend fun onGameCalculated(
         settings: GamePropsI,
-        objectsArray: Array<GameObjectI>
+        objectsArray: List<AbstractGameObject>
     ) {
         if (dataRequest != null && galaxy != null) {
             if (sendWholeDataCount < WHOLE_DATA_INTERVAL) sendWholeDataCount ++
@@ -187,7 +187,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
             if (!fullData && myRocket != null) {
                 objects = objects.filter {
                     it !is GeoObject || it.getGeo().rect() touchesRect viewRect().rect()
-                }.toTypedArray()
+                }
             }
 
             sendDirectly(
@@ -195,9 +195,9 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
                     "game-data",
                     GameDataForSendingI(
                         props = settings,
-                        objects = objects.map { it.data() }.toTypedArray(),
+                        objects = objects.map { it.data() },
                         galaxy = getMyGalaxy().data(),
-                        messages = sendQueue.toTypedArray(),
+                        messages = sendQueue.toList(),
                         fullData = fullData,
                         userView = this.myRocket?.userView(),
                         yourUserProps = props

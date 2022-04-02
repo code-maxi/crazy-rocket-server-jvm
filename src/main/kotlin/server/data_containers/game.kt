@@ -6,21 +6,22 @@ import server.adds.math.geom.GeoI
 
 // Objects
 
-interface TypeObjectI {
+interface AbstractGameObjectI {
     val type: String
     val id: String
+    val zIndex: Int
 }
-interface GeoObjectI : TypeObjectI {
+interface GeoObjectI : AbstractGameObjectI {
     val geo: GeoI
 }
 
 data class AsteroidOI(
     val live: Double,
-    val size: Int,
+    val size: Double,
     override val id: String,
-    override val geo: GeoI
-) : GeoObjectI {
-    override val type = "asteroid"
+    override val zIndex: Int
+) : AbstractGameObjectI {
+    override val type = GameObjectType.ASTEROID.id
 }
 
 data class RocketOI(
@@ -28,21 +29,23 @@ data class RocketOI(
     override val geo: GeoI,
     override val id: String,
     val style: RocketStyleI,
-    val view: UserViewI
+    val view: UserViewI,
+    override val zIndex: Int
 ) : GeoObjectI {
-    override val type = "rocket"
+    override val type = GameObjectType.ROCKET.id
 }
 
 data class RocketStyleI(
     val img: String,
-    val fires: Array<RocketFireI>
+    val fires: List<RocketFireI>
 )
 
 data class RocketFireI(
     val on: Boolean,
     override val geo: GeoI,
     val img: String,
-    override val id: String
+    override val id: String,
+    override val zIndex: Int
 ) : GeoObjectI {
     override val type = "rocket-fire"
 }
@@ -70,14 +73,14 @@ data class GamePropsI(
 
 data class GameDataI(
     val props: GamePropsI,
-    val objects: Array<TypeObjectI>
+    val objects: List<AbstractGameObjectI>
 )
 
 data class GameDataForSendingI(
     val props: GamePropsI,
-    val objects: Array<TypeObjectI>,
+    val objects: List<AbstractGameObjectI>,
     val galaxy: GalaxyI,
-    val messages: Array<SendFormat>,
+    val messages: List<SendFormat>,
     val fullData: Boolean,
     val userView: UserViewI?,
     val yourUserProps: UserPropsI
@@ -103,14 +106,17 @@ interface GameClassI {
 }
 
 data class GameStartI(
-    val listeningKeys: Array<String>
+    val listeningKeys: List<String>
 )
 
-enum class GameObjectType(val text: String) {
-    ASTEROID("asteroid"),
-    ROCKET("rocket");
+enum class GameObjectType(val id: String, val defaultZIndex: Int) {
+    ASTEROID("asteroid", 1),
+    ROCKET("rocket", 2),
+    SIMPLE_SHOT("simple-shot", 0)
+
+    ;
 
     companion object {
-        fun textType(t: String) = values().find { it.text == t }
+        fun textType(t: String) = values().find { it.id == t }
     }
 }

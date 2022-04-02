@@ -1,10 +1,11 @@
 package server.adds.math.geom.shapes
 
 import javafx.scene.canvas.GraphicsContext
+import javafx.scene.paint.Color
 import server.adds.CrazyGraphics
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
-import server.adds.math.geom.debug.DebugTransform
+import server.adds.debug.DebugTransform
 
 class CrazyCircle(
     val radius: Double,
@@ -31,12 +32,16 @@ class CrazyCircle(
         g2.fillOval(screenPos.x - screenRadius, screenPos.y - screenRadius, screenRadius*2, screenRadius*2)
         g2.strokeOval(screenPos.x - screenRadius, screenPos.y - screenRadius, screenRadius*2, screenRadius*2)
 
-        CrazyGraphics.paintPoint(g2, screenPos, paintCoords = config.paintCoords)
+        CrazyGraphics.paintPoint(g2, screenPos, coordinates = if (config.paintCoords) pos else null)
     }
 
     fun copy(radius: Double = this.radius, pos: CrazyVector = this.pos, config: ShapeDebugConfig? = this.config) =
         CrazyCircle(radius, pos, config)
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyCircle(radius, pos, shapeDebugConfig)
+    override fun shapeString() = "Circle(radius = $radius, pos = ${pos.niceString()})"
+
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?): CrazyCircle = CrazyCircle(radius, pos, shapeDebugConfig)
     //override fun transform(trans: GeomTransform) = RocketCircle(radius * trans.scaling, pos + trans.pos)
+
+    override fun setColor(c: Color): CrazyCircle = super.setColor(c) as CrazyCircle
 }

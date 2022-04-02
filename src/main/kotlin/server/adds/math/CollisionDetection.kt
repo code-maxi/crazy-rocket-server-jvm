@@ -24,13 +24,26 @@ object CollisionDetection {
         return rect2 containsPoint circle1.pos
     }
 
-    fun circlePolygonCollision(circ1: CrazyCircle, polygon: CrazyPolygon): Boolean {
-        val poPoints = polygon.pointsWithEnd()
-        for (i in 0..(poPoints.size - 2)) {
-            val line = CrazyLine(poPoints[i], poPoints[i + 1])
-            if (!circleLineCollision(circ1, line)) return false
+    fun circlePolygonCollision(circle: CrazyCircle, polygon: CrazyPolygon): Boolean {
+        val popoints = polygon.pointsWithEnd()
+
+        if (polygon containsPoint circle.pos) return true
+
+        for (i in popoints.indices) {
+            if (circle containsPoint popoints[i]) return true
+            if (i < popoints.size - 1) {
+                val line1 = CrazyLine(popoints[i], popoints[i+1])
+                val line2 = line1.orthogonalLineFromPoint(circle.pos)
+                val intersection = line1 intersection line2
+
+                if (intersection.onLine1) {
+                    if (circle.pos distance intersection.intersection < circle.radius) return true
+                }
+            }
+            //if (touchesPolygon != null) continue
         }
-        return true
+
+        return false
     }
 
     fun polygonLineCollision(polygon1: CrazyPolygon, line1: CrazyLine): Boolean {

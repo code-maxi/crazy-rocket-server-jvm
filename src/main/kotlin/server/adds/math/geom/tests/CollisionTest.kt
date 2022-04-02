@@ -6,10 +6,9 @@ import javafx.scene.paint.Color
 import server.adds.CrazyGraphicStyle
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
-import server.adds.math.geom.debug.*
+import server.adds.debug.*
 import server.adds.math.geom.shapes.*
 import server.adds.math.vec
-import tornadofx.mapEach
 import java.text.DecimalFormat
 
 data class ShapeMapItem(
@@ -20,9 +19,9 @@ data class ShapeMapItem(
 class CollisionTest : CrazyDebugger(
     GeomDebuggerConfig(
     unit = 100.0,
-    transformEyeModule = TransformEyeModuleConfig(),
+    eyeModule = TransformEyeModuleConfig(),
     timerModule = TimerModuleConfig(startStepSpeed = 20),
-    debugObjectModule = DebugObjectModuleConfig()
+    inspectorModule = DebugObjectModuleConfig()
 )
 ) {
     private val shapeMap = hashMapOf(
@@ -50,7 +49,7 @@ class CollisionTest : CrazyDebugger(
 
     var selectedShape: String? = null
 
-    override suspend fun act(s: Double): Array<DebugObjectI> {
+    override suspend fun act(s: Double): List<DebugObjectI> {
         var addAngle = 0.0
 
         if (isKeyPressed(KeyCode.RIGHT)) addAngle += 0.05
@@ -66,7 +65,7 @@ class CollisionTest : CrazyDebugger(
             if (shape != null) shapeMap[it] = shape.copy(transform = shape.transform.copy(
                 rotate = shape.transform.rotate!! + addAngle,
                 scale = shape.transform.scale + CrazyVector.square(addScale),
-                translateAfter = getMouse()
+                translateAfter = getMousePos()
             ))
         }
 
@@ -91,7 +90,7 @@ class CollisionTest : CrazyDebugger(
                     items = collidesOthers
                 )
             ))
-        }.toTypedArray()
+        }
     }
 
     override fun onKeyPressed(it: KeyEvent) {
@@ -99,7 +98,7 @@ class CollisionTest : CrazyDebugger(
 
         if (it.code == KeyCode.F) selectedShape = null
 
-        else if (it.code == KeyCode.T) debugObjectModule!!.getSelectedObject()?.let {
+        else if (it.code == KeyCode.T) inspectorModule!!.getSelectedObject()?.let {
             if (shapeMap.containsKey(it)) selectedShape = it
         }
     }

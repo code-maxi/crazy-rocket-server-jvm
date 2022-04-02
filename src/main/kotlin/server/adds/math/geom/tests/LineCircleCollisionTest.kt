@@ -3,7 +3,7 @@ package server.adds.math.geom.tests
 import javafx.scene.paint.Color
 import server.adds.math.CrazyVector
 import server.adds.math.debugString
-import server.adds.math.geom.debug.*
+import server.adds.debug.*
 import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.ShapeDebugConfig
@@ -12,14 +12,14 @@ import server.adds.math.vec
 class LineCircleCollisionTest : CrazyDebugger(
     GeomDebuggerConfig(
         unit = 100.0,
-        transformEyeModule = TransformEyeModuleConfig(),
+        eyeModule = TransformEyeModuleConfig(),
         timerModule = TimerModuleConfig(startStepSpeed = 20),
-        debugObjectModule = DebugObjectModuleConfig()
+        inspectorModule = DebugObjectModuleConfig()
     )
 ) {
-    override suspend fun act(s: Double): Array<DebugObjectI> {
+    override suspend fun act(s: Double): List<DebugObjectI> {
         val line = CrazyLine(CrazyVector.zero(), vec(3, 7))
-        var circle = CrazyCircle(1.0, getMouse() ?: CrazyVector.zero())
+        var circle = CrazyCircle(1.0, getMousePos() ?: CrazyVector.zero())
 
         val line2 = CrazyLine(circle.pos, circle.pos + line.delta().normalRight().e()).drawAsVector()
         val ints = line intersection line2
@@ -34,7 +34,7 @@ class LineCircleCollisionTest : CrazyDebugger(
             "Intersection On Line 2" to ints.onLine2.toString()
         )
 
-        return arrayOf(
+        return listOf(
             line2,
 
             CrazyDebugVector(ints.intersection, CrazyDebugVectorOptions(size = 15.0, extraName = "I")),

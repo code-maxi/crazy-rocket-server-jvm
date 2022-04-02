@@ -1,22 +1,22 @@
 package server.adds.math.geom.tests
 
-import server.adds.math.geom.debug.*
+import server.adds.debug.*
 import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.vec
 
 class GeomTest : CrazyDebugger(GeomDebuggerConfig(
     unit = 3.0,
-    transformEyeModule = TransformEyeModuleConfig(),
+    eyeModule = TransformEyeModuleConfig(),
     timerModule = TimerModuleConfig(),
-    debugObjectModule = DebugObjectModuleConfig()
+    inspectorModule = DebugObjectModuleConfig()
 )) {
     var vecPos = vec(0,0)
 
-    override suspend fun act(s: Double): Array<DebugObjectI> {
+    override suspend fun act(s: Double): List<DebugObjectI> {
         vecPos += vec(2,1) * s
 
-        return arrayOf(
+        return listOf(
             CrazyLine(
                 vecPos,
                 vec(20, 70),

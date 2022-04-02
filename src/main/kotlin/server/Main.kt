@@ -5,15 +5,18 @@ import GalaxyConfigI
 import kotlinx.coroutines.*
 import org.apache.http.impl.client.HttpClients
 import server.adds.Network
+import server.adds.math.geom.tests.CirclePolygonIntersectionTest
 import server.adds.math.geom.tests.CircleRicochetOnLineTest
 import server.adds.math.geom.tests.LineCircleCollisionTest
+import server.adds.math.geom.tests.PolygonPolygonCollisionTest
 import server.galaxy.GalaxyS
+import server.game.debug.GameDebugger
 import tornadofx.launch
 
 fun main(args: Array<String>) {
     when (args[0]) {
         "debugger" -> {
-            launch<CircleRicochetOnLineTest>()
+            launch<GameDebugger>()
         }
         "server" -> {
             runBlocking {

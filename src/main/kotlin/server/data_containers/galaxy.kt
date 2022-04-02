@@ -23,7 +23,7 @@ data class TeamPropsI(
 
 data class TeamI(
     val props: TeamPropsI,
-    val userIds: Array<String>
+    val userIds: List<String>
 )
 
 // Galaxy
@@ -46,9 +46,9 @@ data class GalaxyConfigI(
 )
 
 data class GalaxyI( // data sent to login client
-    val users: Array<UserPropsI>,
+    val users: List<UserPropsI>,
     val props: GalaxyPropsI,
-    val teams: Array<TeamI>
+    val teams: List<TeamI>
 )
 
 data class GalaxyPrevI(
@@ -57,8 +57,8 @@ data class GalaxyPrevI(
 )
 
 data class GalaxyPasswordArrI(
-    val items: Array<GalaxyPropsI>,
-    val passwords: Array<GalaxyPasswordI>
+    val items: List<GalaxyPropsI>,
+    val passwords: List<GalaxyPasswordI>
 )
 
 data class GalaxyPasswordI(
@@ -85,7 +85,7 @@ data class JoinGalaxyI(
 )
 
 data class GalaxyPaswordArrI(
-    val items: Array<GalaxyPasswordI>
+    val items: List<GalaxyPasswordI>
 )
 
 data class GalaxyDataI(
@@ -109,7 +109,7 @@ data class OwnExceptionDataI(
 )
 
 data class JsonListI<T>(
-    val list: Array<T>
+    val list: List<T>
 )
 
 data class JsonStatusI(val status: String)

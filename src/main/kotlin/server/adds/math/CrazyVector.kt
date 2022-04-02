@@ -33,8 +33,8 @@ data class CrazyVector(val x: Double, val y: Double) {
         return o
     }
 
-    fun normalRight() = CrazyVector(this.y, -this.x)
-    fun normalLeft() = CrazyVector(-this.y, this.x)
+    fun normalRight() = CrazyVector(-this.y, this.x)
+    fun normalLeft() = CrazyVector(this.y, -this.x)
 
     infix fun rotate(angle: Double) = vec(
         x * cos(angle) - y * sin(angle),
@@ -90,11 +90,13 @@ data class CrazyVector(val x: Double, val y: Double) {
 
         return if (!velocityRemoving) {
             val velocityRightOfNormal = -that scalar this > 0
-            val angleFac = (if (posRightOfThat) -1 else 1) * (if (velocityRightOfNormal) -1 else 1)
-            val angle = (that angleTo this)
+            val angleFac = (if (velocityRightOfNormal) -1 else 1)
+            val angle = (that.normalRight() angleTo this)
             (-this) rotate (2 * angle * angleFac)
         } else this
     }
+
+    fun higherCoordinate() = if (x > y) x else y
 
 
     companion object {

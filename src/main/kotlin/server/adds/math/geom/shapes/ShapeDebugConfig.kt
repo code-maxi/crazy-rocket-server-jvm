@@ -2,13 +2,16 @@ package server.adds.math.geom.shapes
 
 import javafx.scene.paint.Color
 import server.adds.CrazyGraphicStyle
-import server.adds.math.geom.debug.DebugObjectOptions
+import server.adds.debug.DebugObjectOptions
 
 data class ShapeDebugConfig(
     val crazyStyle: CrazyGraphicStyle = DEFAULT_CRAZY_STYLE,
     val paintCoords: Boolean = false,
     val debugOptions: DebugObjectOptions? = null,
-    val drawLineAsVector: Boolean = false
+    val drawLineAsVector: Boolean = false,
+    val paintPointNames: Boolean = true,
+    val paintPoints: Boolean = false,
+    val zIndex: Int = 0
 ) {
     companion object {
         val DEFAULT_CRAZY_STYLE = CrazyGraphicStyle(

@@ -3,26 +3,25 @@ package server.game.objects
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
 import server.adds.CrazyGraphicStyle
-import server.data_containers.AsteroidOI
 import server.adds.math.CrazyVector
-import server.adds.math.geom.debug.DebugTransform
+import server.adds.debug.DebugTransform
 import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.data_containers.GameObjectType
 
 class Asteroid(
+    id: String,
     val size: Double,
-    private val turnSpeed: Double,
+    private val rotation: Double,
     var pos: CrazyVector,
     var ang: Double,
-    private var velocity: CrazyVector,
-    id: String
+    private var velocity: CrazyVector
 ) : ColliderObject(id, GameObjectType.ASTEROID) {
     var live = 100.0
 
     override suspend fun calc(s: Double) {
-        ang += turnSpeed
+        ang += rotation
     }
 
     override fun collider() = CrazyCircle(size, pos)
@@ -38,5 +37,5 @@ class Asteroid(
         )).paintDebug(g2, transform, canvasSize)
     }
 
-    override fun data() = TODO("Data must be initialized first.")
+    override fun data() = TODO("Not yet implemented.")
 }

@@ -1,4 +1,6 @@
-package server.adds.math.geom.debug
+package server.adds.debug
+
+import javafx.scene.paint.Color
 
 interface DebuggerModuleI
 
@@ -12,6 +14,13 @@ data class TimerModuleConfig(
     val sofortStartTimer: Boolean = true
 )
 
+data class GridModuleConfig(
+    val gridLength: Double,
+    val paintMarks: Boolean,
+    val lineWidth: Double = 0.5,
+    val color: Color = Color.GREY
+)
+
 data class DebugObjectModuleConfig(
     val pseudoProp: Int = 0
 )
@@ -19,7 +28,8 @@ data class DebugObjectModuleConfig(
 data class GeomDebuggerConfig(
     val title: String = "Geom-Debugger",
     val unit: Double = 1.0,
-    val transformEyeModule: TransformEyeModuleConfig? = null,
+    val eyeModule: TransformEyeModuleConfig? = null,
     val timerModule: TimerModuleConfig? = null,
-    val debugObjectModule: DebugObjectModuleConfig? = null
+    val inspectorModule: DebugObjectModuleConfig? = null,
+    val gridModule: GridModuleConfig? = null
 )

@@ -1,4 +1,4 @@
-package server.adds.math.geom.debug
+package server.adds.debug
 
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color

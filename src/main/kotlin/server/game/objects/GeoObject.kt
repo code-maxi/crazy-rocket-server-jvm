@@ -1,23 +1,20 @@
 package server.game.objects
 
 import javafx.scene.canvas.GraphicsContext
-import server.adds.math.geom.GeoI
 import server.adds.math.CrazyVector
-import server.adds.math.geom.debug.DebugObjectOptions
-import server.adds.math.geom.debug.DebugTransform
+import server.adds.debug.DebugObjectOptions
+import server.adds.debug.DebugTransform
 import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.vec
 import server.data_containers.GameObjectType
 import java.text.DecimalFormat
 
 abstract class GeoObject(
-    var pos: CrazyVector = CrazyVector.zero(),
-    var size: CrazyVector = CrazyVector.square(1),
+    type: GameObjectType,
+    var pos: CrazyVector,
     var ang: Double = 0.0,
-    var velocity: CrazyVector = CrazyVector.zero(),
-    id: String,
-    type: GameObjectType
-): GameObjectI(id, type) {
+    var velocity: CrazyVector = CrazyVector.zero()
+) : AbstractGameObject(type) {
     //protected var effects = arrayListOf<GeoObjectEffect<T>>()
 
     abstract fun collider(): CrazyShape
@@ -29,7 +26,7 @@ abstract class GeoObject(
     override fun surroundedRect() = collider().surroundedRect()
 
     override fun debugOptions() = DebugObjectOptions(
-        "Asteroid $id", id,
+        "Asteroid ${getID()}", getID(),
         mapOf(
             "Pos" to pos.niceString(),
             "Angle" to DecimalFormat("##.##").format(ang).toString()
@@ -40,10 +37,14 @@ abstract class GeoObject(
     fun setAngle(a: Double) { velocity = vec(a, velocity.length()) }
 
     override suspend fun calc(s: Double) {
-        pos += velocity * s
+        move()
     }
 
-    fun getGeo() = GeoI(pos, size.x, size.y, ang)
+    fun move() {
+        pos += velocity
+    }
+
+    fun getGeo() = collider().surroundedRect().toGeo(ang)
 }
 
 /*

@@ -1,4 +1,4 @@
-package server.adds.math.geom.debug
+package server.adds.debug
 
 import javafx.application.Platform
 import javafx.beans.property.SimpleBooleanProperty
@@ -27,12 +27,14 @@ import kotlinx.coroutines.launch
 import server.adds.CrazyGraphicStyle
 import server.adds.CrazyGraphics
 import server.adds.math.CrazyVector
+import server.adds.math.debugString
 import server.adds.math.geom.shapes.CrazyRect
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.vec
 import server.adds.text.Ansi
 import server.adds.text.Logable
 import server.adds.text.Text
+import server.data_containers.ClientMouseI
 import tornadofx.*
 import java.text.DecimalFormat
 import javax.swing.Timer
@@ -44,70 +46,27 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
 
     val keyboard = hashMapOf<KeyCode, Boolean>()
 
-    private var mouse: CrazyVector? = null
+    private var mouse: ClientMouseI? = null
     private var canvasSize = CrazyVector.zero()
 
-    private var objects = arrayOf<DebugObjectI>()
+    private var objects = listOf<DebugObjectI>()
 
-    protected val transformEyeModule = configData.transformEyeModule?.let { TransformEyeModule(it) }
+    protected val eyeModule = configData.eyeModule?.let { TransformEyeModule(it) }
     protected val timerModule = configData.timerModule?.let { TimerModule(it) }
-    protected val debugObjectModule = configData.debugObjectModule?.let { DebugObjectModule(it) }
+    protected val inspectorModule = configData.inspectorModule?.let { DebugObjectModule(it) }
+    protected val gridModule = configData.gridModule?.let { GridModule(it) }
 
     private var paintNecessary = true
 
     private var smallDrag = false
 
-    private val root = BorderPane().apply {
-        paddingAll = 15.0
-
-        center {
-            pane {
-                useMaxSize = true
-                canvas {
-                    widthProperty().bind(this@pane.widthProperty())
-                    heightProperty().bind(this@pane.heightProperty())
-
-                    widthProperty().onChange {
-                        canvasSize = canvasSize.copy(x = it)
-                        paint()
-                    }
-                    heightProperty().onChange {
-                        canvasSize = canvasSize.copy(y = it)
-                        paint()
-                    }
-
-                    setOnMouseEntered { mouseEvent(it, MouseEventType.ENTER) }
-                    setOnMouseExited { mouseEvent(it, MouseEventType.EXIT) }
-                    setOnMousePressed { mouseEvent(it, MouseEventType.PRESS) }
-                    setOnMouseDragged { mouseEvent(it, MouseEventType.DRAG) }
-                    setOnMouseReleased { mouseEvent(it, MouseEventType.RELEASE) }
-                    setOnMouseMoved { mouseEvent(it, MouseEventType.MOVE) }
-
-                    setOnScroll { scrollEvent(it) }
-
-                    canvas = this
-                }
-            }
-        }
-
-        val custom = customGui()
-        if (timerModule != null || debugObjectModule != null || custom != null) bottom {
-            hbox {
-                spacing = 20.0
-                alignment = Pos.TOP_CENTER
-                paddingTop = 10.0
-
-                custom?.let { add(it) }
-                timerModule?.component?.let { add(it) }
-                debugObjectModule?.component?.let { add(it) }
-            }
-        }
-    }
+    private lateinit var root: BorderPane
 
     fun isKeyPressed(key: KeyCode) = keyboard[key] ?: false
+    fun getMousePos() = mouse?.pos
     fun getMouse() = mouse
 
-    fun eyeTransform() = transformEyeModule?.getTrans() ?: DebugTransform(unit = configData.unit, canvasSize = canvasSize)
+    fun eyeTransform() = eyeModule?.getTrans() ?: DebugTransform(unit = configData.unit, canvasSize = canvasSize)
 
     override fun log(str: String, color: Ansi?) {
         Text.coloredLog(configData.title, str, color, Ansi.YELLOW, configData.title.length+1)
@@ -116,31 +75,84 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
     protected fun step(f: Double) {
         GlobalScope.launch {
             objects = act(f)
-            debugObjectModule?.updateSelectedObject()
+            inspectorModule?.select()
             if (paintNecessary) paint()
         }
     }
 
     private fun paint() {
         Platform.runLater {
-            val g2 = canvas.graphicsContext2D
+            try {
+                val gc = canvas.graphicsContext2D
 
-            g2.fill = Color.WHITE
-            g2.fillRect(0.0, 0.0, canvasSize.x, canvasSize.y)
+                gc.fill = Color.WHITE
+                gc.fillRect(0.0, 0.0, canvasSize.x, canvasSize.y)
 
-            for (o in objects) {
-                val surroundedRect = o.surroundedRect()
+                gridModule?.drawGrid(gc)
 
-                if (surroundedRect.transform(eyeTransform().screenTrans()) as CrazyRect touchesRect CrazyRect(CrazyVector.zero(), canvasSize)) {
-                    debugObjectModule?.paintObjectDebug(g2, o, surroundedRect)
+                objects
+                    .filter { o->
+                        o.surroundedRect().transform(eyeTransform().screenTrans())
+                            .touchesRect(CrazyRect(CrazyVector.zero(), canvasSize))
+                    }
+                    .sortedBy { it.zIndex() }
+                    .forEach { o ->
+                        inspectorModule?.paintObjectDebug(gc, o, o.surroundedRect())
+                        o.paintDebug(gc, eyeTransform(), canvasSize)
+                    }
 
-                    o.paintDebug(g2, eyeTransform(), canvasSize)
-                }
-            }
+            } catch (_: UninitializedPropertyAccessException) {}
         }
     }
 
     override fun start(stage: Stage) {
+        root = BorderPane().apply {
+            paddingAll = 15.0
+
+            center {
+                pane {
+                    useMaxSize = true
+                    canvas {
+                        widthProperty().bind(this@pane.widthProperty())
+                        heightProperty().bind(this@pane.heightProperty())
+
+                        widthProperty().onChange {
+                            canvasSize = canvasSize.copy(x = it)
+                            paint()
+                        }
+                        heightProperty().onChange {
+                            canvasSize = canvasSize.copy(y = it)
+                            paint()
+                        }
+
+                        setOnMouseEntered { mouseEvent(it, MouseEventType.ENTER) }
+                        setOnMouseExited { mouseEvent(it, MouseEventType.EXIT) }
+                        setOnMousePressed { mouseEvent(it, MouseEventType.PRESS) }
+                        setOnMouseDragged { mouseEvent(it, MouseEventType.DRAG) }
+                        setOnMouseReleased { mouseEvent(it, MouseEventType.RELEASE) }
+                        setOnMouseMoved { mouseEvent(it, MouseEventType.MOVE) }
+
+                        setOnScroll { scrollEvent(it) }
+
+                        canvas = this
+                    }
+                }
+            }
+
+            val custom = customGui()
+            if (timerModule != null || inspectorModule != null || custom != null) bottom {
+                hbox {
+                    spacing = 20.0
+                    alignment = Pos.TOP_CENTER
+                    paddingTop = 10.0
+
+                    custom?.let { add(it) }
+                    timerModule?.component?.let { add(it) }
+                    inspectorModule?.component?.let { add(it) }
+                }
+            }
+        }
+
         val scene = Scene(root)
 
         scene.fill = Color.color(0.9,0.9,0.9)
@@ -153,12 +165,13 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
         stage.title = configData.title
         stage.width = 1200.0
         stage.height = 900.0
+        stage.isAlwaysOnTop = true
 
         stage.show()
     }
 
     open fun mouseEvent(it: MouseEvent, type: MouseEventType) {
-        mouse = eyeTransform().world(vec(it.x, it.y))
+        mouse = mouse?.copy(pos = eyeTransform().world(vec(it.x, it.y)))
 
         when (type) {
             MouseEventType.PRESS -> {
@@ -175,8 +188,8 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
             MouseEventType.ENTER -> { paintNecessary = true }
         }
 
-        transformEyeModule?.mouseEvent(it, type) ?: run { smallDrag = true }
-        debugObjectModule?.mouseEvent(it, type)
+        eyeModule?.mouseEvent(it, type) ?: run { smallDrag = true }
+        inspectorModule?.mouseEvent(it, type)
 
         paint()
     }
@@ -190,13 +203,13 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
     }
 
     open fun scrollEvent(it: ScrollEvent) {
-        transformEyeModule?.scrollEvent(it)
+        eyeModule?.scrollEvent(it)
         paint()
     }
 
     open fun customGui(): Node? { return null }
 
-    abstract suspend fun act(s: Double): Array<DebugObjectI>
+    abstract suspend fun act(s: Double): List<DebugObjectI>
 
     inner class TransformEyeModule(val moduleConfig: TransformEyeModuleConfig) : DebuggerModuleI {
         private var oldEyePos = CrazyVector.zero()
@@ -212,6 +225,8 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
 
         fun setEyePos(v: CrazyVector) { transform = transform.copy(eye = v) }
         fun setEyeScale(s: Double) { transform = transform.copy(zoom = s) }
+        fun getEyePos() = transform.eye
+        fun getEyeScale() = transform.zoom
 
         fun getTrans() = transform.copy(canvasSize = canvasSize)
 
@@ -221,11 +236,11 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                     MouseEventType.PRESS -> {
                         oldEyePos = transform.eye
                         oldTransform = transform
-                        oldMousePos = oldTransform.world(vec(it.x, -it.y))
+                        oldMousePos = oldTransform.world(vec(it.x, it.y))
                         canvas.scene.cursor = Cursor.MOVE
                     }
                     MouseEventType.DRAG -> {
-                        val delta = oldTransform.world(vec(it.x, -it.y)) - oldMousePos
+                        val delta = oldTransform.world(vec(it.x, it.y)) - oldMousePos
                         transform = transform.copy(eye = oldEyePos - delta)
                     }
                     MouseEventType.RELEASE -> {
@@ -240,6 +255,65 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
 
         fun scrollEvent(it: ScrollEvent) {
             if (active && moduleConfig.scroll) zoomAdd(it.deltaY / 700.0 * transform.zoom)
+        }
+    }
+
+    inner class GridModule(private val moduleConfig: GridModuleConfig) : DebuggerModuleI {
+        fun drawGrid(gc: GraphicsContext) {
+            gc.beginPath()
+
+            val transform = eyeTransform()
+
+            val steps = (1.0/transform.zoom).toInt() * 2 + 1
+            val gridLength = moduleConfig.gridLength * steps.toDouble()
+
+            val worldZero = transform.world(CrazyVector.zero())
+            val worldSize = transform.world(canvasSize) - worldZero
+
+            val startPos = vec(
+                worldZero.x % gridLength,
+                worldZero.y % gridLength
+            )
+
+            for (x in 0..((worldSize.higherCoordinate() / gridLength).toInt() + 1)) {
+                val worldPos = worldZero - startPos + CrazyVector.square(x*gridLength)
+                val screenPos = transform.screen(worldPos)
+
+                gc.moveTo(screenPos.x, 0.0)
+                gc.lineTo(screenPos.x, canvasSize.y)
+
+                gc.moveTo(0.0, screenPos.y)
+                gc.lineTo(canvasSize.x, screenPos.y)
+
+                if (moduleConfig.paintMarks) {
+                    CrazyGraphics.paintTextRect(gc,
+                        vec(screenPos.x, 0),
+                        worldPos.x.debugString().toString(),
+                        center = vec(0.5, -0.5),
+                        style = CrazyGraphicStyle(
+                            fillColor = Color.GREY,
+                            fillOpacity = 1.0
+                        ),
+                        textColor = Color.WHITE
+                    )
+                    CrazyGraphics.paintTextRect(
+                        gc,
+                        vec(0, screenPos.y),
+                        worldPos.y.debugString().toString(),
+                        center = vec(-0.1, 0.5),
+                        style = CrazyGraphicStyle(
+                            fillColor = Color.GREY,
+                            fillOpacity = 1.0
+                        ),
+                        textColor = Color.WHITE
+                    )
+                }
+            }
+
+            gc.lineWidth = moduleConfig.lineWidth
+            gc.stroke = moduleConfig.color
+
+            gc.stroke()
         }
     }
 
@@ -370,21 +444,21 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
 
         fun getSelectedObject() = selectedObjectId
 
-        fun updateSelectedObject(id: String? = selectedObjectId) {
-            val selectedObject = objects.find { o -> o.debugOptions()?.id?.let { it == id } ?: false }
+        fun select(id: String? = selectedObjectId) {
+            val selObj = objects.find { o -> o.debugOptions()?.id?.let { it == id } ?: false }
 
             if (
                 selectedObjectId != id
-                || (selectedObject?.debugOptions()?.itemsToString() ?: "") != soOptionsComponent.text
+                || (selObj?.debugOptions()?.itemsToString() ?: "") != soOptionsComponent.text
             ) {
                 Platform.runLater {
-                    soLabel.text = if (selectedObject == null) "Es wurde kein Objekt ausgewählt, das DebugOptions definiert." else "Es wurde das Objekt \"${selectedObject.debugOptions()?.name}\" ausgewählt."
-                    soOptionsComponent.text = selectedObject?.debugOptions()?.itemsToString() ?: ""
+                    soLabel.text = if (selObj == null) "Es wurde kein Objekt ausgewählt, das DebugOptions definiert." else "Es wurde das Objekt \"${selObj.debugOptions()?.name}\" ausgewählt."
+                    soOptionsComponent.text = selObj?.debugOptions()?.itemsToString() ?: ""
                 }
             }
 
-            selectedObjectPos = selectedObject?.surroundedRect()?.center()
-            selectedObjectId = selectedObject?.debugOptions()?.id
+            selectedObjectPos = selObj?.surroundedRect()?.center()
+            selectedObjectId = selObj?.debugOptions()?.id
             paint()
         }
 
@@ -398,15 +472,12 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                 ))
 
                 val padding = CrazyVector.square(10)
-                val rectCornerBL = eyeTransform().screen(surroundedRect.pos) - padding
-                val rectCornerTR = eyeTransform().screen(surroundedRect.pos + surroundedRect.size) + padding*2
-                val rectSize = (rectCornerBL - rectCornerTR).abs()
 
-                log(rectSize.niceString())
+                var transformedRect = surroundedRect.transform(eyeTransform().screenTrans())
 
-                val transformedRect = CrazyRect(
-                    rectCornerBL - vec(0, rectSize.y),
-                    rectSize
+                transformedRect = CrazyRect(
+                    transformedRect.pos - padding,
+                    transformedRect.size + padding * 2
                 )
 
                 CrazyGraphics.paintCornersAroundRect(g2, transformedRect, 20.0)
@@ -447,10 +518,10 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
             hbox {
                 spacing = 10.0
                 alignment = Pos.CENTER_LEFT
-                if (transformEyeModule != null) button("Zu Objekt Springen") {
+                if (eyeModule != null) button("Zu Objekt Springen") {
                     action {
                         selectedObjectPos?.let {
-                            transformEyeModule.transform = transformEyeModule.transform.copy(eye = it)
+                            eyeModule.transform = eyeModule.transform.copy(eye = it)
                             paint()
                         }
                     }
@@ -464,16 +535,16 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
         fun mouseEvent(it: MouseEvent, type: MouseEventType) {
             if (it.button == MouseButton.PRIMARY) when (type) {
                 MouseEventType.RELEASE -> {
-                    getMouse()?.let { m ->
+                    getMousePos()?.let { m ->
                         var selectedObjectId: String? = null
                         for (o in objects) {
                             if (o.surroundedRect() containsPoint m) {
                                 o.debugOptions()?.id?.let { selectedObjectId = it }
                             }
                         }
-                        updateSelectedObject(selectedObjectId)
+                        select(selectedObjectId)
                     } ?: run {
-                        updateSelectedObject(null)
+                        select(null)
                     }
                 }
             }

@@ -1,6 +1,7 @@
 package server.data_containers
 
 import SendFormat
+import javafx.scene.input.KeyCode
 import server.adds.math.CrazyVector
 
 data class UserViewI(
@@ -20,28 +21,39 @@ data class ClientDataI(
     val screenSize: CrazyVector
 )
 
-data class KeyboardI(val keys: Array<ClientKeyI> = arrayOf()) {
-    fun key(search: String) = keys.find { it.key == search }?.active ?: false
+data class KeyboardI(val keys: List<ClientKeyI> = listOf()) {
+    fun keyPressed(search: String) = keys.find { it.key == search }?.active ?: false
 }
 
 data class ClientMouseI(
     val pos: CrazyVector,
-    val pressed: Boolean
+    val leftPressed: Boolean,
+    val middlePressed: Boolean,
+    val rightPressed: Boolean
 )
 
 data class ClientKeyI(
     val key: String,
     val active: Boolean
 ) {
-    fun convertJavaFXKey()  = copy(key = when (key) {
-
-        else -> "unknown-key: $key"
-    })
+    companion object {
+        fun convertJavaFxKey(keyCode: KeyCode, pressed: Boolean) = ClientKeyI(
+            when (keyCode) {
+                KeyCode.UP -> "ArrowUp"
+                KeyCode.LEFT -> "ArrowLeft"
+                KeyCode.RIGHT -> "ArrowRight"
+                KeyCode.DOWN -> "ArrowDown"
+                KeyCode.SPACE -> "Space"
+                else -> "UNKNOWN_JAVAFX_KEY"
+            },
+            pressed
+        )
+    }
 }
 
 data class ClientDataRequestI(
     val userProps: UserPropsI,
     val keyboard: KeyboardI?,
     val mouse: ClientMouseI?,
-    val messages: Array<SendFormat>?
+    val messages: List<SendFormat>?
 )

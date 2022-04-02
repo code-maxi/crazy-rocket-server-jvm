@@ -72,7 +72,7 @@ object CrazyGraphics {
         g2: GraphicsContext,
         pos: CrazyVector,
         name: String? = null,
-        paintCoords: Boolean = false,
+        coordinates: CrazyVector? = null,
         pointSize: Double = 10.0,
         pointStyle: CrazyGraphicStyle? = CrazyGraphicStyle(
             fillColor = Color.RED,
@@ -89,8 +89,8 @@ object CrazyGraphics {
 
         var resText = ""
         if (name != null) resText += name
-        if (name != null && paintCoords) resText += " = "
-        if (paintCoords) resText += pos.niceString()
+        if (name != null && coordinates != null) resText += " = "
+        if (coordinates != null) resText += pos.niceString()
 
         if (resText != "") {
             paintTextRect(

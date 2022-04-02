@@ -1,4 +1,4 @@
-package server.adds.math.geom.debug
+package server.adds.debug
 
 enum class MouseEventType {
     PRESS,

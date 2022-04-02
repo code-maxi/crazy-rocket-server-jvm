@@ -15,7 +15,7 @@ import server.adds.text.Ansi
 import server.adds.text.Text
 import server.adds.text.Text.coloredLog
 import server.data_containers.*
-import server.game.Game
+import server.game.CrazyGame
 import server.game.GameConfig
 import server.user.UserS
 import stringToTeamColor
@@ -25,8 +25,10 @@ class GalaxyS(
     private val config: GalaxyConfigI
 ) {
     var props = GalaxyPropsI(name, "queue")
+
     private val users = hashMapOf<String, UserS>()
-    private var game: Game? = null
+    private var game: CrazyGame? = null
+
     private val teams = hashMapOf<TeamColor, ArrayList<String>>(
         TeamColor.RED to arrayListOf(),
         TeamColor.BLUE to arrayListOf(),
@@ -35,8 +37,8 @@ class GalaxyS(
 
     //val clientAnswerChannel = Channel<ClientAnswerI>()
 
-    private val sendGameQueue = arrayListOf<Pair<SendFormat, UserPropsI>>()
-    private fun userList() = users.values.toTypedArray()
+    private val clientDataList = arrayListOf<ClientDataRequestI>()
+    private fun userList() = users.values.toList()
 
     fun getGame() = game ?: throw GameNotInitializedEx(props.name)
 
@@ -47,12 +49,12 @@ class GalaxyS(
                 it.key.name,
                 it.key.color
             ),
-            it.value.toTypedArray()
+            it.value
         )
-    }.toTypedArray()
+    }
 
     fun data() = GalaxyI(
-        userList().map { it.props }.toTypedArray(),
+        userList().map { it.props },
         props, teamData()
     )
 
@@ -85,8 +87,6 @@ class GalaxyS(
         sendGalaxyDataToClients()
     }
 
-    fun sendGame(message: SendFormat, u: UserPropsI) { sendGameQueue.add(message to u) }
-
     suspend fun closeUser(u: UserS) {
         users.remove(u.props.id)
         u.props.teamColor?.let {
@@ -108,9 +108,8 @@ class GalaxyS(
 
         checkMyPassword(password)
 
-        game = Game(config, GameConfig(
+        game = CrazyGame(config, GameConfig(
             sendUser = { id, sendFormat -> users[id]?.onMessageFromGame(sendFormat) },
-            onRocketCreated = { rocket -> users[rocket.userProps.id]?.myRocket = rocket }
         ))
 
         props = props.copy(state = "running")
@@ -130,17 +129,6 @@ class GalaxyS(
         } else throw GameIsAlreadyRunning()
     }
 
-    fun joinGame(user: UserS) {
-        if (users.containsKey(user.id)) {
-            getGame().addUserRocket(user.props) { user.myRocket = it }
-        }
-    }
-
-    fun registerClientData(data: ClientDataRequestI) {
-        //clientAnswerChannel.send(data)
-        game?.onClientData(data)
-    }
-
     private suspend fun gameLoop() {
         log("Starting Game Loop...")
         log("")
@@ -157,6 +145,7 @@ class GalaxyS(
 
             val factor = (measuredTime.toDouble() / estimatedTime.toDouble())
 
+            game!!.onClientData(clientDataList.toList())
             game!!.calc(factor)
 
             userList().forEach {
@@ -170,6 +159,18 @@ class GalaxyS(
 
             measuredTime = ((System.nanoTime() - oldTimestamp) / 100000).toInt()
         }
+    }
+
+
+    fun joinGame(user: UserS) {
+        if (users.containsKey(user.id)) {
+            user.myRocket = getGame().addRocket(user.props)
+        }
+    }
+
+    fun registerClientData(data: ClientDataRequestI) {
+        //clientAnswerChannel.send(data)
+        clientDataList.add(data)
     }
 
     private fun checkMyPassword(password: String) {
@@ -221,7 +222,7 @@ class GalaxyS(
               catch (ex: NullPointerException) { throw GalaxyDoesNotExist(join.userName) }
         }
 
-        fun getGalaxies() = galaxyList().toTypedArray()
+        fun getGalaxies() = galaxyList()
 
         fun getGalaxy(key: String) = galaxies[key] ?: throw GalaxyDoesNotExist(key)
 

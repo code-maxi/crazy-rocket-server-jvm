@@ -6,7 +6,7 @@ import server.adds.CrazyGraphics
 import server.adds.math.CrazyMatrix
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
-import server.adds.math.geom.debug.DebugTransform
+import server.adds.debug.DebugTransform
 import server.adds.math.vec
 import server.data_containers.CannotCheckPointOnLine
 
@@ -55,8 +55,8 @@ class CrazyLine(
         if (!config.drawLineAsVector) {
             g2.strokeLine(sa.x, sa.y, sb.x, sb.y)
 
-            CrazyGraphics.paintPoint(g2, sa, name = "A", paintCoords = config.paintCoords)
-            CrazyGraphics.paintPoint(g2, sb, name = "B", paintCoords = config.paintCoords)
+            CrazyGraphics.paintPoint(g2, sa, name = "A", coordinates = if (config.paintCoords) a else null)
+            CrazyGraphics.paintPoint(g2, sb, name = "B", coordinates = if (config.paintCoords) b else null)
         }
         else {
             CrazyGraphics.drawVectorArrow(g2, sa, sb - sa)
@@ -68,14 +68,18 @@ class CrazyLine(
     fun leftPoint() = if (a.x < b.x) a else b
     fun rightPoint() = if (a.x > b.x) a else b
 
+    override fun shapeString() = "Line(a = ${a.niceString()}; b = ${b.niceString()})"
+
     fun rightLine() = copy(a, a + (b - a).normalRight())
+
+    fun orthogonalLineFromPoint(p: CrazyVector, vecLength: Double = 1.0) = CrazyLine(p, p + this.delta().normalRight().e() * vecLength * (if (isPointRight(p)) -1.0 else 1.0))
 
     fun delta() = b - a
 
     fun copy(a: CrazyVector = this.a, b: CrazyVector = this.b, config: ShapeDebugConfig? = this.config) =
         CrazyLine(a, b, config)
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyLine(a, b, shapeDebugConfig)
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?): CrazyLine = CrazyLine(a, b, shapeDebugConfig)
 
     infix fun isPointRight(pos: CrazyVector) = (b - a).normalRight() scalar (pos - a) > 0
 
@@ -109,4 +113,6 @@ class CrazyLine(
     fun modifyDelta(f: (CrazyVector) -> CrazyVector) = copy(a, f(b - a))
 
     fun toVec() = b - a
+
+    override fun setColor(c: Color): CrazyLine = super.setColor(c) as CrazyLine
 }

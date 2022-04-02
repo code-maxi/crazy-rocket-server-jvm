@@ -1,14 +1,17 @@
 package server.adds.math.geom.shapes
 
+import javafx.geometry.Point2D
 import javafx.scene.canvas.GraphicsContext
+import javafx.scene.paint.Color
+import javafx.scene.shape.Polygon
 import server.adds.CrazyGraphics
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
-import server.adds.math.geom.debug.DebugTransform
+import server.adds.debug.DebugTransform
 import server.data_containers.TooLittlePointsInPolygonEx
 
 open class CrazyPolygon(
-    val points: Array<CrazyVector>,
+    val points: List<CrazyVector>,
     config: ShapeDebugConfig? = null,
     surroundedRectP: CrazyRect? = null
 ) : CrazyShape(ShapeType.POLYGON, config) {
@@ -29,8 +32,8 @@ open class CrazyPolygon(
             points.forEach {
                 if (lowestXCoordinate == null || it.x < lowestXCoordinate!!) lowestXCoordinate = it.x
                 if (lowestYCoordinate == null || it.y < lowestYCoordinate!!) lowestYCoordinate = it.y
-                if (highestXCoordinate == null || it.x < highestXCoordinate!!) highestXCoordinate = it.x
-                if (highestYCoordinate == null || it.y < highestYCoordinate!!) highestYCoordinate = it.y
+                if (highestXCoordinate == null || it.x > highestXCoordinate!!) highestXCoordinate = it.x
+                if (highestYCoordinate == null || it.y > highestYCoordinate!!) highestYCoordinate = it.y
             }
 
             val ltRectCorner = CrazyVector(lowestXCoordinate!!, lowestYCoordinate!!)
@@ -46,45 +49,49 @@ open class CrazyPolygon(
 
     open fun getMyPoints() = points
 
-    fun pointsWithEnd() = this.points + this.points.last()
+    fun pointsWithEnd() = this.points + this.points.first()
 
     override fun surroundedRect() = surroundedRect
 
+    override fun shapeString() = "Polygon(points = [${points.joinToString(", ") { it.niceString() }}])"
+
     override fun transform(trans: CrazyTransform) =
-        CrazyPolygon(points.map { it transformTo trans }.toTypedArray(), config)
+        CrazyPolygon(points.map { it transformTo trans }, config)
 
     override fun containsPoint(point: CrazyVector): Boolean {
-        for (i in 0..(getMyPoints().size-2)) {
-            val line = CrazyLine(getMyPoints()[i], getMyPoints()[i + 1])
-            if (!(line pointRightOnLine point)) return false
-        }
-        return true
+        var arr = doubleArrayOf()
+        points.forEach { arr += it.x; arr += it.y }
+        return Polygon(*arr).contains(Point2D(point.x, point.y))
     }
 
-    override fun paintSelf(g2: GraphicsContext, transform: DebugTransform, config: ShapeDebugConfig) {
-        g2.beginPath()
+    override fun paintSelf(gc: GraphicsContext, transform: DebugTransform, config: ShapeDebugConfig) {
+        gc.beginPath()
 
-        points.forEachIndexed { i, p ->
-            if (i == 0) g2.moveTo(p.x, p.y)
-            else g2.lineTo(p.x, p.y)
+        points.forEachIndexed { i, pp ->
+            val p = transform.screen(pp)
+            if (i == 0) gc.moveTo(p.x, p.y)
+            else gc.lineTo(p.x, p.y)
         }
 
-        g2.closePath()
-        if (config.crazyStyle.fillOpacity != null) g2.fill()
-        if (config.crazyStyle.strokeOpacity != null) g2.stroke()
+        gc.closePath()
+
+        gc.fill()
+        gc.stroke()
 
         points.forEach {
             CrazyGraphics.paintPoint(
-                g2, transform.screen(it),
-                paintCoords = config.paintCoords
+                gc, transform.screen(it),
+                coordinates = if (config.paintCoords) it else null
             )
         }
     }
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyPolygon(points, shapeDebugConfig)
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?): CrazyPolygon = CrazyPolygon(points, shapeDebugConfig)
 
-    fun copy(points: Array<CrazyVector> = this.points, config: ShapeDebugConfig? = this.config) =
+    fun copy(points: List<CrazyVector> = this.points, config: ShapeDebugConfig? = this.config) =
         CrazyPolygon(points, config)
 
-    fun convert(f: (CrazyVector) -> CrazyVector) = copy(points = points.map { f(it) }.toTypedArray())
+    fun convert(f: (CrazyVector) -> CrazyVector) = copy(points = points.map { f(it) })
+
+    override fun setColor(c: Color): CrazyPolygon = super.setColor(c) as CrazyPolygon
 }

@@ -1,4 +1,4 @@
-package server.adds.math.geom.debug
+package server.adds.debug
 
 import server.adds.text.Text
 

@@ -5,24 +5,24 @@ import SendFormat
 import server.adds.math.vec
 import server.data_containers.*
 import server.game.objects.Asteroid
-import server.game.objects.GameObjectI
-import server.game.objects.Rocket
+import server.game.objects.AbstractGameObject
+import server.game.objects.CrazyRocket
 
 data class GameConfig(
     val sendUser: (id: String, send: SendFormat) -> Unit,
-    val onRocketCreated: (rocket: Rocket) -> Unit,
     val debug: Boolean = false
 )
 
-class Game(
+class CrazyGame(
     config: GalaxyConfigI,
     private val gameConfig: GameConfig
 ) : GameClassI {
-    private val objects = hashMapOf<String, GameObjectI>()
+    private var objects = mutableMapOf<String, AbstractGameObject>()
     private var idCount = Int.MAX_VALUE
     lateinit var settings: GamePropsI
+    private var isResortNextTime = false
 
-    fun objectList() = objects.values.toTypedArray()
+    fun objectList() = objects.values.toList()
 
     private fun newID(): String {
         idCount --
@@ -34,39 +34,34 @@ class Game(
         else throw IdIsAlreadyInUse("Object", id)
     }
 
-    private fun addObject(objF: (id: String) -> GameObjectI) {
+    fun addObject(obj: AbstractGameObject) {
         val id = newID()
-
-        val obj = objF(id)
-        obj.setGame(this)
-
+        obj.initialize(this, id)
         objects[id] = obj
     }
 
-    fun onClientData(data: ClientDataRequestI) {
-        if (data.keyboard != null) {
-            val keyboard = data.keyboard
-            val rocket = objects[data.userProps.id]?.let { it as Rocket }
-            rocket?.setKeyboard(keyboard)
+    fun onClientData(dataList: List<ClientDataRequestI>) {
+        dataList.forEach { data ->
+            if (data.keyboard != null) {
+                val keyboard = data.keyboard
+                val rocket = objects[data.userProps.id]?.let { it as CrazyRocket }
+                rocket?.setKeyboard(keyboard)
+            }
         }
     }
 
     fun killObject(id: String) { objects.remove(id) }
 
-    fun addRocket(u: UserPropsI): Rocket {
+    fun addRocket(u: UserPropsI): CrazyRocket {
         checkOtherId(u.id)
 
-        val rocket = Rocket(
+        val rocket = CrazyRocket(
             vec(settings.width.toDouble(), settings.height.toDouble()) * vec(Math.random(), Math.random()),
-            u, u.id
+            u
         )
         objects[u.id] = rocket
 
         return rocket
-    }
-    fun addUserRocket(u: UserPropsI, onFinish: (r: Rocket) -> Unit) {
-        val r = addRocket(u)
-        onFinish(r)
     }
 
     fun loadLevel(l: Int) {
@@ -84,13 +79,19 @@ class Game(
         }*/
     }
 
+    fun createRandomAsteroids(howMany: Int) {
+        for (i in 0..howMany) {
+
+        }
+    }
+
     override suspend fun calc(s: Double) {
         objects.forEach { it.value.calc(s) }
     }
 
-    override fun data() = GameDataI(settings, objectList().map { it.data() }.toTypedArray())
+    override fun data() = GameDataI(settings, objectList().map { it.data() })
 
     companion object {
-        val LISTINING_KEYS = arrayOf("ArrowUp", "ArrowRight", "ArrowLeft")
+        val LISTINING_KEYS = listOf("ArrowUp", "ArrowRight", "ArrowLeft")
     }
 }

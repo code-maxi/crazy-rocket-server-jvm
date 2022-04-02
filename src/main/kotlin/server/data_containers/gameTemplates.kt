@@ -1,31 +1,55 @@
 package server.data_containers
 
+import server.adds.math.CrazyVector
+import server.adds.math.geom.shapes.CrazyPolygon
+import server.adds.math.vec
+import server.game.objects.CrazyRocket
+
 enum class RocketType(
     val id: String,
-    val fires: Array<RocketFireSettingsI>,
+    val fires: List<RocketFireSettingsI>,
     val acceleratingSpeed: Double,
     val turningSpeed: Double,
     val defaultZoom: Double,
     val img: String,
-    val width: Double,
-    val height: Double,
-    val eyeLazy: Double
+    val size: CrazyVector,
+    val colliderPolygon: CrazyPolygon,
+    val eyeLazy: Double,
+    val fireShots: List<CrazyRocketShotConfig>
 ) {
     DEFAULT(
         "default-rocket",
-        arrayOf(RocketFireSettingsI(
+        listOf(RocketFireSettingsI(
             0.0, 0.5,0.6,
             30.0,40.0,0.0,
             0.0, "fire.png"
         )),
+        0.03,
         0.05,
-        0.005,
         1.0,
         "rocket.png",
-        70.0, 50.0,
-        0.1
+        vec(10, 7),
+        CrazyPolygon(
+            listOf(
+                vec(-0.25, 0.5),
+                vec(0.0, -0.5),
+                vec(0.25, 0.5)
+            )
+        ),
+        0.1,
+        listOf(CrazyRocketShotConfig(
+            2.0, CrazyVector.zero(), 0.0, 30, 1.0
+        ))
     )
 }
+
+data class CrazyRocketShotConfig(
+    val length: Double,
+    val relativePosToRocket: CrazyVector,
+    val relativeAngleToRocket: Double,
+    val rechargingTime: Int,
+    val lifetime: Double
+)
 
 /*
 export function rocketTypes(s: rocketTypes) {

@@ -1,43 +1,97 @@
 package server.game.debug
 
 import GalaxyConfigI
-import javafx.scene.input.KeyEvent
-import server.adds.math.geom.debug.*
-import server.data_containers.ClientKeyI
-import server.data_containers.KeyboardI
-import server.data_containers.UserPropsI
-import server.game.Game
+import SendFormat
+import TeamColor
+import javafx.scene.layout.VBox
+import server.adds.debug.*
+import server.data_containers.*
+import server.game.CrazyGame
 import server.game.GameConfig
+import server.game.objects.CrazyRocket
+import tornadofx.action
+import tornadofx.checkbox
 
 class GameDebugger : CrazyDebugger(GeomDebuggerConfig(
     title = "Game-Debugger",
-    transformEyeModule = TransformEyeModuleConfig(),
-    timerModule = TimerModuleConfig(startStepSpeed = 200),
-    debugObjectModule = DebugObjectModuleConfig(),
-    unit = 0.1
+    eyeModule = TransformEyeModuleConfig(),
+    timerModule = TimerModuleConfig(startStepSpeed = 50),
+    inspectorModule = DebugObjectModuleConfig(),
+    gridModule = GridModuleConfig(10.0, true),
+    unit = 20.0
 )) {
-    private val game = Game(
+    val userProps = UserPropsI(
+        "test-user", 
+        "test-user", 
+        "test-galaxy", 
+        TeamColor.RED.color
+    )
+    
+    private val game = CrazyGame(
         GalaxyConfigI(1.0, 200.0, 3, 200, 200),
-        GameConfig({ _,_ -> }, { _ ->  })
+        GameConfig({ id,m -> onMessage(id, m) })
     )
 
-    private val rocket = game.addRocket(UserPropsI("Test Rocket", "test-rocket-id"))
-    private var gameKeyboard = KeyboardI(arrayOf())
+    private var followRocketEye = true
+    private var followRocketZoom = false
+
+    private val rocket: CrazyRocket
+    private var gameKeyboard = KeyboardI(listOf())
+    
+    private val messages = arrayListOf<SendFormat>()
 
     init {
         game.loadLevel(1)
+        rocket = game.addRocket(userProps)
         step(1.0)
+        inspectorModule!!.select(rocket.getID())
     }
 
-    override suspend fun act(s: Double): Array<DebugObjectI> {
-        gameKeyboard = KeyboardI(keyboard.map { ClientKeyI(it.key.name, it.value).convertJavaFXKey() }.toTypedArray())
-        rocket.setKeyboard(gameKeyboard)
+    override suspend fun act(s: Double): List<DebugObjectI> {
+        gameKeyboard = KeyboardI(keyboard.map {
+            ClientKeyI.convertJavaFxKey(it.key, it.value)
+        })
+
+        if (followRocketEye) {
+            eyeModule!!.setEyePos(rocket.eye)
+        }
+        if (followRocketZoom) {
+            eyeModule!!.setEyeScale(rocket.zoom)
+        }
+
+        game.onClientData(listOf(ClientDataRequestI(
+            userProps,
+            gameKeyboard,
+            getMouse(),
+            messages
+        )))
+
         game.calc(s)
-        return game.objectList().map { it }.toTypedArray()
-    }
 
-    override fun onKeyPressed(it: KeyEvent) {
-        super.onKeyPressed(it)
-        log(keyboard.keys.joinToString(", "))
+        return game.objectList()
+    }
+    
+    private fun onMessage(id: String, message: SendFormat) {
+        log("Rocket with id $id sends $message")
+    }
+    
+    private fun send(message: SendFormat) { messages.add(message) }
+
+    override fun customGui() = VBox().apply {
+        spacing = 5.0
+        checkbox("Follow Rocket's eye") {
+            isSelected = followRocketEye
+            action {
+                followRocketEye = isSelected
+                if (isSelected) rocket.eye = eyeModule!!.getEyePos()
+            }
+        }
+        checkbox("Follow Rocket's zoom") {
+            isSelected = followRocketZoom
+            action {
+                followRocketZoom = isSelected
+                if (isSelected) rocket.zoomTarget = eyeModule!!.getEyeScale()
+            }
+        }
     }
 }

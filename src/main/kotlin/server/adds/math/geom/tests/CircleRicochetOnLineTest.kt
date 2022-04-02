@@ -7,7 +7,7 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import server.adds.math.CrazyVector
 import server.adds.math.debugString
-import server.adds.math.geom.debug.*
+import server.adds.debug.*
 import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.ShapeDebugConfig
@@ -17,16 +17,16 @@ import server.adds.math.vec
 class CircleRicochetOnLineTest : CrazyDebugger(
     GeomDebuggerConfig(
         unit = 100.0,
-        transformEyeModule = TransformEyeModuleConfig(),
+        eyeModule = TransformEyeModuleConfig(),
         timerModule = TimerModuleConfig(startStepSpeed = 50),
-        debugObjectModule = DebugObjectModuleConfig()
+        inspectorModule = DebugObjectModuleConfig()
     )
 ) {
     private var circlePos: CrazyVector? = null
     private var circleVelocity: CrazyVector? = null
     private val circleRadius = 2.0
 
-    override suspend fun act(s: Double): Array<DebugObjectI> {
+    override suspend fun act(s: Double): List<DebugObjectI> {
         val cPos = circlePos
         val cVelocity = circleVelocity?.times(s)
         var line = CrazyLine(vec(5, -2), vec(4, 4))
@@ -69,8 +69,8 @@ class CircleRicochetOnLineTest : CrazyDebugger(
                         line = line.setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = Color.RED)) as CrazyLine
 
                         //circleVelocity = (-cVelocity) rotate (2 * angle * (if (wrongWay) -1 else 1))
-                        //circleVelocity = cVelocity.ricochetMyVelocity(line.toVec(), posRightOfThat)
-                        circleVelocity = -cVelocity rotate (2 * angle)
+                        circleVelocity = cVelocity.ricochetMyVelocity(line.toVec(), posRightOfThat)
+                        //circleVelocity = -cVelocity rotate (2 * angle)
                     }
                 }
             //}
@@ -91,7 +91,7 @@ class CircleRicochetOnLineTest : CrazyDebugger(
             )
 
 
-            return arrayOf(
+            return listOf(
                 circle.setDebugConfig(
                     DebugObjectOptions(
                         "Circle", "circle",
@@ -108,18 +108,17 @@ class CircleRicochetOnLineTest : CrazyDebugger(
                     )
                 ),
                 line.rightLine().drawAsVector(Color.GREEN),
-                line.rightLine().rightLine().drawAsVector(Color.GREEN)
             )
         }
 
-        return if (circle != null) arrayOf(line, circle) else arrayOf(line)
+        return if (circle != null) listOf(line, circle) else listOf(line)
     }
 
     override fun mouseEvent(it: MouseEvent, type: MouseEventType) {
         super.mouseEvent(it, type)
         if (type == MouseEventType.PRESS && it.button == MouseButton.SECONDARY) {
-            circlePos?.let { circleVelocity = (getMouse()!! - it) / 20.0 }
-                ?: run { circlePos = getMouse()!! }
+            circlePos?.let { circleVelocity = (getMousePos()!! - it) / 20.0 }
+                ?: run { circlePos = getMousePos()!! }
         }
     }
 
