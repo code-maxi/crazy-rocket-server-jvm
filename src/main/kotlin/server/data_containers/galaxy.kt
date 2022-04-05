@@ -1,6 +1,7 @@
 import server.data_containers.TeamColorDoesNotExistEx
 import server.data_containers.UserPropsI
 import server.adds.math.CrazyVector
+import server.galaxy.GalaxyS
 
 data class SendFormat(val header: String, val value: Any? = null)
 

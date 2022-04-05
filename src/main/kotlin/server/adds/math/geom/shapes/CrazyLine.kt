@@ -54,12 +54,14 @@ class CrazyLine(
 
         if (!config.drawLineAsVector) {
             g2.strokeLine(sa.x, sa.y, sb.x, sb.y)
-
-            CrazyGraphics.paintPoint(g2, sa, name = "A", coordinates = if (config.paintCoords) a else null)
-            CrazyGraphics.paintPoint(g2, sb, name = "B", coordinates = if (config.paintCoords) b else null)
         }
         else {
             CrazyGraphics.drawVectorArrow(g2, sa, sb - sa)
+        }
+
+        if (config.paintPoints) {
+            CrazyGraphics.paintPoint(g2, sa, name = if (config.paintPointNames) "A" else null, coordinates = if (config.paintCoords) a else null)
+            CrazyGraphics.paintPoint(g2, sb, name = if (config.paintPointNames) "B" else null, coordinates = if (config.paintCoords) b else null)
         }
     }
 

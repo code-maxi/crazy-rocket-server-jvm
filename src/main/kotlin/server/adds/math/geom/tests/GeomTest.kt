@@ -9,7 +9,7 @@ class GeomTest : CrazyDebugger(GeomDebuggerConfig(
     unit = 3.0,
     eyeModule = TransformEyeModuleConfig(),
     timerModule = TimerModuleConfig(),
-    inspectorModule = DebugObjectModuleConfig()
+    inspectorModule = InspectorModuleConfig()
 )) {
     var vecPos = vec(0,0)
 

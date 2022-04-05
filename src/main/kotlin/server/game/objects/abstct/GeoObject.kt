@@ -1,48 +1,52 @@
-package server.game.objects
+package server.game.objects.abstct
 
-import javafx.scene.canvas.GraphicsContext
 import server.adds.math.CrazyVector
-import server.adds.debug.DebugObjectOptions
-import server.adds.debug.DebugTransform
+import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.vec
 import server.data_containers.GameObjectType
-import java.text.DecimalFormat
 
 abstract class GeoObject(
     type: GameObjectType,
     var pos: CrazyVector,
     var ang: Double = 0.0,
     var velocity: CrazyVector = CrazyVector.zero()
-) : AbstractGameObject(type) {
-    //protected var effects = arrayListOf<GeoObjectEffect<T>>()
+) : ColliderObject(type) {
+    abstract fun getMass(): Double
 
-    abstract fun collider(): CrazyShape
-
-    override fun paintDebug(g2: GraphicsContext, transform: DebugTransform, canvasSize: CrazyVector) {
-        collider().paintDebug(g2, transform, canvasSize)
-    }
-
-    override fun surroundedRect() = collider().surroundedRect()
-
-    override fun debugOptions() = DebugObjectOptions(
-        "Asteroid ${getID()}", getID(),
-        mapOf(
-            "Pos" to pos.niceString(),
-            "Angle" to DecimalFormat("##.##").format(ang).toString()
-        )
-    )
-
+    fun impulsePower() = velocity.length() * getMass()
+    
     fun setSpeed(s: Double) { velocity = velocity.e() * s }
     fun setAngle(a: Double) { velocity = vec(a, velocity.length()) }
+    
+    fun ricochetOnLine(line: CrazyLine, coll: CrazyShape = collider()) {
+        if (line.surroundedRect() touchesRect coll.surroundedRect()) {
+            val cpa = coll containsPoint line.a
+            val cpb = coll containsPoint line.b
+
+            if (cpa) {
+                velocity = velocity.ricochetMyVelocity((pos - line.a).normalRight(), false)
+            }
+            else if (cpb) {
+                velocity = velocity.ricochetMyVelocity((pos - line.b).normalRight(), false)
+            }
+            else {
+                val posRightOfThat = line isPointRight pos
+                val ints = line intersection (line normalLineFrom pos)
+                val orthogonalTouch = ints.onLine1 && coll containsPoint ints.intersection
+
+                if (orthogonalTouch) {
+                    velocity = velocity.ricochetMyVelocity(line.toVec(), posRightOfThat)
+                }
+            }
+        }
+    }
 
     override suspend fun calc(s: Double) {
         move()
     }
 
-    fun move() {
-        pos += velocity
-    }
+    fun move() { pos += velocity }
 
     fun getGeo() = collider().surroundedRect().toGeo(ang)
 }

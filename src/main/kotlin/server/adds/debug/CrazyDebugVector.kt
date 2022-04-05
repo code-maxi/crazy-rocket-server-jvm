@@ -13,17 +13,21 @@ data class CrazyDebugVectorOptions(
     val debuggerConfig: DebugObjectOptions? = null,
     val color: Color = Color.RED,
     val textColor: Color = Color.WHITE,
-    val extraName: String? = null
+    val extraName: String? = null,
+    val zIndex: Int = 0
 )
 
 class CrazyDebugVector(
     val pos: CrazyVector,
     val config: CrazyDebugVectorOptions = CrazyDebugVectorOptions()
 ) : DebugObjectI {
+    override fun zIndex() = config.zIndex
+
     override fun paintDebug(g2: GraphicsContext, transform: DebugTransform, canvasSize: CrazyVector) {
         CrazyGraphics.paintPoint(
             g2, transform.screen(pos),
-            config.extraName ?: debugOptions()?.name, config.paintCoords,
+            config.extraName ?: debugOptions()?.name,
+            if (config.paintCoords) pos else null,
             config.size, CrazyGraphicStyle(
                 fillColor = Color.RED,
                 strokeColor = Color.BLACK,

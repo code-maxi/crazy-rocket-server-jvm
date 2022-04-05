@@ -6,7 +6,7 @@ import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import server.adds.math.CrazyVector
-import server.adds.math.debugString
+import server.adds.math.niceString
 import server.adds.debug.*
 import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.CrazyLine
@@ -19,7 +19,7 @@ class CircleRicochetOnLineTest : CrazyDebugger(
         unit = 100.0,
         eyeModule = TransformEyeModuleConfig(),
         timerModule = TimerModuleConfig(startStepSpeed = 50),
-        inspectorModule = DebugObjectModuleConfig()
+        inspectorModule = InspectorModuleConfig()
     )
 ) {
     private var circlePos: CrazyVector? = null
@@ -81,13 +81,13 @@ class CircleRicochetOnLineTest : CrazyDebugger(
                 "Contains Point A" to cpa.toString(),
                 "Contains Point B" to cpb.toString(),
                 "On Line" to ints.onLine1.toString(),
-                "Velocity Angle vs. Normal Angle" to (line2.toVec() angleTo cVelocity).toDegrees().debugString(),
+                "Velocity Angle vs. Normal Angle" to (line2.toVec() angleTo cVelocity).toDegrees().niceString(),
                 "Is Pos Right" to posRightOfThat.toString(),
                 "Is Vel Right Of Line" to velocityRightOfThat.toString(),
                 "Is Vel Right of Normal" to velocityRightOfNormal.toString(),
                 "Is Object Removing" to velocityRemoving.toString(),
                 "Angle-Fac" to angleFac.toString(),
-                "Angle" to angle.toDegrees().debugString()
+                "Angle" to angle.toDegrees().niceString()
             )
 
 

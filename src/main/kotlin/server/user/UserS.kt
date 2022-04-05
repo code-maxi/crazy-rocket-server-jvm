@@ -20,8 +20,8 @@ import server.adds.math.CrazyVector
 import server.data_containers.*
 import server.galaxy.GalaxyS
 import server.game.CrazyGame
-import server.game.objects.AbstractGameObject
-import server.game.objects.GeoObject
+import server.game.objects.abstct.AbstractGameObject
+import server.game.objects.abstct.GeoObject
 import server.game.objects.CrazyRocket
 
 class UserS(private val session: DefaultWebSocketSession) : Logable {

@@ -78,10 +78,11 @@ open class CrazyPolygon(
         gc.fill()
         gc.stroke()
 
-        points.forEach {
+        if (config.paintPoints) points.forEachIndexed { i, it ->
             CrazyGraphics.paintPoint(
                 gc, transform.screen(it),
-                coordinates = if (config.paintCoords) it else null
+                coordinates = if (config.paintCoords) it else null,
+                name = if (config.paintPointNames) i.toString() else null
             )
         }
     }

@@ -32,7 +32,7 @@ class CrazyCircle(
         g2.fillOval(screenPos.x - screenRadius, screenPos.y - screenRadius, screenRadius*2, screenRadius*2)
         g2.strokeOval(screenPos.x - screenRadius, screenPos.y - screenRadius, screenRadius*2, screenRadius*2)
 
-        CrazyGraphics.paintPoint(g2, screenPos, coordinates = if (config.paintCoords) pos else null)
+        if (config.paintPoints) CrazyGraphics.paintPoint(g2, screenPos, name = if (config.paintPointNames) "M" else null, coordinates = if (config.paintCoords) pos else null)
     }
 
     fun copy(radius: Double = this.radius, pos: CrazyVector = this.pos, config: ShapeDebugConfig? = this.config) =

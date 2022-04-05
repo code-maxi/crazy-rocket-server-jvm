@@ -2,7 +2,7 @@ package server.adds.math.geom.tests
 
 import javafx.scene.paint.Color
 import server.adds.math.CrazyVector
-import server.adds.math.debugString
+import server.adds.math.niceString
 import server.adds.debug.*
 import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.CrazyLine
@@ -14,7 +14,7 @@ class LineCircleCollisionTest : CrazyDebugger(
         unit = 100.0,
         eyeModule = TransformEyeModuleConfig(),
         timerModule = TimerModuleConfig(startStepSpeed = 20),
-        inspectorModule = DebugObjectModuleConfig()
+        inspectorModule = InspectorModuleConfig()
     )
 ) {
     override suspend fun act(s: Double): List<DebugObjectI> {
@@ -28,8 +28,8 @@ class LineCircleCollisionTest : CrazyDebugger(
 
         val objectOptionsItems = mapOf(
             "Intersection Point" to ints.intersection.niceString(),
-            "Intersection Factor 1" to ints.factor1.debugString(),
-            "Intersection Factor 2" to ints.factor2.debugString(),
+            "Intersection Factor 1" to ints.factor1.niceString(),
+            "Intersection Factor 2" to ints.factor2.niceString(),
             "Intersection On Line 1" to ints.onLine1.toString(),
             "Intersection On Line 2" to ints.onLine2.toString()
         )

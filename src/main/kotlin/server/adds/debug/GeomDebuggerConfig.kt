@@ -1,8 +1,12 @@
 package server.adds.debug
 
+import javafx.scene.Node
 import javafx.scene.paint.Color
 
-interface DebuggerModuleI
+interface DebuggerModuleI {
+    fun getName(): String
+    fun myComponent(): Node?
+}
 
 data class TransformEyeModuleConfig(
     val dragAndDrop: Boolean = true,
@@ -21,8 +25,13 @@ data class GridModuleConfig(
     val color: Color = Color.GREY
 )
 
-data class DebugObjectModuleConfig(
-    val pseudoProp: Int = 0
+data class InspectorModuleConfig(
+    val minWidth: Double = 450.0
+)
+
+data class LoggerModuleConfig(
+    val firstColumnLength: Int = 20,
+    val minWidth: Double = 250.0
 )
 
 data class GeomDebuggerConfig(
@@ -30,6 +39,7 @@ data class GeomDebuggerConfig(
     val unit: Double = 1.0,
     val eyeModule: TransformEyeModuleConfig? = null,
     val timerModule: TimerModuleConfig? = null,
-    val inspectorModule: DebugObjectModuleConfig? = null,
-    val gridModule: GridModuleConfig? = null
+    val inspectorModule: InspectorModuleConfig? = null,
+    val gridModule: GridModuleConfig? = null,
+    val loggerModule: LoggerModuleConfig? = null
 )

@@ -11,7 +11,7 @@ class CirclePolygonIntersectionTest : CrazyDebugger(
         unit = 100.0,
         eyeModule = TransformEyeModuleConfig(),
         timerModule = TimerModuleConfig(startStepSpeed = 50),
-        inspectorModule = DebugObjectModuleConfig()
+        inspectorModule = InspectorModuleConfig()
     )
 ) {
     override suspend fun act(s: Double): List<DebugObjectI> {

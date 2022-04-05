@@ -2,6 +2,7 @@ package server.adds.math.geom.shapes
 
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
+import server.adds.CrazyGraphics
 import server.adds.math.CollisionDetection
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
@@ -45,6 +46,21 @@ class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugC
 
         if (config.crazyStyle.fillOpacity != null) g2.fillRect(screenPos.x, screenPos.y, size.x * transform.zoom, size.y * transform.zoom)
         if (config.crazyStyle.strokeOpacity != null) g2.strokeRect(screenPos.x, screenPos.y, size.x * transform.zoom, size.y * transform.zoom)
+
+        if (config.paintPoints) {
+            val paintPoint = { x: Int, y: Int ->
+                val p = pos + vec(x, y) * size
+                CrazyGraphics.paintPoint(
+                    g2, transform.screen(p),
+                    name = if (config.paintPointNames) "${if (x == 0) "L" else "R"}${if (y == 0) "T" else "B"}" else null,
+                    coordinates = if (config.paintCoords) p else null
+                )
+            }
+            paintPoint(0,0)
+            paintPoint(1,0)
+            paintPoint(1,1)
+            paintPoint(0,1)
+        }
     }
 
     fun copy(pos: CrazyVector = this.pos, size: CrazyVector = this.size, config: ShapeDebugConfig? = this.config) =

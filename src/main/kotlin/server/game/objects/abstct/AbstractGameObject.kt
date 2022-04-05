@@ -1,4 +1,4 @@
-package server.game.objects
+package server.game.objects.abstct
 
 import server.adds.debug.DebugObjectI
 import server.adds.text.Ansi
@@ -18,10 +18,17 @@ abstract class AbstractGameObject(val type: GameObjectType) : GameClassI, DebugO
     protected fun getGame() = game
     fun getID() = id
 
-    fun initialize(g: CrazyGame, id: String) { this.id = id; game = g }
+    fun initialize(g: CrazyGame, id: String) {
+        if (this::id.isInitialized || this::game.isInitialized) error("I can't be initialized twice!")
+        this.id = id; game = g
+    }
+
+    fun killMe() { getGame().killObject(id) }
+
+    protected fun addObject(o: AbstractGameObject) { getGame().addObject(o) }
 
     fun log(text: String, color: Ansi? = null) {
-        Text.coloredLog("GO ($id) ${data().type}", text, color = color, name = Ansi.PURPLE, maxSize = 25)
+        Text.coloredLog("GO ($id) ${type.id}", text, color = color, name = Ansi.PURPLE, maxSize = 25)
     }
 
     abstract override fun data(): AbstractGameObjectI

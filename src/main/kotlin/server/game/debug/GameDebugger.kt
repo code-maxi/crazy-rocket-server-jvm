@@ -16,7 +16,7 @@ class GameDebugger : CrazyDebugger(GeomDebuggerConfig(
     title = "Game-Debugger",
     eyeModule = TransformEyeModuleConfig(),
     timerModule = TimerModuleConfig(startStepSpeed = 50),
-    inspectorModule = DebugObjectModuleConfig(),
+    inspectorModule = InspectorModuleConfig(),
     gridModule = GridModuleConfig(10.0, true),
     unit = 20.0
 )) {
@@ -41,10 +41,9 @@ class GameDebugger : CrazyDebugger(GeomDebuggerConfig(
     private val messages = arrayListOf<SendFormat>()
 
     init {
-        game.loadLevel(1)
+        game.createRandomAsteroids(10)
         rocket = game.addRocket(userProps)
         step(1.0)
-        inspectorModule!!.select(rocket.getID())
     }
 
     override suspend fun act(s: Double): List<DebugObjectI> {
@@ -68,7 +67,7 @@ class GameDebugger : CrazyDebugger(GeomDebuggerConfig(
 
         game.calc(s)
 
-        return game.objectList()
+        return game.objects()
     }
     
     private fun onMessage(id: String, message: SendFormat) {

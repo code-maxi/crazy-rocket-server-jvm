@@ -3,6 +3,7 @@ package server.adds.debug
 import javafx.application.Platform
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.geometry.HPos
+import javafx.geometry.Insets
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.Cursor
@@ -14,12 +15,10 @@ import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
 import javafx.scene.control.TextArea
 import javafx.scene.input.*
-import javafx.scene.layout.BorderPane
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.text.Font
+import javafx.scene.text.FontWeight
 import javafx.stage.Stage
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -27,7 +26,7 @@ import kotlinx.coroutines.launch
 import server.adds.CrazyGraphicStyle
 import server.adds.CrazyGraphics
 import server.adds.math.CrazyVector
-import server.adds.math.debugString
+import server.adds.math.niceString
 import server.adds.math.geom.shapes.CrazyRect
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.vec
@@ -53,12 +52,19 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
 
     protected val eyeModule = configData.eyeModule?.let { TransformEyeModule(it) }
     protected val timerModule = configData.timerModule?.let { TimerModule(it) }
-    protected val inspectorModule = configData.inspectorModule?.let { DebugObjectModule(it) }
+    protected val inspectorModule = configData.inspectorModule?.let { InspectorModule(it) }
     protected val gridModule = configData.gridModule?.let { GridModule(it) }
+    protected val loggerModule = configData.loggerModule?.let { LoggerModule(it) }
+
+    private fun modules() = listOfNotNull(
+        eyeModule,
+        timerModule,
+        inspectorModule,
+        gridModule,
+        loggerModule
+    )
 
     private var paintNecessary = true
-
-    private var smallDrag = false
 
     private lateinit var root: BorderPane
 
@@ -105,57 +111,85 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
         }
     }
 
-    override fun start(stage: Stage) {
-        root = BorderPane().apply {
-            paddingAll = 15.0
+    private fun loadMyComponent() = BorderPane().apply {
+        paddingAll = 15.0
 
-            center {
-                pane {
-                    useMaxSize = true
-                    canvas {
-                        widthProperty().bind(this@pane.widthProperty())
-                        heightProperty().bind(this@pane.heightProperty())
+        center {
+            pane {
+                useMaxSize = true
+                canvas {
+                    widthProperty().bind(this@pane.widthProperty())
+                    heightProperty().bind(this@pane.heightProperty())
 
-                        widthProperty().onChange {
-                            canvasSize = canvasSize.copy(x = it)
-                            paint()
-                        }
-                        heightProperty().onChange {
-                            canvasSize = canvasSize.copy(y = it)
-                            paint()
-                        }
-
-                        setOnMouseEntered { mouseEvent(it, MouseEventType.ENTER) }
-                        setOnMouseExited { mouseEvent(it, MouseEventType.EXIT) }
-                        setOnMousePressed { mouseEvent(it, MouseEventType.PRESS) }
-                        setOnMouseDragged { mouseEvent(it, MouseEventType.DRAG) }
-                        setOnMouseReleased { mouseEvent(it, MouseEventType.RELEASE) }
-                        setOnMouseMoved { mouseEvent(it, MouseEventType.MOVE) }
-
-                        setOnScroll { scrollEvent(it) }
-
-                        canvas = this
+                    widthProperty().onChange {
+                        canvasSize = canvasSize.copy(x = it)
+                        paint()
                     }
-                }
-            }
+                    heightProperty().onChange {
+                        canvasSize = canvasSize.copy(y = it)
+                        paint()
+                    }
 
-            val custom = customGui()
-            if (timerModule != null || inspectorModule != null || custom != null) bottom {
-                hbox {
-                    spacing = 20.0
-                    alignment = Pos.TOP_CENTER
-                    paddingTop = 10.0
+                    setOnMouseEntered { mouseEvent(it, MouseEventType.ENTER) }
+                    setOnMouseExited { mouseEvent(it, MouseEventType.EXIT) }
+                    setOnMousePressed { mouseEvent(it, MouseEventType.PRESS) }
+                    setOnMouseDragged { mouseEvent(it, MouseEventType.DRAG) }
+                    setOnMouseReleased { mouseEvent(it, MouseEventType.RELEASE) }
+                    setOnMouseMoved { mouseEvent(it, MouseEventType.MOVE) }
 
-                    custom?.let { add(it) }
-                    timerModule?.component?.let { add(it) }
-                    inspectorModule?.component?.let { add(it) }
+                    setOnScroll { scrollEvent(it) }
+
+                    canvas = this
                 }
             }
         }
 
+        bottom {
+            val modulesWithComponent = (modules() + (object : DebuggerModuleI {
+                override fun getName() = "Custom GUI"
+                override fun myComponent() = customGui()
+            })).filter { it.myComponent() != null }
+
+            if (modulesWithComponent.isNotEmpty()) {
+                scrollpane(true, true) {
+                    background = Background(BackgroundFill(Color.rgb(0, 0, 0, 0.0), CornerRadii(0.0), Insets(0.0)))
+                    paddingBottom = 5.0
+
+                    hbox {
+                        spacing = 10.0
+                        alignment = Pos.TOP_CENTER
+                        paddingTop = 10.0
+
+                        modulesWithComponent.forEach {
+                            vbox {
+                                spacing = 10.0
+                                paddingAll = 10.0
+                                background = Background(BackgroundFill(
+                                    Color.WHITE,
+                                    CornerRadii(5.0),
+                                    Insets(0.0)
+                                ))
+                                style = "-fx-border-color: rgb(150,150,150); -fx-border-radius: 5px;"
+                                vgrow = Priority.ALWAYS
+
+                                label(it.getName()) {
+                                    font = Font.font("sans-serif", FontWeight.BOLD, 14.0)
+                                }
+                                add(it.myComponent()!!)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun start(stage: Stage) {
+        root = loadMyComponent()
+
         val scene = Scene(root)
 
-        scene.fill = Color.color(0.9,0.9,0.9)
+        scene.fill = Color.color(0.6,0.6,0.6)
 
         scene.addEventFilter(KeyEvent.KEY_PRESSED) { onKeyPressed(it) }
         scene.addEventFilter(KeyEvent.KEY_RELEASED) { onKeyReleased(it) }
@@ -171,13 +205,17 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
     }
 
     open fun mouseEvent(it: MouseEvent, type: MouseEventType) {
-        mouse = mouse?.copy(pos = eyeTransform().world(vec(it.x, it.y)))
+        mouse = ClientMouseI(eyeTransform().world(vec(it.x, it.y)), when (it.button) {
+            MouseButton.PRIMARY -> 1
+            MouseButton.MIDDLE -> 2
+            MouseButton.SECONDARY -> 3
+            else -> 0
+        })
 
         when (type) {
-            MouseEventType.PRESS -> {
-                log(objects.map { it.debugOptions() }.joinToString(", "))
+            /*MouseEventType.PRESS -> {
                 smallDrag = false
-            }
+            }*/
             MouseEventType.EXIT -> {
                 mouse = null
                 canvas.scene.cursor = Cursor.DEFAULT
@@ -188,7 +226,7 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
             MouseEventType.ENTER -> { paintNecessary = true }
         }
 
-        eyeModule?.mouseEvent(it, type) ?: run { smallDrag = true }
+        eyeModule?.mouseEvent(it, type)
         inspectorModule?.mouseEvent(it, type)
 
         paint()
@@ -212,6 +250,9 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
     abstract suspend fun act(s: Double): List<DebugObjectI>
 
     inner class TransformEyeModule(val moduleConfig: TransformEyeModuleConfig) : DebuggerModuleI {
+        override fun getName() = "Inspector Module"
+        override fun myComponent() = null
+
         private var oldEyePos = CrazyVector.zero()
         private var oldMousePos = CrazyVector.zero()
         var transform = DebugTransform(zoom = configData.unit)
@@ -245,9 +286,9 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                     }
                     MouseEventType.RELEASE -> {
                         canvas.scene.cursor = Cursor.DEFAULT
-                        if (transform.screen(oldMousePos) distance vec(it.x, it.y) < 3.0) {
+                        /*if (transform.screen(oldMousePos) distance vec(it.x, it.y) < 3.0) {
                             smallDrag = true
-                        }
+                        }*/
                     }
                 }
             }
@@ -259,6 +300,9 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
     }
 
     inner class GridModule(private val moduleConfig: GridModuleConfig) : DebuggerModuleI {
+        override fun getName() = "Grid Module"
+        override fun myComponent() = null
+
         fun drawGrid(gc: GraphicsContext) {
             gc.beginPath()
 
@@ -288,7 +332,7 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                 if (moduleConfig.paintMarks) {
                     CrazyGraphics.paintTextRect(gc,
                         vec(screenPos.x, 0),
-                        worldPos.x.debugString().toString(),
+                        worldPos.x.niceString().toString(),
                         center = vec(0.5, -0.5),
                         style = CrazyGraphicStyle(
                             fillColor = Color.GREY,
@@ -299,7 +343,7 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                     CrazyGraphics.paintTextRect(
                         gc,
                         vec(0, screenPos.y),
-                        worldPos.y.debugString().toString(),
+                        worldPos.y.niceString().toString(),
                         center = vec(-0.1, 0.5),
                         style = CrazyGraphicStyle(
                             fillColor = Color.GREY,
@@ -432,27 +476,35 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                     valueProperty().onChange { setValues(it) }
                 }
             }
+
+            minWidth = 550.0
         }
+
+        override fun getName() = "Timer Module"
+        override fun myComponent() = component
     }
 
-    inner class DebugObjectModule(val moduleConfig: DebugObjectModuleConfig) : DebuggerModuleI {
+    inner class InspectorModule(val moduleConfig: InspectorModuleConfig) : DebuggerModuleI {
         private var selectedObjectId: String? = null
         private var selectedObjectPos: CrazyVector? = null
         private var soOptionsComponent: TextArea
         private var soLabel: Label
         private var paintDebug = SimpleBooleanProperty(true)
 
+        override fun getName() = "Inspector Module"
+
         fun getSelectedObject() = selectedObjectId
 
-        fun select(id: String? = selectedObjectId) {
+        fun select(id: String? = selectedObjectId, updateStill: Boolean = false) {
             val selObj = objects.find { o -> o.debugOptions()?.id?.let { it == id } ?: false }
 
             if (
                 selectedObjectId != id
                 || (selObj?.debugOptions()?.itemsToString() ?: "") != soOptionsComponent.text
+                || updateStill
             ) {
                 Platform.runLater {
-                    soLabel.text = if (selObj == null) "Es wurde kein Objekt ausgewählt, das DebugOptions definiert." else "Es wurde das Objekt \"${selObj.debugOptions()?.name}\" ausgewählt."
+                    soLabel.text = if (selObj == null) "There is no object defining DebugOptions selected." else "The object \"${selObj.debugOptions()?.name}\" is selected."
                     soOptionsComponent.text = selObj?.debugOptions()?.itemsToString() ?: ""
                 }
             }
@@ -506,7 +558,7 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
             }
         }
 
-        val component = VBox().apply {
+        private val component = VBox().apply {
             spacing = 10.0
             soLabel = label()
             soOptionsComponent = textarea {
@@ -518,7 +570,7 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
             hbox {
                 spacing = 10.0
                 alignment = Pos.CENTER_LEFT
-                if (eyeModule != null) button("Zu Objekt Springen") {
+                if (eyeModule != null) button("Jump to Object's Position") {
                     action {
                         selectedObjectPos?.let {
                             eyeModule.transform = eyeModule.transform.copy(eye = it)
@@ -526,22 +578,31 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                         }
                     }
                 }
-                checkbox("Paint Debug", paintDebug) {
+                checkbox("Paint DebugOptions", paintDebug) {
                     action { paint() }
                 }
             }
         }
 
+        override fun myComponent() = component
+
+        init {
+            select(null, true)
+        }
+
         fun mouseEvent(it: MouseEvent, type: MouseEventType) {
             if (it.button == MouseButton.PRIMARY) when (type) {
                 MouseEventType.RELEASE -> {
+
                     getMousePos()?.let { m ->
                         var selectedObjectId: String? = null
-                        for (o in objects) {
+
+                        for (o in objects.sortedBy { it.zIndex() }) {
                             if (o.surroundedRect() containsPoint m) {
                                 o.debugOptions()?.id?.let { selectedObjectId = it }
                             }
                         }
+
                         select(selectedObjectId)
                     } ?: run {
                         select(null)
@@ -549,5 +610,40 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                 }
             }
         }
+    }
+
+    inner class LoggerModule(val moduleConfig: LoggerModuleConfig) : DebuggerModuleI {
+        private val textArea: TextArea
+
+        private val component = VBox().apply {
+            spacing = 10.0
+            vgrow = Priority.ALWAYS
+            hgrow = Priority.ALWAYS
+
+            textArea = textarea("Logger started...\n").apply {
+                vgrow = Priority.ALWAYS
+                hgrow = Priority.ALWAYS
+                isEditable = false
+                font = Font.font("monospace", 15.0)
+                minWidth = 300.0
+            }
+
+            button("Clear Console") {
+                action {
+                    Platform.runLater { textArea.clear() }
+                }
+            }
+        }
+
+        fun log(text: String, from: String = configData.title) {
+            Platform.runLater {
+                textArea.appendText("${Text.sizeString(from, moduleConfig.firstColumnLength)}: $text\n")
+                textArea.positionCaret(textArea.length)
+            }
+        }
+
+        override fun myComponent() = component
+
+        override fun getName() = "Logger Module"
     }
 }

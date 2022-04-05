@@ -27,9 +27,7 @@ data class KeyboardI(val keys: List<ClientKeyI> = listOf()) {
 
 data class ClientMouseI(
     val pos: CrazyVector,
-    val leftPressed: Boolean,
-    val middlePressed: Boolean,
-    val rightPressed: Boolean
+    val button: Int
 )
 
 data class ClientKeyI(

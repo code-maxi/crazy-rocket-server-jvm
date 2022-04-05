@@ -150,8 +150,8 @@ class GalaxyS(
 
             userList().forEach {
                 it.onGameCalculated(
-                    game!!.settings,
-                    game!!.objectList()
+                    game!!.props,
+                    game!!.objects()
                 )
             }
 
@@ -222,7 +222,7 @@ class GalaxyS(
               catch (ex: NullPointerException) { throw GalaxyDoesNotExist(join.userName) }
         }
 
-        fun getGalaxies() = galaxyList()
+        fun getGalaxies() = galaxyList().map { it.data() }
 
         fun getGalaxy(key: String) = galaxies[key] ?: throw GalaxyDoesNotExist(key)
 

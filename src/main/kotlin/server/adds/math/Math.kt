@@ -27,7 +27,7 @@ object RocketMath {
         z1 <= z2 + d/2 && z1 >= z2 - d/2
 }
 
-fun Double.debugString() = DecimalFormat("###################.##").format(this)
+fun Double.niceString() = DecimalFormat("###################.##").format(this)
 
 fun Double.toDegrees() = this * (180.0/Math.PI)
 

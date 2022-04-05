@@ -21,7 +21,7 @@ class CollisionTest : CrazyDebugger(
     unit = 100.0,
     eyeModule = TransformEyeModuleConfig(),
     timerModule = TimerModuleConfig(startStepSpeed = 20),
-    inspectorModule = DebugObjectModuleConfig()
+    inspectorModule = InspectorModuleConfig()
 )
 ) {
     private val shapeMap = hashMapOf(
