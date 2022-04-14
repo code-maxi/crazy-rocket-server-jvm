@@ -11,9 +11,10 @@ import javafx.scene.Node
 import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
-import javafx.scene.control.CheckBox
+import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.control.TextArea
+import javafx.scene.control.ToggleGroup
 import javafx.scene.input.*
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
@@ -40,8 +41,9 @@ import javax.swing.Timer
 import kotlin.math.abs
 
 
-abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App(), Logable {
+abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App() {
     private lateinit var canvas: Canvas
+    protected var stopAfterAct = false
 
     val keyboard = hashMapOf<KeyCode, Boolean>()
 
@@ -56,7 +58,7 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
     protected val gridModule = configData.gridModule?.let { GridModule(it) }
     protected val loggerModule = configData.loggerModule?.let { LoggerModule(it) }
 
-    private fun modules() = listOfNotNull(
+    private fun moduleList() = listOfNotNull(
         eyeModule,
         timerModule,
         inspectorModule,
@@ -75,15 +77,26 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
     fun eyeTransform() = eyeModule?.getTrans() ?: DebugTransform(unit = configData.unit, canvasSize = canvasSize)
 
     override fun log(str: String, color: Ansi?) {
-        Text.coloredLog(configData.title, str, color, Ansi.YELLOW, configData.title.length+1)
+        Text.formattedPrint(configData.title, str, color, Ansi.YELLOW, configData.title.length+1)
     }
 
-    protected fun step(f: Double) {
-        GlobalScope.launch {
-            objects = act(f)
-            inspectorModule?.select()
-            if (paintNecessary) paint()
-        }
+    protected fun logModule(text: String, from: String? = null) {
+        loggerModule?.log(text, from)
+    }
+
+    protected suspend fun step(f: Double): Int {
+        stopAfterAct = false
+
+        val timeBefore = System.nanoTime()
+        objects = act(f)
+        val fps = (1000000 / (System.nanoTime() - timeBefore)).toInt()
+
+        inspectorModule?.select()
+        if (paintNecessary) paint()
+
+        if (stopAfterAct) timerModule?.stop()
+
+        return fps
     }
 
     private fun paint() {
@@ -111,81 +124,90 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
         }
     }
 
-    private fun loadMyComponent() = BorderPane().apply {
-        paddingAll = 15.0
+    fun initialize(): Scene {
+        root = BorderPane().apply {
+            center {
+                splitpane(Orientation.VERTICAL) {
+                    paddingAll = 15.0
+                    vgrow = Priority.ALWAYS
+                    hgrow = Priority.ALWAYS
 
-        center {
-            pane {
-                useMaxSize = true
-                canvas {
-                    widthProperty().bind(this@pane.widthProperty())
-                    heightProperty().bind(this@pane.heightProperty())
+                    //center {
+                    pane {
+                        vgrow = Priority.ALWAYS
+                        hgrow = Priority.ALWAYS
 
-                    widthProperty().onChange {
-                        canvasSize = canvasSize.copy(x = it)
-                        paint()
+                        canvas {
+                            widthProperty().bind(this@pane.widthProperty())
+                            heightProperty().bind(this@pane.heightProperty())
+
+                            widthProperty().onChange {
+                                canvasSize = canvasSize.copy(x = it)
+                                paint()
+                            }
+                            heightProperty().onChange {
+                                canvasSize = canvasSize.copy(y = it)
+                                paint()
+                            }
+
+                            setOnMouseEntered { mouseEvent(it, MouseEventType.ENTER) }
+                            setOnMouseExited { mouseEvent(it, MouseEventType.EXIT) }
+                            setOnMousePressed { mouseEvent(it, MouseEventType.PRESS) }
+                            setOnMouseDragged { mouseEvent(it, MouseEventType.DRAG) }
+                            setOnMouseReleased { mouseEvent(it, MouseEventType.RELEASE) }
+                            setOnMouseMoved { mouseEvent(it, MouseEventType.MOVE) }
+
+                            setOnScroll { scrollEvent(it) }
+
+                            canvas = this
+                        }
                     }
-                    heightProperty().onChange {
-                        canvasSize = canvasSize.copy(y = it)
-                        paint()
-                    }
+                    //}
+                    val modulesWithComponent = (listOf(
+                        (object : DebuggerModuleI {
+                            override fun getName() = "Custom GUI"
+                            override fun myComponent() = customGui()
+                        })
+                    ) + moduleList()).filter { it.myComponent() != null }
 
-                    setOnMouseEntered { mouseEvent(it, MouseEventType.ENTER) }
-                    setOnMouseExited { mouseEvent(it, MouseEventType.EXIT) }
-                    setOnMousePressed { mouseEvent(it, MouseEventType.PRESS) }
-                    setOnMouseDragged { mouseEvent(it, MouseEventType.DRAG) }
-                    setOnMouseReleased { mouseEvent(it, MouseEventType.RELEASE) }
-                    setOnMouseMoved { mouseEvent(it, MouseEventType.MOVE) }
+                    if (modulesWithComponent.isNotEmpty()) {
+                        scrollpane(true, true) {
+                            background = Background(BackgroundFill(Color.rgb(0, 0, 0, 0.0), CornerRadii(0.0), Insets(0.0)))
+                            paddingBottom = 5.0
 
-                    setOnScroll { scrollEvent(it) }
-
-                    canvas = this
-                }
-            }
-        }
-
-        bottom {
-            val modulesWithComponent = (modules() + (object : DebuggerModuleI {
-                override fun getName() = "Custom GUI"
-                override fun myComponent() = customGui()
-            })).filter { it.myComponent() != null }
-
-            if (modulesWithComponent.isNotEmpty()) {
-                scrollpane(true, true) {
-                    background = Background(BackgroundFill(Color.rgb(0, 0, 0, 0.0), CornerRadii(0.0), Insets(0.0)))
-                    paddingBottom = 5.0
-
-                    hbox {
-                        spacing = 10.0
-                        alignment = Pos.TOP_CENTER
-                        paddingTop = 10.0
-
-                        modulesWithComponent.forEach {
-                            vbox {
+                            hbox {
                                 spacing = 10.0
-                                paddingAll = 10.0
-                                background = Background(BackgroundFill(
-                                    Color.WHITE,
-                                    CornerRadii(5.0),
-                                    Insets(0.0)
-                                ))
-                                style = "-fx-border-color: rgb(150,150,150); -fx-border-radius: 5px;"
+                                alignment = Pos.TOP_CENTER
+                                paddingTop = 10.0
                                 vgrow = Priority.ALWAYS
+                                hgrow = Priority.ALWAYS
 
-                                label(it.getName()) {
-                                    font = Font.font("sans-serif", FontWeight.BOLD, 14.0)
+                                prefHeight = configData.moduleComponentHeight
+
+                                modulesWithComponent.forEach {
+                                    vbox {
+                                        spacing = 10.0
+                                        paddingAll = 10.0
+                                        background = Background(BackgroundFill(
+                                            Color.WHITE,
+                                            CornerRadii(5.0),
+                                            Insets(0.0)
+                                        ))
+                                        style = "-fx-border-color: rgb(150,150,150); -fx-border-radius: 5px;"
+                                        vgrow = Priority.ALWAYS
+
+                                        label(it.getName()) {
+                                            font = Font.font("sans-serif", FontWeight.BOLD, 14.0)
+                                        }
+                                        add(it.myComponent()!!)
+                                    }
                                 }
-                                add(it.myComponent()!!)
                             }
                         }
                     }
                 }
             }
         }
-    }
-
-    override fun start(stage: Stage) {
-        root = loadMyComponent()
 
         val scene = Scene(root)
 
@@ -194,13 +216,14 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
         scene.addEventFilter(KeyEvent.KEY_PRESSED) { onKeyPressed(it) }
         scene.addEventFilter(KeyEvent.KEY_RELEASED) { onKeyReleased(it) }
 
-        stage.scene = scene
+        return scene
+    }
 
-        stage.title = configData.title
-        stage.width = 1200.0
-        stage.height = 900.0
+    override fun start(stage: Stage) {
+        super.start(stage)
+        stage.scene = initialize()
+        stage.isMaximized = true
         stage.isAlwaysOnTop = true
-
         stage.show()
     }
 
@@ -364,79 +387,122 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
     inner class TimerModule(val moduleConfig: TimerModuleConfig) : DebuggerModuleI {
         private var actFactor = 1.0
         private var reverseStep = false
-        private lateinit var reverseCheckbox: CheckBox
-
+        private var runButton: Button? = null
         private val timerRunning = SimpleBooleanProperty()
+        private val isContinuousSelected = SimpleBooleanProperty(false)
+        private var delayBetweenSteps = 20
+        private var fps = 0
+        private var fpsLabel: Label? = null
+        private var delayChangeCount = 0
 
-        private val timer = Timer(moduleConfig.startStepSpeed) { step(getActFactor()) }
+        private val timer: Timer = Timer(moduleConfig.startStepSpeed) {
+            GlobalScope.launch {
+                val fps = step(actFactor)
+                countFps(fps)
+            }
+        }
 
         init {
-            if (moduleConfig.sofortStartTimer) GlobalScope.launch {
-                delay(500)
-                timerRunning.value = true
-            }
-
-            timerRunning.onChange {
-                if (it) timer.start()
-                else timer.stop()
-                println(it)
+            if (moduleConfig.sofortStartTimer != null) GlobalScope.launch {
+                delay(moduleConfig.sofortStartTimer.toLong())
+                start()
             }
         }
 
         fun stop() {
-            timerRunning.value = false
+            startOrStopTimer(false)
         }
-        fun runAgin() {
-            timerRunning.value = true
+
+        private fun setFps(fpsp: Int) {
+            fps = fpsp
+            if (fps.toString() != fpsLabel?.text) Platform.runLater {
+                fpsLabel?.text = "$fps FPS"
+            }
+        }
+
+        fun start() {
+            startOrStopTimer(true)
+        }
+
+        private fun countFps(fps: Int, maxDelayCount: Int = 10) {
+            if (delayChangeCount >= maxDelayCount) {
+                setFps(fps)
+                delayChangeCount = 0
+            }
+            else delayChangeCount ++
+        }
+
+        private fun startContinuousThread() {
+            GlobalScope.launch {
+                while (isContinuousSelected.value) {
+                    val fps = step(actFactor)
+                    countFps(fps)
+                    delay(delayBetweenSteps.toLong())
+                }
+            }
+        }
+
+        private fun startOrStopTimer(start: Boolean) {
+            if (start != timer.isRunning) {
+                if (start) timer.start() else timer.stop()
+                Platform.runLater {
+                    timerRunning.value = start
+                    runButton?.text = if (start) "Timer Stop" else "Timer Run"
+                }
+            }
         }
 
         private fun getActFactor() = actFactor * if (reverseStep) -1.0 else 1.0
 
-        val component = GridPane().apply {
-            vgap = 15.0
-            hgap = 10.0
-            alignment = Pos.TOP_CENTER
+        override fun getName() = "Timer Module"
 
-            row {
-                hbox {
-                    alignment = Pos.CENTER
-                    spacing = 10.0
+        override fun myComponent() = VBox().apply {
+            spacing = 15.0
+            alignment = Pos.CENTER
 
-                    gridpaneConstraints {
-                        columnSpan = 2
+            hbox {
+                spacing = 5.0
+                alignment = Pos.CENTER_LEFT
+
+                val toggleGroupV = ToggleGroup()
+
+                radiobutton("Timer Type") {
+                    toggleGroup = toggleGroupV
+                    action {
+                        Platform.runLater { isContinuousSelected.value = false }
+                        start()
                     }
-
-                    button("Act Step Back") {
-                        disableProperty().bind(timerRunning)
-                        action {
-                            step(abs(getActFactor()) * -1)
-                        }
+                }
+                radiobutton("Continuous Type") {
+                    toggleGroup = toggleGroupV
+                    action {
+                        Platform.runLater { isContinuousSelected.value = true }
+                        stop()
+                        Platform.runLater { startContinuousThread() }
                     }
+                }
 
-                    button("Act Step Forward") {
-                        disableProperty().bind(timerRunning)
-                        action { step(abs(getActFactor())) }
-                    }
-
-                    button {
-                        timerRunning.onChange {
-                            Platform.runLater { text = if (it) "Timer Stop" else "Timer Run" }
-                        }
-                        action { timerRunning.value = !timerRunning.value }
-                    }
-                    checkbox("Reverse") {
-                        selectedProperty().onChange { reverseStep = it }
-                        disableProperty().bind(timerRunning.not())
+                fpsLabel = label {
+                    font = Font.font("sans-serif", FontWeight.BOLD, 14.0)
+                    this.hboxConstraints {
+                        alignment = Pos.CENTER_RIGHT
                     }
                 }
             }
 
-            row {
-                val timerSpeedLabel = label {
-                    gridpaneConstraints { hAlignment = HPos.RIGHT }
-                }
+            separator {
+                hgrow = Priority.ALWAYS
+            }
 
-                slider(0.02, 2.0, (moduleConfig.startStepSpeed.toDouble() / 1000.0), Orientation.HORIZONTAL) {
+            vbox {
+                spacing = 5.0
+
+                managedProperty().bind(isContinuousSelected)
+                visibleWhen(isContinuousSelected)
+
+                val gapTimeLabel = label()
+
+                slider(0.02, 0.5, (delayBetweenSteps.toDouble() / 1000.0), Orientation.HORIZONTAL) {
                     majorTickUnit = 0.2
                     isShowTickMarks = true
                     isShowTickLabels = true
@@ -444,17 +510,75 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                     minWidth = 400.0
 
                     val setValues = { it: Double ->
-                        timer.delay = (it * 1000).toInt()
-                        timerSpeedLabel.text = "Timer Speed (${DecimalFormat("0.00").format(it)} s)"
+                        delayBetweenSteps = (it * 1000).toInt()
+                        gapTimeLabel.text = "Gap Time (${DecimalFormat("0.00").format(it)} s)"
                     }
+
                     setValues(value)
+
                     valueProperty().onChange { setValues(it) }
-                    disableProperty().bind(timerRunning.not())
                 }
             }
 
-            row {
-                alignment = Pos.CENTER
+            vbox {
+                spacing = 15.0
+
+                managedProperty().bind(isContinuousSelected.not())
+                hiddenWhen(isContinuousSelected)
+
+                hbox {
+                    alignment = Pos.CENTER
+                    spacing = 10.0
+
+                    button("Act Step Back") {
+                        disableProperty().bind(timerRunning)
+                        action { GlobalScope.launch { setFps(step(abs(getActFactor()) * -1)) } }
+                    }
+
+                    button("Act Step Forward") {
+                        disableProperty().bind(timerRunning)
+                        action { GlobalScope.launch { setFps(step(abs(getActFactor()))) } }
+                    }
+
+                    runButton = button {
+                        action { startOrStopTimer(!timerRunning.value) }
+                    }
+
+                    checkbox("Reverse") {
+                        selectedProperty().onChange { reverseStep = it }
+                        disableProperty().bind(timerRunning.not())
+                    }
+                }
+
+                vbox {
+                    spacing = 4.0
+
+                    val timerSpeedLabel = label {
+                        gridpaneConstraints { hAlignment = HPos.RIGHT }
+                    }
+
+                    slider(0.02, 2.0, (moduleConfig.startStepSpeed.toDouble() / 1000.0), Orientation.HORIZONTAL) {
+                        majorTickUnit = 0.2
+                        isShowTickMarks = true
+                        isShowTickLabels = true
+
+                        minWidth = 400.0
+
+                        val setValues = { it: Double ->
+                            timer.delay = (it * 1000).toInt()
+                            timerSpeedLabel.text = "Timer Speed (${DecimalFormat("0.00").format(it)} s)"
+                        }
+
+                        setValues(value)
+                        valueProperty().onChange { setValues(it) }
+
+                        disableProperty().bind(timerRunning.not())
+                    }
+                }
+            }
+
+            vbox {
+                spacing = 4.0
 
                 val actFactorLabel = label {
                     gridpaneConstraints { hAlignment = HPos.RIGHT }
@@ -471,25 +595,23 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                         actFactor = it
                         actFactorLabel.text = "Act Factor (${DecimalFormat("0.00").format(it)})"
                     }
+
                     setValues(value)
 
                     valueProperty().onChange { setValues(it) }
                 }
             }
 
-            minWidth = 550.0
+            minWidth = 450.0
         }
-
-        override fun getName() = "Timer Module"
-        override fun myComponent() = component
     }
 
     inner class InspectorModule(val moduleConfig: InspectorModuleConfig) : DebuggerModuleI {
         private var selectedObjectId: String? = null
         private var selectedObjectPos: CrazyVector? = null
-        private var soOptionsComponent: TextArea
-        private var soLabel: Label
-        private var paintDebug = SimpleBooleanProperty(true)
+        private var soOptionsComponent: TextArea? = null
+        private var soLabel: Label? = null
+        private var paintDebug = SimpleBooleanProperty(moduleConfig.paintDebugDefault)
 
         override fun getName() = "Inspector Module"
 
@@ -500,12 +622,12 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
 
             if (
                 selectedObjectId != id
-                || (selObj?.debugOptions()?.itemsToString() ?: "") != soOptionsComponent.text
+                || (selObj?.debugOptions()?.itemsToString() ?: "") != soOptionsComponent?.text
                 || updateStill
             ) {
                 Platform.runLater {
-                    soLabel.text = if (selObj == null) "There is no object defining DebugOptions selected." else "The object \"${selObj.debugOptions()?.name}\" is selected."
-                    soOptionsComponent.text = selObj?.debugOptions()?.itemsToString() ?: ""
+                    soLabel?.text = if (selObj == null) "There is no object defining DebugOptions selected." else "The object \"${selObj.debugOptions()?.name}\" is selected."
+                    soOptionsComponent?.text = selObj?.debugOptions()?.itemsToString() ?: ""
                 }
             }
 
@@ -558,15 +680,19 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
             }
         }
 
-        private val component = VBox().apply {
+        override fun myComponent() = VBox().apply {
+            vgrow = Priority.ALWAYS
             spacing = 10.0
             soLabel = label()
+
             soOptionsComponent = textarea {
                 font = Font.font("monospace", 15.0)
                 isEditable = false
                 vgrow = Priority.ALWAYS
-                minWidth = 450.0
+                hgrow = Priority.ALWAYS
+                minWidth = moduleConfig.minWidth
             }
+
             hbox {
                 spacing = 10.0
                 alignment = Pos.CENTER_LEFT
@@ -579,12 +705,11 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
                     }
                 }
                 checkbox("Paint DebugOptions", paintDebug) {
+                    isSelected = moduleConfig.paintDebugDefault
                     action { paint() }
                 }
             }
         }
-
-        override fun myComponent() = component
 
         init {
             select(null, true)
@@ -613,7 +738,7 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
     }
 
     inner class LoggerModule(val moduleConfig: LoggerModuleConfig) : DebuggerModuleI {
-        private val textArea: TextArea
+        private var textArea: TextArea? = null
 
         private val component = VBox().apply {
             spacing = 10.0
@@ -630,15 +755,24 @@ abstract class CrazyDebugger(private val configData: GeomDebuggerConfig) : App()
 
             button("Clear Console") {
                 action {
-                    Platform.runLater { textArea.clear() }
+                    Platform.runLater { textArea?.clear() }
                 }
             }
         }
 
-        fun log(text: String, from: String = configData.title) {
+        fun log(text: String, from: String? = null) {
             Platform.runLater {
-                textArea.appendText("${Text.sizeString(from, moduleConfig.firstColumnLength)}: $text\n")
-                textArea.positionCaret(textArea.length)
+                textArea?.let {
+                    it.appendText(
+                        if (from != null) "${
+                            Text.sizeString(
+                                from,
+                                moduleConfig.firstColumnLength
+                            )
+                        }: $text\n" else text
+                    )
+                    it.positionCaret(it.length)
+                }
             }
         }
 

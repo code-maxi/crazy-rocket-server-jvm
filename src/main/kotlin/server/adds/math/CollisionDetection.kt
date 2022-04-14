@@ -80,7 +80,7 @@ object CollisionDetection {
     }
 
     fun shapeShapeCollision(shape1: CrazyShape, shape2: CrazyShape): Boolean {
-        val checkNotNecessary = (shape1 is CrazyRect && shape2 is CrazyRect) || (shape1 is CrazyCircle && shape2 is CrazyCircle)
+        val checkNotNecessary = (shape1 is CrazyRect && shape2 is CrazyRect)// || (shape1 is CrazyCircle && shape2 is CrazyCircle)
         val firstCollisionCheck = checkNotNecessary || rectRectCollision(shape1.surroundedRect(), shape2.surroundedRect())
 
         return firstCollisionCheck && when (shape1) {

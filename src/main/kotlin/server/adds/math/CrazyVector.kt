@@ -9,12 +9,14 @@ data class CrazyVector(val x: Double, val y: Double) {
     operator fun minus(v: CrazyVector) = CrazyVector(this.x - v.x, this.y - v.y)
     operator fun times(s: Number) = CrazyVector(this.x * s.toDouble(), this.y * s.toDouble())
     operator fun times(v: CrazyVector) = CrazyVector(this.x * v.x, this.y * v.y)
-    operator fun div(s: Double) = CrazyVector(this.x / s, this.y / s)
+    operator fun div(s: Number) = CrazyVector(this.x / s.toDouble(), this.y / s.toDouble())
     operator fun div(v: CrazyVector) = CrazyVector(this.x / v.x, this.y / v.y)
     operator fun unaryMinus() = this * -1.0
 
     infix fun mulX(s: Number) = CrazyVector(x*s.toDouble(), y)
     infix fun mulY(s: Number) = CrazyVector(x, y*s.toDouble())
+
+    fun square() = CrazyVector(x*x, y*y)
 
     fun length() = sqrt(this.x * this.x + this.y * this.y)
     fun angle() = atan2(y, x)
@@ -22,7 +24,7 @@ data class CrazyVector(val x: Double, val y: Double) {
         val length = length()
         return CrazyVector(this.x / length, this.y / length)
     }
-    fun abs() = CrazyVector(abs(this.x), abs(this.y))
+    fun abs() = CrazyVector(this.x.abs(), this.y.abs())
 
     infix fun distance(v: CrazyVector) = (v - this).length()
     infix fun scalar(v: CrazyVector) = this.x * v.x + this.y * v.y
@@ -36,12 +38,15 @@ data class CrazyVector(val x: Double, val y: Double) {
     fun normalRight() = CrazyVector(-this.y, this.x)
     fun normalLeft() = CrazyVector(this.y, -this.x)
 
+    infix fun setX(xp: Number) = CrazyVector(xp.toDouble(), this.y)
+    infix fun setY(yp: Number) = CrazyVector(this.x, yp.toDouble())
+
     infix fun rotate(angle: Double) = vec(
         x * cos(angle) - y * sin(angle),
         x * sin(angle) + y * cos(angle)
     )
 
-    fun rotateAroundOtherPoint(center: CrazyVector, angle: Double): CrazyVector {
+    private fun rotateAroundOtherPoint(center: CrazyVector, angle: Double): CrazyVector {
         val x1 = this.x - center.x;
         val y1 = this.y - center.y;
 
@@ -84,7 +89,7 @@ data class CrazyVector(val x: Double, val y: Double) {
 
     infix fun angleTo(that: CrazyVector) = acos((this scalar that) / (this.length() * that.length()))
 
-    fun ricochetMyVelocity(that: CrazyVector, posRightOfThat: Boolean): CrazyVector {
+    fun ricochetVelocity(that: CrazyVector, posRightOfThat: Boolean): CrazyVector {
         val velocityRightOfThat = that.normalRight() scalar this > 0
         val velocityRemoving = velocityRightOfThat == posRightOfThat
 
@@ -98,11 +103,15 @@ data class CrazyVector(val x: Double, val y: Double) {
 
     fun higherCoordinate() = if (x > y) x else y
 
+    fun stepSpeed() = this / VELOCITY_SPEED
+
 
     companion object {
         fun zero() = CrazyVector(0.0, 0.0)
         fun square(s: Number) = CrazyVector(s.toDouble(), s.toDouble())
-        fun fromAL(a: Double, l: Double) = CrazyVector(cos(a) * l, sin(a) * l)
+        fun fromAL(a: Double, l: Number) = CrazyVector(cos(a) * l.toDouble(), sin(a) * l.toDouble())
+
+        const val VELOCITY_SPEED = 50
 
         fun ricochet(center: CrazyVector, pos: CrazyVector, velocity: CrazyVector): CrazyVector {
             val removing = (center - pos) scalar velocity > 0

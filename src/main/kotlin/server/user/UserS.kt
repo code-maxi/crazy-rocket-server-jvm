@@ -14,7 +14,7 @@ import io.ktor.http.cio.websocket.*
 import server.adds.text.Ansi
 import server.adds.Error.resultCatch
 import server.adds.text.Logable
-import server.adds.text.Text.coloredLog
+import server.adds.text.Text.formattedPrint
 import server.adds.math.geom.GeoI
 import server.adds.math.CrazyVector
 import server.data_containers.*
@@ -226,7 +226,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
     }
 
     override fun log(str: String, color: Ansi?) {
-        coloredLog("User ${props.name}", str, color, name = Ansi.GREEN)
+        formattedPrint("User ${props.name}", str, color, name = Ansi.GREEN)
     }
 
     companion object {

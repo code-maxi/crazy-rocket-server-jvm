@@ -28,8 +28,8 @@ object RocketMath {
 }
 
 fun Double.niceString() = DecimalFormat("###################.##").format(this)
-
 fun Double.toDegrees() = this * (180.0/Math.PI)
+fun Double.abs() = if (this < 0) -this else this
 
 /*
 // Java program to implement

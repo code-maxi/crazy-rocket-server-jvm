@@ -25,10 +25,11 @@ abstract class CrazyShape(val type: ShapeType, val config: ShapeDebugConfig?) : 
     abstract fun transform(trans: CrazyTransform): CrazyShape
     abstract infix fun containsPoint(point: CrazyVector): Boolean
 
-    fun setDebugConfig(options: DebugObjectOptions) = setConfig(shapeConfig().copy(debugOptions = options))
-    fun setCrazyStyle(style: CrazyGraphicStyle) = setConfig(shapeConfig().copy(crazyStyle = style))
+    open fun setDebugConfig(options: DebugObjectOptions) = setConfig(shapeConfig().copy(debugOptions = options))
+    open fun setCrazyStyle(style: CrazyGraphicStyle) = setConfig(shapeConfig().copy(crazyStyle = style))
 
     open fun setColor(c: Color) = setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor =  c, strokeColor = c))
+    open fun setZIndex(i: Int) = setConfig(shapeConfig().copy(zIndex = i))
 
     override fun paintDebug(g2: GraphicsContext, transform: DebugTransform, canvasSize: CrazyVector) {
         val config = shapeConfig()

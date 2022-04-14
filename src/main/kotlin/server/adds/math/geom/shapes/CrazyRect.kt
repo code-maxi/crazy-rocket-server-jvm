@@ -2,7 +2,9 @@ package server.adds.math.geom.shapes
 
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
+import server.adds.CrazyGraphicStyle
 import server.adds.CrazyGraphics
+import server.adds.debug.DebugObjectOptions
 import server.adds.math.CollisionDetection
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
@@ -66,11 +68,19 @@ class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugC
     fun copy(pos: CrazyVector = this.pos, size: CrazyVector = this.size, config: ShapeDebugConfig? = this.config) =
         CrazyRect(pos, size, config)
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?): CrazyRect = CrazyRect(pos, size, shapeDebugConfig)
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyRect(pos, size, shapeDebugConfig)
 
     override fun shapeString() = "Rect(pos = $pos, size = ${size.niceString()})"
 
     fun toGeo(angle: Double) = GeoI(pos, size.x, size.y, angle)
 
-    override fun setColor(c: Color): CrazyRect = super.setColor(c) as CrazyRect
+    fun left() = pos.x
+    fun top() = pos.y
+    fun right() = pos.x + size.x
+    fun bottom() = pos.y + size.y
+
+    override fun setColor(c: Color) = super.setColor(c) as CrazyRect
+    override fun setZIndex(i: Int) = super.setZIndex(i) as CrazyRect
+    override fun setDebugConfig(options: DebugObjectOptions) = super.setDebugConfig(options) as CrazyRect
+    override fun setCrazyStyle(style: CrazyGraphicStyle) = super.setCrazyStyle(style) as CrazyRect
 }

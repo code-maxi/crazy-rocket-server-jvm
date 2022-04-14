@@ -8,7 +8,8 @@ data class DebugObjectOptions(
     val items: Map<String, String>
 ) {
     fun itemsToString(): String {
-        val propWidth = items.keys.maxOf { it.length } + 1
-        return items.map { Text.sizeString(it.key, propWidth) + ": " + it.value }.joinToString("\n")
+        return if (items.isNotEmpty()) items.map { i ->
+            Text.sizeString(i.key, items.keys.maxOf { it.length } + 1) + ": " + i.value
+        }.joinToString("\n") else "There are no elements specified."
     }
 }

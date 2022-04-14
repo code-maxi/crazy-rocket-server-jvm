@@ -2,7 +2,9 @@ package server.adds.math.geom.shapes
 
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
+import server.adds.CrazyGraphicStyle
 import server.adds.CrazyGraphics
+import server.adds.debug.DebugObjectOptions
 import server.adds.math.CrazyMatrix
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
@@ -56,7 +58,7 @@ class CrazyLine(
             g2.strokeLine(sa.x, sa.y, sb.x, sb.y)
         }
         else {
-            CrazyGraphics.drawVectorArrow(g2, sa, sb - sa)
+            CrazyGraphics.drawVectorArrow(g2, sa, sb - sa, crazyStyle = config.crazyStyle)
         }
 
         if (config.paintPoints) {
@@ -116,5 +118,8 @@ class CrazyLine(
 
     fun toVec() = b - a
 
+    override fun setZIndex(i: Int): CrazyLine = super.setZIndex(i) as CrazyLine
     override fun setColor(c: Color): CrazyLine = super.setColor(c) as CrazyLine
+    override fun setDebugConfig(options: DebugObjectOptions) = super.setDebugConfig(options) as CrazyLine
+    override fun setCrazyStyle(style: CrazyGraphicStyle) = super.setCrazyStyle(style) as CrazyLine
 }

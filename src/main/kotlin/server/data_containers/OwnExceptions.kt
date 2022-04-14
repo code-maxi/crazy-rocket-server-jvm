@@ -6,7 +6,7 @@ import SendFormat
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import server.adds.text.Ansi
-import server.adds.text.Text.coloredLog
+import server.adds.text.Text.formattedPrint
 import server.adds.math.CrazyVector
 
 abstract class OwnException(type: String, message: String) : Exception(message) {
@@ -24,7 +24,7 @@ abstract class OwnException(type: String, message: String) : Exception(message) 
     }
 
     fun printError() {
-        coloredLog("Error '${exceptionData.type}'", exceptionData.message, Ansi.RED)
+        formattedPrint("Error '${exceptionData.type}'", exceptionData.message, Ansi.RED)
     }
 }
 

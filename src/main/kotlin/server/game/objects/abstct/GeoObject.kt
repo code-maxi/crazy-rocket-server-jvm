@@ -5,6 +5,7 @@ import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.vec
 import server.data_containers.GameObjectType
+import server.data_containers.GeoObjectI
 
 abstract class GeoObject(
     type: GameObjectType,
@@ -25,10 +26,10 @@ abstract class GeoObject(
             val cpb = coll containsPoint line.b
 
             if (cpa) {
-                velocity = velocity.ricochetMyVelocity((pos - line.a).normalRight(), false)
+                velocity = velocity.ricochetVelocity((pos - line.a).normalRight(), false)
             }
             else if (cpb) {
-                velocity = velocity.ricochetMyVelocity((pos - line.b).normalRight(), false)
+                velocity = velocity.ricochetVelocity((pos - line.b).normalRight(), false)
             }
             else {
                 val posRightOfThat = line isPointRight pos
@@ -36,10 +37,14 @@ abstract class GeoObject(
                 val orthogonalTouch = ints.onLine1 && coll containsPoint ints.intersection
 
                 if (orthogonalTouch) {
-                    velocity = velocity.ricochetMyVelocity(line.toVec(), posRightOfThat)
+                    velocity = velocity.ricochetVelocity(line.toVec(), posRightOfThat)
                 }
             }
         }
+    }
+
+    infix fun handleElasticCollision(that: GeoObject) {
+
     }
 
     override suspend fun calc(s: Double) {

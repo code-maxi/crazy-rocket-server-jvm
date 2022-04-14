@@ -3,6 +3,8 @@ package server.game
 import GalaxyConfigI
 import SendFormat
 import server.adds.math.vec
+import server.adds.text.Ansi
+import server.adds.text.Text
 import server.data_containers.*
 import server.game.objects.CrazyAsteroid
 import server.game.objects.abstct.AbstractGameObject
@@ -22,11 +24,18 @@ class CrazyGame(
 ) : GameClassI {
     private var objectMap = mutableMapOf<String, AbstractGameObject>()
     private var idCount = Int.MAX_VALUE
+
+    private val logListeners = hashMapOf<String, (from: String?, text: String, fromColor: Ansi?, textColor: Ansi?) -> Unit>(
+        "main" to { f, t, c1, c2 -> Text.formattedPrint(f, t, c1, c2) }
+    )
+
     val props = GamePropsI(10, 5000, 5000)
 
     fun objects() = objectMap.values.toList()
-
     fun size() = vec(props.width, props.height)
+
+    fun addLoggingListener(id: String, listener: (from: String?, text: String, fromColor: Ansi?, textColor: Ansi?) -> Unit) { logListeners[id] = listener }
+    fun removeLoggingListener(id: String) { logListeners.remove(id) }
 
     private fun newID(): String {
         idCount --
@@ -72,10 +81,6 @@ class CrazyGame(
         return rocket
     }
 
-    fun loadLevel(l: Int) {
-
-    }
-
     fun createRandomAsteroids(howMany: Int) {
         for (i in 0..10) {
             addObject(
@@ -98,6 +103,11 @@ class CrazyGame(
     }
 
     override fun data() = GameDataI(props, objects().map { it.data() })
+
+    fun log(from: String? = null, text: String, fromColor: Ansi? = null, textColor: Ansi? = null) {
+        try { for (i in logListeners.values) i(from, text, fromColor, textColor) }
+        catch (_: ConcurrentModificationException) {}
+    }
 
     companion object {
         val LISTINING_KEYS = listOf("ArrowUp", "ArrowRight", "ArrowLeft")

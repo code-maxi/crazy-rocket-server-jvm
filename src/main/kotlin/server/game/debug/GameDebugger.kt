@@ -20,7 +20,7 @@ class GameDebugger : CrazyDebugger(GeomDebuggerConfig(
     gridModule = GridModuleConfig(10.0, true),
     unit = 20.0
 )) {
-    val userProps = UserPropsI(
+    private val userProps = UserPropsI(
         "test-user", 
         "test-user", 
         "test-galaxy", 
@@ -43,7 +43,6 @@ class GameDebugger : CrazyDebugger(GeomDebuggerConfig(
     init {
         game.createRandomAsteroids(10)
         rocket = game.addRocket(userProps)
-        step(1.0)
     }
 
     override suspend fun act(s: Double): List<DebugObjectI> {

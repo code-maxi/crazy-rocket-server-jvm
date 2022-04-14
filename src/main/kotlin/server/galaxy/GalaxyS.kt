@@ -13,7 +13,7 @@ import TeamPropsI
 import kotlinx.coroutines.*
 import server.adds.text.Ansi
 import server.adds.text.Text
-import server.adds.text.Text.coloredLog
+import server.adds.text.Text.formattedPrint
 import server.data_containers.*
 import server.game.CrazyGame
 import server.game.GameConfig
@@ -63,7 +63,7 @@ class GalaxyS(
     }
 
     private fun log(text: String, color: Ansi? = null) {
-        coloredLog("Galaxy [${props.name}]", text, color, name = Ansi.CYAN)
+        formattedPrint("Galaxy [${props.name}]", text, color, name = Ansi.CYAN)
     }
 
     suspend fun joinUser(u: UserS, joinData: JoinGalaxyI) {
@@ -193,7 +193,7 @@ class GalaxyS(
         fun galaxyPassword(galaxy: String) = galaxyPasswords[galaxy]
 
         fun log(text: String, color: Ansi? = null) {
-            coloredLog("Galaxy Static", text, color, name = Ansi.PURPLE)
+            formattedPrint("Galaxy Static", text, color, name = Ansi.PURPLE)
         }
 
         fun createGalaxy(g: CreateNewGalaxyI) {

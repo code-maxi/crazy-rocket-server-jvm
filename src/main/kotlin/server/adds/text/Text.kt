@@ -13,16 +13,26 @@ object Text {
             "it can only contain letters, numbers and hyphens.."
         )
     }
-    fun coloredLog(
-        from: String,
-        str: String,
+
+    fun getFormattedLog(
+        from: Any?,
+        str: Any,
+        color: Ansi? = null,
+        name: Ansi? = null,
+        maxSize: Int = 18
+    ) = "${ if (from != null) "${Ansi.BOLD.color}${name?.color ?: Ansi.YELLOW.color}${sizeString(from.toString(), maxSize)} ${Ansi.RESET.color} " else "" }${if (color != null) "${color.color}$str${Ansi.RESET.color}" else str.toString()}"
+
+    fun formattedPrint(
+        from: Any?,
+        str: Any,
         color: Ansi? = null,
         name: Ansi? = null,
         maxSize: Int = 18
     ) {
-        if (str != "") println("${Ansi.BOLD.color}${name?.color ?: Ansi.YELLOW.color}${sizeString(from, maxSize)} ${Ansi.RESET.color} ${if (color != null) "${color.color}$str${Ansi.RESET.color}" else str}")
+        if (str != "") println(getFormattedLog(from, str, color, name, maxSize))
         else println()
     }
+
     fun maxSizeString(str: String, maxSize: Int) =
         if (str.length > maxSize) "${str.substring(0, maxSize - 3)}..."
         else str

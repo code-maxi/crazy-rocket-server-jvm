@@ -15,7 +15,7 @@ data class TransformEyeModuleConfig(
 
 data class TimerModuleConfig(
     val startStepSpeed: Int = 50,
-    val sofortStartTimer: Boolean = true
+    val sofortStartTimer: Int? = null
 )
 
 data class GridModuleConfig(
@@ -26,7 +26,8 @@ data class GridModuleConfig(
 )
 
 data class InspectorModuleConfig(
-    val minWidth: Double = 450.0
+    val minWidth: Double = 450.0,
+    val paintDebugDefault: Boolean = true
 )
 
 data class LoggerModuleConfig(
@@ -37,6 +38,7 @@ data class LoggerModuleConfig(
 data class GeomDebuggerConfig(
     val title: String = "Geom-Debugger",
     val unit: Double = 1.0,
+    val moduleComponentHeight: Double = 300.0,
     val eyeModule: TransformEyeModuleConfig? = null,
     val timerModule: TimerModuleConfig? = null,
     val inspectorModule: InspectorModuleConfig? = null,

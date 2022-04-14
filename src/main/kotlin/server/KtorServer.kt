@@ -17,7 +17,7 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import server.adds.text.Ansi
 import server.adds.Error
-import server.adds.text.Text.coloredLog
+import server.adds.text.Text.formattedPrint
 import server.data_containers.*
 import server.galaxy.GalaxyS
 import server.user.UserS
@@ -97,6 +97,6 @@ object KtorServer {
     }
 
     fun log(str: String, color: Ansi? = null) {
-        coloredLog("Server", str, color)
+        formattedPrint("Server", str, color)
     }
 }

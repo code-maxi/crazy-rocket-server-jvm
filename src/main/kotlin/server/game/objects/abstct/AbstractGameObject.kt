@@ -9,27 +9,30 @@ import server.data_containers.AbstractGameObjectI
 import server.game.CrazyGame
 
 abstract class AbstractGameObject(val type: GameObjectType) : GameClassI, DebugObjectI {
-    private lateinit var game: CrazyGame
-    private lateinit var id: String
+    private var game: CrazyGame? = null
+    private var id: String? = null
 
     var zIndex = type.defaultZIndex
     override fun zIndex() = zIndex
 
-    protected fun getGame() = game
-    fun getID() = id
+    protected fun getGame() = game ?: error("Game Object (${stringDescription()} has not been initialized yet. So you can not access the property Game.")
+    fun getID() = id ?: error("Game Object (${stringDescription()} has not been initialized yet. So you can not access the property ID.")
 
     fun initialize(g: CrazyGame, id: String) {
-        if (this::id.isInitialized || this::game.isInitialized) error("I can't be initialized twice!")
-        this.id = id; game = g
+        if (id != null || game != null) error("A Game Object (${stringDescription()}) can't be initialized twice!")
+        this.id = id
+        game = g
     }
 
-    fun killMe() { getGame().killObject(id) }
+    fun killMe() { getGame().killObject(getID()) }
 
     protected fun addObject(o: AbstractGameObject) { getGame().addObject(o) }
 
     fun log(text: String, color: Ansi? = null) {
-        Text.coloredLog("GO ($id) ${type.id}", text, color = color, name = Ansi.PURPLE, maxSize = 25)
+
     }
+
+    open fun stringDescription(): String { return type.id }
 
     abstract override fun data(): AbstractGameObjectI
 }

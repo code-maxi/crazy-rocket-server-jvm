@@ -2,7 +2,9 @@ package server.adds.math.geom.shapes
 
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
+import server.adds.CrazyGraphicStyle
 import server.adds.CrazyGraphics
+import server.adds.debug.DebugObjectOptions
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
 import server.adds.debug.DebugTransform
@@ -40,8 +42,11 @@ class CrazyCircle(
 
     override fun shapeString() = "Circle(radius = $radius, pos = ${pos.niceString()})"
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?): CrazyCircle = CrazyCircle(radius, pos, shapeDebugConfig)
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyCircle(radius, pos, shapeDebugConfig)
     //override fun transform(trans: GeomTransform) = RocketCircle(radius * trans.scaling, pos + trans.pos)
 
-    override fun setColor(c: Color): CrazyCircle = super.setColor(c) as CrazyCircle
+    override fun setColor(c: Color) = super.setColor(c) as CrazyCircle
+    override fun setZIndex(i: Int) = super.setZIndex(i) as CrazyCircle
+    override fun setDebugConfig(options: DebugObjectOptions) = super.setDebugConfig(options) as CrazyCircle
+    override fun setCrazyStyle(style: CrazyGraphicStyle) = super.setCrazyStyle(style) as CrazyCircle
 }

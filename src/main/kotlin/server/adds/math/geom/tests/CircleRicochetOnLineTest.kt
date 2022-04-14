@@ -54,11 +54,11 @@ class CircleRicochetOnLineTest : CrazyDebugger(
 
             //if (!velocityRemoving) {
                 if (cpa) {
-                    circleVelocity = cVelocity.ricochetMyVelocity((circle.pos - line.a).normalRight(), false)
+                    circleVelocity = cVelocity.ricochetVelocity((circle.pos - line.a).normalRight(), false)
                     line = line.setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = Color.YELLOW)) as CrazyLine
                 }
                 else if (cpb) {
-                    circleVelocity = cVelocity.ricochetMyVelocity((circle.pos - line.b).normalRight(), false)
+                    circleVelocity = cVelocity.ricochetVelocity((circle.pos - line.b).normalRight(), false)
                     line = line.setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = Color.GREEN)) as CrazyLine
                 }
                 else {
@@ -69,7 +69,7 @@ class CircleRicochetOnLineTest : CrazyDebugger(
                         line = line.setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = Color.RED)) as CrazyLine
 
                         //circleVelocity = (-cVelocity) rotate (2 * angle * (if (wrongWay) -1 else 1))
-                        circleVelocity = cVelocity.ricochetMyVelocity(line.toVec(), posRightOfThat)
+                        circleVelocity = cVelocity.ricochetVelocity(line.toVec(), posRightOfThat)
                         //circleVelocity = -cVelocity rotate (2 * angle)
                     }
                 }

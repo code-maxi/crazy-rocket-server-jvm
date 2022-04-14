@@ -4,7 +4,9 @@ import javafx.geometry.Point2D
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
 import javafx.scene.shape.Polygon
+import server.adds.CrazyGraphicStyle
 import server.adds.CrazyGraphics
+import server.adds.debug.DebugObjectOptions
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
 import server.adds.debug.DebugTransform
@@ -87,12 +89,15 @@ open class CrazyPolygon(
         }
     }
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?): CrazyPolygon = CrazyPolygon(points, shapeDebugConfig)
+    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyPolygon(points, shapeDebugConfig)
 
     fun copy(points: List<CrazyVector> = this.points, config: ShapeDebugConfig? = this.config) =
         CrazyPolygon(points, config)
 
     fun convert(f: (CrazyVector) -> CrazyVector) = copy(points = points.map { f(it) })
 
-    override fun setColor(c: Color): CrazyPolygon = super.setColor(c) as CrazyPolygon
+    override fun setZIndex(i: Int) = super.setZIndex(i) as CrazyPolygon
+    override fun setColor(c: Color) = super.setColor(c) as CrazyPolygon
+    override fun setDebugConfig(options: DebugObjectOptions) = super.setDebugConfig(options) as CrazyPolygon
+    override fun setCrazyStyle(style: CrazyGraphicStyle) = super.setCrazyStyle(style) as CrazyPolygon
 }

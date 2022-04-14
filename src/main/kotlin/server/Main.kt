@@ -5,6 +5,7 @@ import GalaxyConfigI
 import kotlinx.coroutines.*
 import org.apache.http.impl.client.HttpClients
 import server.adds.Network
+import server.adds.debug.DebugEnvironment
 import server.adds.math.geom.tests.*
 import server.galaxy.GalaxyS
 import server.game.debug.GameDebugger
@@ -13,7 +14,7 @@ import tornadofx.launch
 fun main(args: Array<String>) {
     when (args[0]) {
         "debugger" -> {
-            launch<Test1dPhysics>()
+            launch<Test2dPhysics>()
         }
         "server" -> {
             runBlocking {

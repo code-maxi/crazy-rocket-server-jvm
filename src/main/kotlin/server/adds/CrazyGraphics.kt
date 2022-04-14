@@ -132,7 +132,7 @@ object CrazyGraphics {
         arrowSize: Double = 8.0,
         crazyStyle: CrazyGraphicStyle? = null
     ) {
-        if (crazyStyle != null) setCrazyStyle(g2, crazyStyle)
+        setCrazyStyle(g2, crazyStyle)
 
         g2.fill = Color.BLACK
 
@@ -150,7 +150,6 @@ object CrazyGraphics {
             doubleArrayOf(0.0, -arrowSize, arrowSize, 0.0),
             4
         )
-        paintPoint(g2, CrazyVector.zero())
 
         g2.restore()
     }
