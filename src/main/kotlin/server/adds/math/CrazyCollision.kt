@@ -124,5 +124,66 @@ object CrazyCollision {
         }!!)
     }
 
+    fun partiallyElasticCollision2D(
+        m1: Double, v1: CrazyVector, p1: CrazyVector, 
+        m2: Double, v2: CrazyVector, p2: CrazyVector,
+        k: Double = 1.0, checkMovingAway: Boolean = true
+    ): PartiallyElasticCollisionData2D? {
+        var result: PartiallyElasticCollisionData2D? = null
+        val movingAwayFrom = (p2 + v2 - p1 - v1).length() > (p2 - p1).length()
 
+        if (!checkMovingAway || !movingAwayFrom) {
+            val nv1 = (v1*m1 + v2*m2 - (v1 - v2) * m2 * k) / (m1 + m2)
+            val nv2 = (v1*m1 + v2*m2 - (v2 - v1) * m1 * k) / (m1 + m2)
+
+            val energyLost = (v1-v2).selfScalar() * ((m1 * m2) / (2 * (m1 + m2))) * (1 - k*k)
+
+            result = PartiallyElasticCollisionData2D(nv1, nv2, energyLost)
+        }
+
+        return result
+    }
+
+    fun partiallyElasticCollision1D(
+        m1: Double, v1: Double,
+        m2: Double, v2: Double,
+        k: Double = 1.0
+    ): PartiallyElasticCollisionData1D {
+        val nv1 = (v1*m1 + v2*m2 - (v1 - v2) * m2 * k) / (m1 + m2)
+        val nv2 = (v1*m1 + v2*m2 - (v2 - v1) * m1 * k) / (m1 + m2)
+        val vd = v1 - v2
+        val energyLost = vd * vd * ((m1 * m2) / (2 * (m1 + m2))) * (1 - k*k)
+        return PartiallyElasticCollisionData1D(nv1, nv2, energyLost)
+    }
+
+    fun partiallyElasticCollision2Dv2(
+        m1: Double, v1: CrazyVector, p1: CrazyVector,
+        m2: Double, v2: CrazyVector, p2: CrazyVector,
+        k: Double = 1.0
+    ): PartiallyElasticCollisionData2D? {
+        var result: PartiallyElasticCollisionData2D? = null
+
+        val ne = (p1 - p2).e()
+        val te = ne.normalLeft()
+
+        val isV1Right = ne scalar v1 > 0
+        val isV2Left = ne scalar v2 < 0
+
+        if (isV1Right && isV2Left) {
+            val cn1 = ne * (ne scalar v1)
+            val cn2 = ne * (ne scalar v2)
+
+            val ct1 = te * (te scalar v1)
+            val ct2 = te * (te scalar v2)
+
+            val collision1dResult = partiallyElasticCollision1D(m1, cn1.length(), m2, cn2.length(), k)
+
+            val nv1 = ct1 + (ne * collision1dResult.nv1)
+            val nv2 = ct2 + (ne * collision1dResult.nv2)
+
+            result = PartiallyElasticCollisionData2D(nv1, nv2, collision1dResult.energyLost)
+        }
+
+        return result
+    }
 }

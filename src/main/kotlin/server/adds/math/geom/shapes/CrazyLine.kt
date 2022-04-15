@@ -67,7 +67,7 @@ class CrazyLine(
         }
     }
 
-    fun drawAsVector(color: Color = Color.BLUE) = setConfig(shapeConfig().copy(drawLineAsVector = true, crazyStyle = ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = color, strokeColor = color, lineWidth = 2.0)))
+    fun drawAsVector(color: Color = Color.BLUE) = setConfig(shapeConfig().copy(drawLineAsVector = true, crazyStyle = ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = color, strokeColor = color, fillOpacity = 1.0, lineWidth = 2.0)))
 
     fun leftPoint() = if (a.x < b.x) a else b
     fun rightPoint() = if (a.x > b.x) a else b

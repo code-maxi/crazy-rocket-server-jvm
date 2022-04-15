@@ -8,13 +8,11 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import server.adds.CrazyGraphicStyle
 import server.adds.debug.*
-import server.adds.math.CrazyVector
+import server.adds.math.*
 import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.CrazyRect
 import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.geom.shapes.ShapeDebugConfig
-import server.adds.math.niceString
-import server.adds.math.vec
 import kotlin.math.PI
 import kotlin.math.abs
 
@@ -86,7 +84,7 @@ data class Test2dObject(
 
         drawingShapes.clear()
         drawingShapes.add(shape())
-        drawingShapes.add((velocity/10.0).toLine(pos).drawAsVector())
+        drawingShapes.add(velocity.toLine(pos).drawAsVector(Color.ORANGE))
 
         alreadyTurned = false
     }
@@ -108,34 +106,57 @@ data class Test2dObject(
 
         if (!alreadyTurned) for (that in others) {
             if (that !== this && that.shape() collides this.shape()) {
-                val movingAway = (that.pos - this.pos) scalar this.velocity < 0
-                if (!movingAway) {
-                    val m1 = this.mass
-                    val m2 = that.mass
+                val m1 = this.mass
+                val m2 = that.mass
 
-                    val v1 = this.velocity
-                    val v2 = that.velocity
+                val v1 = this.velocity
+                val v2 = that.velocity
 
-                    val k = 0.8
+                val p1 = this.pos
+                val p2 = that.pos
 
-                    val vel1n2 = (v1*m1 + v2*m2 - (v1 - v2) * m2 * k) / (m1 + m2)
-                    val vel2n2 = (v1*m1 + v2*m2 - (v2 - v1) * m1 * k) / (m1 + m2)
+                val k = 0.8
 
-                    val energyLost = (v1-v2).square().length() * ((m1 * m2) / (2 * (m1 + m2))) * (1 - k*k)
+                val ne = (p2 - p1).e()
+                val te = ne.normalLeft()
 
-                    this.velocity = vel1n2
+                val isV1Right = ne scalar v1 > 0
+                val isV2Left = ne scalar v2 < 0
+
+                if (isV1Right && isV2Left || true) {
+                    val cn1 = ne * (ne scalar v1)
+                    val cn2 = ne * (ne scalar v2)
+
+                    val ct1 = te * (te scalar v1)
+                    val ct2 = te * (te scalar v2)
+
+                    val collision1dResult =
+                        CrazyCollision.partiallyElasticCollision1D(m1, cn1.length(), m2, cn2.length(), k)
+
+                    val nv1 = ct1 - (ne * collision1dResult.nv1)
+                    val nv2 = ct2 + (ne * collision1dResult.nv2)
+
+                    this.velocity = nv1
                     this.alreadyTurned = true
-                    this.lastEnergyLost = energyLost
+                    this.lastEnergyLost = collision1dResult.energyLost
                     this.lastCollision = "Object Name: " + that.name
 
-                    that.velocity = vel2n2
+                    that.velocity = nv2
                     that.alreadyTurned = true
-                    that.lastEnergyLost = energyLost
+                    that.lastEnergyLost = collision1dResult.energyLost
                     that.lastCollision = "Object Name: " + this.name
+
+                    this.drawingShapes.add(cn1.toLine(p1).drawAsVector(Color.RED))
+                    this.drawingShapes.add(ct1.toLine(p1).drawAsVector(Color.BLUE))
+
+                    that.drawingShapes.add(cn2.toLine(p2).drawAsVector(Color.RED))
+                    that.drawingShapes.add(ct2.toLine(p2).drawAsVector(Color.BLUE))
+
+                    this.drawingShapes.add((p1 - p2).toLine(p1).drawAsVector(Color.GREEN))
+                    this.drawingShapes.add(te.toLine(p1 + (ne * this.radius) - te/2).drawAsVector(Color.BLACK))
 
                     return "${this.name} collided with ${that.name}"
                 }
-                else println("Collision but moving away!")
             }
         }
         return null
@@ -144,7 +165,8 @@ data class Test2dObject(
     override fun zIndex() = 0
 
     override fun paintDebug(g2: GraphicsContext, transform: DebugTransform, canvasSize: CrazyVector) {
-        drawingShapes.forEach { it.paintDebug(g2, transform, canvasSize) }
+        drawingShapes[0].paintDebug(g2, transform, canvasSize)
+    //for (i in drawingShapes.indices) drawingShapes[i].paintDebug(g2, transform, canvasSize)
     }
 
     override fun debugOptions() = DebugObjectOptions(name, name, debugOptions.toMap())

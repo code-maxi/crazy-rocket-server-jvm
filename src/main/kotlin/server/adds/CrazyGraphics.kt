@@ -134,8 +134,6 @@ object CrazyGraphics {
     ) {
         setCrazyStyle(g2, crazyStyle)
 
-        g2.fill = Color.BLACK
-
         val angle = vector.angle() * (180.0/Math.PI)
         val len = vector.length()
 

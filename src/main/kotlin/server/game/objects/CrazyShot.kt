@@ -87,7 +87,7 @@ class CrazyShot(
             for (that in objects) {
                 if (that !== this && that is ShotVulnerableObject) {
                     if (this collides that) {
-                        val collisionResult = this.handlePartiallyElasticCollision(that, SHOT_ASTEROID_COLLISION_FACTOR, false)
+                        val collisionResult = this.handlePartiallyElasticCollision(that, SHOT_ASTEROID_COLLISION_FACTOR)
 
                         if (collisionResult != null) {
                             that.velocity = collisionResult.nv2

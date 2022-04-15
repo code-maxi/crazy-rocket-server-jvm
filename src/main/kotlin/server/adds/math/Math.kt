@@ -119,8 +119,14 @@ object Polygon {
  */
 
 
-data class PartiallyElasticCollisionData(
+data class PartiallyElasticCollisionData2D(
     val nv1: CrazyVector,
     val nv2: CrazyVector,
     val energyLost: Double
  )
+
+data class PartiallyElasticCollisionData1D(
+    val nv1: Double,
+    val nv2: Double,
+    val energyLost: Double
+)

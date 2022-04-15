@@ -1,7 +1,7 @@
 package server.game.objects.abstct
 
+import server.adds.math.CrazyCollision
 import server.adds.math.CrazyVector
-import server.adds.math.PartiallyElasticCollisionData
 import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.vec
@@ -48,23 +48,8 @@ abstract class GeoObject(
         }
     }
 
-    suspend fun handlePartiallyElasticCollision(that: GeoObject, k: Double = 1.0, checkMovingAway: Boolean = true): PartiallyElasticCollisionData? {
-        var result: PartiallyElasticCollisionData? = null
-
-        if (!checkMovingAway || !movingAwayFrom(that)) {
-            val m1 = this.getMass(); val m2 = that.getMass()
-            val v1 = this.velocity; val v2 = that.velocity
-
-            val nv1 = (v1*m1 + v2*m2 - (v1 - v2) * m2 * k) / (m1 + m2)
-            val nv2 = (v1*m1 + v2*m2 - (v2 - v1) * m1 * k) / (m1 + m2)
-
-            val energyLost = (v1-v2).selfScalar() * ((m1 * m2) / (2 * (m1 + m2))) * (1 - k*k)
-
-            result = PartiallyElasticCollisionData(nv1, nv2, energyLost)
-        }
-
-        return result
-    }
+    suspend fun handlePartiallyElasticCollision(that: GeoObject, k: Double = 1.0) =
+        CrazyCollision.partiallyElasticCollision2Dv2(this.getMass(), this.velocity, this.pos, that.getMass(), that.velocity, that.pos, k)
 
     infix fun movingAwayFrom(that: GeoObject) = (that.pos + that.velocity - this.pos - this.velocity).length() > (that.pos - this.pos).length()
 
