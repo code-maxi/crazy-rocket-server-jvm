@@ -61,61 +61,66 @@ class CrazyRocket(
         }
     }
 
-    override fun collider() = polygonCollider
+    override fun collider() = polygonCollider.setColor(Color.RED)
 
     fun circleCollider() = CrazyCircle(rocketType.size.higherCoordinate() / 2.0, pos)
 
     private fun fire(it: CrazyRocketShotConfig) {
-        log(it.customId + " fired!")
-        addObject(CrazyShot(
+        val shot = CrazyShot(
             pos + it.relativePosToRocket,
             ang + it.relativeAngleToRocket,
-            userProps.teamColor, it.speed, it.shotType
-        ))
+            userProps.teamColor, it.speed, velocity, it.shotType
+        )
+        addObject(shot)
+        this.velocity = (this.impulse() - shot.impulse()/20.0) / this.getMass()
     }
 
     override fun getMass() = rocketType.mass
 
-    override suspend fun calc(s: Double) {
-        polygonCollider = makePolygonCollider()
+    override suspend fun calc(factor: Double, step: Int) {
+        if (step == 1) {
+            polygonCollider = makePolygonCollider()
 
-        val arrowUp = keyboard.keyPressed("ArrowUp")
-        val arrowRight = keyboard.keyPressed("ArrowRight")
-        val arrowLeft = keyboard.keyPressed("ArrowLeft")
+            val arrowUp = keyboard.keyPressed("ArrowUp")
+            val arrowRight = keyboard.keyPressed("ArrowRight")
+            val arrowLeft = keyboard.keyPressed("ArrowLeft")
 
-        rocketType.fireShots.forEach {
-            shotChargeMap[it.customId]?.let { c ->
-                if (c < it.rechargingTime) shotChargeMap[it.customId] = c + 1
-                else {
-                    fire(it)
-                    shotChargeMap[it.customId] = 0
+            if (zoom < zoomTarget) zoom += zoomSpeed
+            else if (zoom > zoomTarget) zoom -= zoomSpeed
+
+            if (arrowRight || arrowLeft)
+                ang += (if (arrowRight) 1 else -1) * rocketType.turningSpeed * factor
+
+            if (arrowUp) velocity += vec(ang, rocketType.acceleratingSpeed, true).stepSpeed() * factor
+
+            eye += (pos - eye) * rocketType.eyeLazy
+
+            move(factor)
+        }
+
+
+        else if (step == 3 && keyboard.keyPressed("Space")) {
+            rocketType.fireShots.forEach {
+                shotChargeMap[it.customId]?.let { c ->
+                    if (c < it.rechargingTime) shotChargeMap[it.customId] = c + 1
+                    else {
+                        fire(it)
+                        shotChargeMap[it.customId] = 0
+                    }
                 }
             }
         }
-
-        if (zoom < zoomTarget) zoom += zoomSpeed
-        else if (zoom > zoomTarget) zoom -= zoomSpeed
 
         /*if (arrowUp) this.fires.forEach {
             it.owner = this.getGeo().copy()
             it.calc(s)
         }*/
-
-        if (arrowRight || arrowLeft)
-            ang += (if (arrowRight) 1 else -1) * rocketType.turningSpeed * s
-
-        if (arrowUp) velocity += vec(ang, rocketType.acceleratingSpeed, true) * s
-
-        eye += (pos - eye) * rocketType.eyeLazy
-
-        move()
     }
 
     override fun debugOptions(): DebugObjectOptions {
         return DebugObjectOptions(
             "Rocket", getID(),
             mapOf(
-                "Pos" to pos.niceString(),
                 "Fire Counts" to "",
                 *shotChargeMap.map { it.key to it.value.toString() }.toTypedArray(),
                 "Pressed Keys" to "",
@@ -125,7 +130,7 @@ class CrazyRocket(
     }
 
     private fun onMouseEvent(key: String, pressed: Boolean) {
-        log("Key $key ${if (pressed) "pressed" else "released"}.")
+
     }
 
     override fun data() = TODO("Not yet implemented.")

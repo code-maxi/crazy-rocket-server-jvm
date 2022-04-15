@@ -14,7 +14,7 @@ import tornadofx.launch
 fun main(args: Array<String>) {
     when (args[0]) {
         "debugger" -> {
-            launch<Test2dPhysics>()
+            launch<GameDebugger>()
         }
         "server" -> {
             runBlocking {

@@ -22,7 +22,7 @@ abstract class ColliderObject(type: GameObjectType) : AbstractGameObject(type), 
         getGame().objects().filter { type.isInstance(it) && this collides (it as ColliderObject) }
 
     override fun paintDebug(g2: GraphicsContext, transform: DebugTransform, canvasSize: CrazyVector) {
-        collider().setConfig(shapeDebugConfig()).paintDebug(g2, transform, canvasSize)
+        collider().paintDebug(g2, transform, canvasSize)
     }
 
     override fun surroundedRect() = collider().surroundedRect()

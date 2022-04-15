@@ -51,6 +51,7 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
     private var canvasSize = CrazyVector.zero()
 
     private var objects = listOf<DebugObjectI>()
+    private var visibleObjects = listOf<DebugObjectI>()
 
     protected val eyeModule = configData.eyeModule?.let { TransformEyeModule(it) }
     protected val timerModule = configData.timerModule?.let { TimerModule(it) }
@@ -91,6 +92,13 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
         objects = act(f)
         val fps = (1000000 / (System.nanoTime() - timeBefore)).toInt()
 
+        visibleObjects = objects
+            .filter { o->
+                o.surroundedRect().transform(eyeTransform().screenTrans())
+                    .touchesRect(CrazyRect(CrazyVector.zero(), canvasSize))
+            }
+            .sortedBy { it.zIndex() }
+
         inspectorModule?.select()
         if (paintNecessary) paint()
 
@@ -109,16 +117,10 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
 
                 gridModule?.drawGrid(gc)
 
-                objects
-                    .filter { o->
-                        o.surroundedRect().transform(eyeTransform().screenTrans())
-                            .touchesRect(CrazyRect(CrazyVector.zero(), canvasSize))
-                    }
-                    .sortedBy { it.zIndex() }
-                    .forEach { o ->
-                        inspectorModule?.paintObjectDebug(gc, o, o.surroundedRect())
-                        o.paintDebug(gc, eyeTransform(), canvasSize)
-                    }
+                visibleObjects.forEach { o ->
+                    inspectorModule?.paintObjectDebug(gc, o, o.surroundedRect())
+                    o.paintDebug(gc, eyeTransform(), canvasSize)
+                }
 
             } catch (_: UninitializedPropertyAccessException) {}
         }
@@ -216,6 +218,8 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
         scene.addEventFilter(KeyEvent.KEY_PRESSED) { onKeyPressed(it) }
         scene.addEventFilter(KeyEvent.KEY_RELEASED) { onKeyReleased(it) }
 
+        Platform.runLater { canvas.requestFocus() }
+
         return scene
     }
 
@@ -256,6 +260,7 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
     }
 
     open fun onKeyPressed(it: KeyEvent) {
+        Platform.runLater { canvas.requestFocus() }
         keyboard[it.code] = true
     }
 
@@ -309,9 +314,6 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
                     }
                     MouseEventType.RELEASE -> {
                         canvas.scene.cursor = Cursor.DEFAULT
-                        /*if (transform.screen(oldMousePos) distance vec(it.x, it.y) < 3.0) {
-                            smallDrag = true
-                        }*/
                     }
                 }
             }
@@ -331,8 +333,8 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
 
             val transform = eyeTransform()
 
-            val steps = (1.0/transform.zoom).toInt() * 2 + 1
-            val gridLength = moduleConfig.gridLength * steps.toDouble()
+            val steps = (((1.0/transform.zoom * 4.0).toInt().toDouble() / 4.0) * 5 + 1).toInt()
+            val gridLength = moduleConfig.gridLength * steps
 
             val worldZero = transform.world(CrazyVector.zero())
             val worldSize = transform.world(canvasSize) - worldZero
@@ -352,7 +354,7 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
                 gc.moveTo(0.0, screenPos.y)
                 gc.lineTo(canvasSize.x, screenPos.y)
 
-                if (moduleConfig.paintMarks) {
+                if (moduleConfig.paintMarks && x % 2 == 0) {
                     CrazyGraphics.paintTextRect(gc,
                         vec(screenPos.x, 0),
                         worldPos.x.niceString().toString(),
@@ -399,13 +401,6 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
             GlobalScope.launch {
                 val fps = step(actFactor)
                 countFps(fps)
-            }
-        }
-
-        init {
-            if (moduleConfig.sofortStartTimer != null) GlobalScope.launch {
-                delay(moduleConfig.sofortStartTimer.toLong())
-                start()
             }
         }
 
@@ -472,6 +467,7 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
                         Platform.runLater { isContinuousSelected.value = false }
                         start()
                     }
+                    if (moduleConfig.isDefaultContinuousSelected == false) fire()
                 }
                 radiobutton("Continuous Type") {
                     toggleGroup = toggleGroupV
@@ -480,6 +476,7 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
                         stop()
                         Platform.runLater { startContinuousThread() }
                     }
+                    if (moduleConfig.isDefaultContinuousSelected == true) fire()
                 }
 
                 fpsLabel = label {
@@ -620,9 +617,11 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
         fun select(id: String? = selectedObjectId, updateStill: Boolean = false) {
             val selObj = objects.find { o -> o.debugOptions()?.id?.let { it == id } ?: false }
 
+            val items = selObj?.debugOptions()?.itemsToString()
+
             if (
                 selectedObjectId != id
-                || (selObj?.debugOptions()?.itemsToString() ?: "") != soOptionsComponent?.text
+                || (items ?: "") != soOptionsComponent?.text
                 || updateStill
             ) {
                 Platform.runLater {
@@ -722,7 +721,7 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
                     getMousePos()?.let { m ->
                         var selectedObjectId: String? = null
 
-                        for (o in objects.sortedBy { it.zIndex() }) {
+                        for (o in visibleObjects) {
                             if (o.surroundedRect() containsPoint m) {
                                 o.debugOptions()?.id?.let { selectedObjectId = it }
                             }
@@ -750,7 +749,7 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
                 hgrow = Priority.ALWAYS
                 isEditable = false
                 font = Font.font("monospace", 15.0)
-                minWidth = 300.0
+                minWidth = moduleConfig.minWidth
             }
 
             button("Clear Console") {
@@ -769,7 +768,7 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
                                 from,
                                 moduleConfig.firstColumnLength
                             )
-                        }: $text\n" else text
+                        }: $text\n" else "$text\n"
                     )
                     it.positionCaret(it.length)
                 }

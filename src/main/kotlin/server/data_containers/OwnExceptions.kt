@@ -119,11 +119,6 @@ class NegativeCoordinateInSizeVector(vector: CrazyVector) : OwnException(
     "One the coordinates in the vector $vector is negative."
 )
 
-class NoPointsInPolygonListEx : OwnException(
-    "no-points-in-polygon",
-    "There are no Points in the Polygon."
-)
-
 class CannotCheckPointOnLine : OwnException(
     "can-not-check-point-on-line",
     "Checking wether a line contains a point doesn't make sense."
@@ -132,6 +127,11 @@ class CannotCheckPointOnLine : OwnException(
 class TooLittlePointsInPolygonEx(pointsSize: Int) : OwnException(
     "too-little-points-in-poligon",
     "There are to little points ($pointsSize) in polygon."
+)
+
+class GameObjectIsNotInitialized(name: String) : OwnException(
+    "game-object-is-not-initialized",
+    "The Game Object $name is not initialized yet."
 )
 
 fun parseSendFormat(str: String): SendFormat {

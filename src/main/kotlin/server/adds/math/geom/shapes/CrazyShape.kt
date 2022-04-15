@@ -4,7 +4,7 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
 import server.adds.CrazyGraphicStyle
 import server.adds.CrazyGraphics
-import server.adds.math.CollisionDetection
+import server.adds.math.CrazyCollision
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
 import server.adds.debug.DebugTransform
@@ -14,7 +14,7 @@ import server.adds.debug.DebugObjectOptions
 abstract class CrazyShape(val type: ShapeType, val config: ShapeDebugConfig?) : DebugObjectI {
     override fun zIndex() = config?.zIndex ?: 0
 
-    infix fun collides(that: CrazyShape) = CollisionDetection.shapeShapeCollision(this, that)
+    infix fun collides(that: CrazyShape) = CrazyCollision.shapeShapeCollision(this, that)
 
     fun shapeConfig() = config ?: ShapeDebugConfig()
 

@@ -1,11 +1,11 @@
 package server.game.objects.abstct
 
 import server.adds.math.CrazyVector
+import server.adds.math.PartiallyElasticCollisionData
 import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.vec
 import server.data_containers.GameObjectType
-import server.data_containers.GeoObjectI
 
 abstract class GeoObject(
     type: GameObjectType,
@@ -15,12 +15,17 @@ abstract class GeoObject(
 ) : ColliderObject(type) {
     abstract fun getMass(): Double
 
-    fun impulsePower() = velocity.length() * getMass()
+    fun impulse() = velocity * getMass()
+
+    fun kinEnergy(): Double {
+        val velLength = velocity.length()
+        return (velLength * velLength * getMass()) / 2.0
+    }
     
     fun setSpeed(s: Double) { velocity = velocity.e() * s }
     fun setAngle(a: Double) { velocity = vec(a, velocity.length()) }
     
-    fun ricochetOnLine(line: CrazyLine, coll: CrazyShape = collider()) {
+    suspend fun ricochetOnLine(line: CrazyLine, coll: CrazyShape = collider()) {
         if (line.surroundedRect() touchesRect coll.surroundedRect()) {
             val cpa = coll containsPoint line.a
             val cpb = coll containsPoint line.b
@@ -43,15 +48,31 @@ abstract class GeoObject(
         }
     }
 
-    infix fun handleElasticCollision(that: GeoObject) {
+    suspend fun handlePartiallyElasticCollision(that: GeoObject, k: Double = 1.0, checkMovingAway: Boolean = true): PartiallyElasticCollisionData? {
+        var result: PartiallyElasticCollisionData? = null
 
+        if (!checkMovingAway || !movingAwayFrom(that)) {
+            val m1 = this.getMass(); val m2 = that.getMass()
+            val v1 = this.velocity; val v2 = that.velocity
+
+            val nv1 = (v1*m1 + v2*m2 - (v1 - v2) * m2 * k) / (m1 + m2)
+            val nv2 = (v1*m1 + v2*m2 - (v2 - v1) * m1 * k) / (m1 + m2)
+
+            val energyLost = (v1-v2).selfScalar() * ((m1 * m2) / (2 * (m1 + m2))) * (1 - k*k)
+
+            result = PartiallyElasticCollisionData(nv1, nv2, energyLost)
+        }
+
+        return result
     }
 
-    override suspend fun calc(s: Double) {
-        move()
+    infix fun movingAwayFrom(that: GeoObject) = (that.pos + that.velocity - this.pos - this.velocity).length() > (that.pos - this.pos).length()
+
+    override suspend fun calc(factor: Double, step: Int) {
+        if (step == 1) move(factor)
     }
 
-    fun move() { pos += velocity }
+    fun move(factor: Double) { pos += velocity.stepSpeed() * factor }
 
     fun getGeo() = collider().surroundedRect().toGeo(ang)
 }

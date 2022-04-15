@@ -15,6 +15,8 @@ data class CrazyVector(val x: Double, val y: Double) {
 
     infix fun mulX(s: Number) = CrazyVector(x*s.toDouble(), y)
     infix fun mulY(s: Number) = CrazyVector(x, y*s.toDouble())
+    infix fun addX(s: Number) = CrazyVector(x+s.toDouble(), y)
+    infix fun addY(s: Number) = CrazyVector(x, y+s.toDouble())
 
     fun square() = CrazyVector(x*x, y*y)
 
@@ -28,6 +30,8 @@ data class CrazyVector(val x: Double, val y: Double) {
 
     infix fun distance(v: CrazyVector) = (v - this).length()
     infix fun scalar(v: CrazyVector) = this.x * v.x + this.y * v.y
+
+    fun selfScalar() = this scalar this
 
     fun addAll(vararg vs: CrazyVector): CrazyVector {
         var o = this.copy()

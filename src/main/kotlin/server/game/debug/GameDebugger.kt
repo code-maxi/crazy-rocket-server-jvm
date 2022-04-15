@@ -4,20 +4,27 @@ import GalaxyConfigI
 import SendFormat
 import TeamColor
 import javafx.scene.layout.VBox
+import javafx.scene.paint.Color
 import server.adds.debug.*
+import server.adds.math.CrazyVector
+import server.adds.math.geom.shapes.CrazyRect
+import server.adds.math.geom.shapes.ShapeDebugConfig
+import server.adds.math.niceString
 import server.data_containers.*
 import server.game.CrazyGame
 import server.game.GameConfig
 import server.game.objects.CrazyRocket
+import server.game.objects.abstct.GeoObject
 import tornadofx.action
 import tornadofx.checkbox
 
 class GameDebugger : CrazyDebugger(GeomDebuggerConfig(
     title = "Game-Debugger",
     eyeModule = TransformEyeModuleConfig(),
-    timerModule = TimerModuleConfig(startStepSpeed = 50),
-    inspectorModule = InspectorModuleConfig(),
+    timerModule = TimerModuleConfig(startStepSpeed = 50, isDefaultContinuousSelected = true),
+    inspectorModule = InspectorModuleConfig(paintDebugDefault = false),
     gridModule = GridModuleConfig(10.0, true),
+    loggerModule = LoggerModuleConfig(),
     unit = 20.0
 )) {
     private val userProps = UserPropsI(
@@ -43,6 +50,10 @@ class GameDebugger : CrazyDebugger(GeomDebuggerConfig(
     init {
         game.createRandomAsteroids(10)
         rocket = game.addRocket(userProps)
+
+        game.addLoggingListener("debugger") { f, t, _, _ ->
+            logModule(t, f)
+        }
     }
 
     override suspend fun act(s: Double): List<DebugObjectI> {
@@ -66,7 +77,22 @@ class GameDebugger : CrazyDebugger(GeomDebuggerConfig(
 
         game.calc(s)
 
-        return game.objects()
+        val gameObjects = game.objects()
+
+        val worldDebugOptions = mapOf(
+            "Kin Energy Sum" to gameObjects.filterIsInstance(GeoObject::class.java).sumOf { it.kinEnergy() }.niceString(),
+            "Impulse Sum" to gameObjects.filterIsInstance(GeoObject::class.java).sumOf { it.impulse().length() }.niceString()
+        )
+
+        return gameObjects + CrazyRect(
+            CrazyVector.zero(),
+            game.size(),
+            ShapeDebugConfig(
+                ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillOpacity = 0.0, strokeColor = Color.RED, lineWidth = 4.0),
+                zIndex = -1,
+                debugOptions = DebugObjectOptions("World", "worldID", worldDebugOptions)
+            )
+        )
     }
     
     private fun onMessage(id: String, message: SendFormat) {

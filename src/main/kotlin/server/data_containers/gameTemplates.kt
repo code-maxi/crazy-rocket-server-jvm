@@ -27,7 +27,7 @@ enum class RocketType(
             30.0,40.0,0.0,
             0.0, "fire.png"
         )),
-        0.03,
+        50.0,
         0.05,
         1.0,
         "rocket.png",
@@ -39,14 +39,14 @@ enum class RocketType(
                 vec(0.25, 0.5)
             )
         ),
-        0.1,
+        0.15,
         listOf(CrazyRocketShotConfig(
             CrazyShotType.SIMPLE_SHOT,
             CrazyVector.zero(), 0.0,
             listOf("Space"),
             30,
             customId = "center",
-            speed = 0.5
+            speed = 20.0
         )),
         10.0
     )

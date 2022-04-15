@@ -117,3 +117,10 @@ object Polygon {
 
 // This code is contributed by chitranayal
  */
+
+
+data class PartiallyElasticCollisionData(
+    val nv1: CrazyVector,
+    val nv2: CrazyVector,
+    val energyLost: Double
+ )

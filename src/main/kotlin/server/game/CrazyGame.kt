@@ -2,6 +2,7 @@ package server.game
 
 import GalaxyConfigI
 import SendFormat
+import kotlinx.coroutines.yield
 import server.adds.math.vec
 import server.adds.text.Ansi
 import server.adds.text.Text
@@ -9,6 +10,7 @@ import server.data_containers.*
 import server.game.objects.CrazyAsteroid
 import server.game.objects.abstct.AbstractGameObject
 import server.game.objects.CrazyRocket
+import server.game.objects.abstct.GeoObject
 import kotlin.math.PI
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
@@ -23,13 +25,15 @@ class CrazyGame(
     private val gameConfig: GameConfig
 ) : GameClassI {
     private var objectMap = mutableMapOf<String, AbstractGameObject>()
-    private var idCount = Int.MAX_VALUE
+    private var idCount = 0
 
     private val logListeners = hashMapOf<String, (from: String?, text: String, fromColor: Ansi?, textColor: Ansi?) -> Unit>(
         "main" to { f, t, c1, c2 -> Text.formattedPrint(f, t, c1, c2) }
     )
+    private val deletingObjects = arrayListOf<String>()
+    private val addingObjects = arrayListOf<Pair<AbstractGameObject, String>>()
 
-    val props = GamePropsI(10, 5000, 5000)
+    val props = GamePropsI(10, config.width, config.height)
 
     fun objects() = objectMap.values.toList()
     fun size() = vec(props.width, props.height)
@@ -38,8 +42,8 @@ class CrazyGame(
     fun removeLoggingListener(id: String) { logListeners.remove(id) }
 
     private fun newID(): String {
-        idCount --
-        return idCount.toString()
+        idCount ++
+        return "G$idCount"
     }
 
     private fun checkOtherId(id: String): String {
@@ -58,48 +62,70 @@ class CrazyGame(
     }
 
     fun <T : AbstractGameObject> objectsOfType(o: KClass<T>) =
-        objectMap.values.filter { o.isInstance(it) }.map { o.cast(it) }
+        objectMap.values.toList().filterIsInstance(o.java)
 
-    fun killObject(id: String) { objectMap.remove(id) }
+    fun geoObjects() = objectMap.values.toList().filterIsInstance(GeoObject::class.java)
 
-    fun addObject(obj: AbstractGameObject) {
-        val id = newID()
-        obj.initialize(this, id)
-        objectMap[id] = obj
+    fun killObject(id: String) {
+        if (deletingObjects.none { it == id }) deletingObjects.add(id)
+    }
+
+    fun addObject(obj: AbstractGameObject, id: String = newID()) {
+        addingObjects.add(obj to id)
     }
 
     fun addRocket(u: UserPropsI): CrazyRocket {
-        checkOtherId(u.id)
-
         val rocket = CrazyRocket(
             vec(props.width.toDouble(), props.height.toDouble()) * vec(Math.random(), Math.random()),
             u
         )
-        rocket.initialize(this, u.id)
-        objectMap[u.id] = rocket
+        addObject(rocket, u.id)
 
         return rocket
     }
 
     fun createRandomAsteroids(howMany: Int) {
-        for (i in 0..10) {
+        for (i in 0..howMany) {
             addObject(
                 CrazyAsteroid(
                     4.0 + 10.0 * Math.random(),
                     Math.random() * 0.25,
                     size() * Math.random(),
                     Math.random() * 2 * PI,
-                    vec(Math.random() * 2 * PI, Math.random() * 0.1 + 0.05, true)
+                    vec(Math.random() * 2 * PI, Math.random() * 10.0 + 5.0, true)
                 )
             )
         }
     }
 
-    override suspend fun calc(s: Double) {
+    override suspend fun calc(factor: Double) {
+        yield()
+
         val objectList = objectMap.values.toList()
-        for (i in objectList.indices) {
-            objectList[i].calc(s)
+
+        for (step in 1..CALCULATION_TIMES) {
+            for (o in objectList) o.calc(factor, step)
+            yield()
         }
+
+        handleAddingAndDeletingObjects()
+
+        yield()
+    }
+
+    @Synchronized
+    private fun handleAddingAndDeletingObjects() {
+        for (d in deletingObjects) objectMap.remove(d)
+        deletingObjects.clear()
+
+        for (a in addingObjects) {
+            if (!a.first.isInitialized()) {
+                log(null, "${a.second} wants to join.")
+                a.first.initialize(this, a.second)
+                objectMap[a.second] = a.first
+            }
+        }
+        addingObjects.clear()
     }
 
     override fun data() = GameDataI(props, objects().map { it.data() })
@@ -110,6 +136,7 @@ class CrazyGame(
     }
 
     companion object {
-        val LISTINING_KEYS = listOf("ArrowUp", "ArrowRight", "ArrowLeft")
+        val LISTING_KEYS = listOf("ArrowUp", "ArrowRight", "ArrowLeft")
+        const val CALCULATION_TIMES = 3
     }
 }

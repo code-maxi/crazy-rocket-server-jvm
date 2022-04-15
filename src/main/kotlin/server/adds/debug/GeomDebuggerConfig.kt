@@ -15,7 +15,8 @@ data class TransformEyeModuleConfig(
 
 data class TimerModuleConfig(
     val startStepSpeed: Int = 50,
-    val sofortStartTimer: Int? = null
+    val startTimerDirectly: Int? = null,
+    val isDefaultContinuousSelected: Boolean? = false
 )
 
 data class GridModuleConfig(
@@ -32,7 +33,7 @@ data class InspectorModuleConfig(
 
 data class LoggerModuleConfig(
     val firstColumnLength: Int = 20,
-    val minWidth: Double = 250.0
+    val minWidth: Double = 350.0
 )
 
 data class GeomDebuggerConfig(

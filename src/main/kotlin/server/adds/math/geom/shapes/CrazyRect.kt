@@ -5,7 +5,7 @@ import javafx.scene.paint.Color
 import server.adds.CrazyGraphicStyle
 import server.adds.CrazyGraphics
 import server.adds.debug.DebugObjectOptions
-import server.adds.math.CollisionDetection
+import server.adds.math.CrazyCollision
 import server.adds.math.CrazyTransform
 import server.adds.math.CrazyVector
 import server.adds.debug.DebugTransform
@@ -41,7 +41,7 @@ class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugC
     fun width() = size.x
     fun height() = size.y
 
-    infix fun touchesRect(that: CrazyRect) = CollisionDetection.rectRectCollision(this, that)
+    infix fun touchesRect(that: CrazyRect) = CrazyCollision.rectRectCollision(this, that)
 
     override fun paintSelf(g2: GraphicsContext, transform: DebugTransform, config: ShapeDebugConfig) {
         val screenPos = transform.screen(pos)

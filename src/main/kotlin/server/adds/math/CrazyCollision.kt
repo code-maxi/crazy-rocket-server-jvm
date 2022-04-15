@@ -2,8 +2,8 @@ package server.adds.math
 
 import server.adds.math.geom.shapes.*
 
-object CollisionDetection {
-    private fun circleLineCollision(circle: CrazyCircle, line: CrazyLine): Boolean {
+object CrazyCollision {
+    fun circleLineCollision(circle: CrazyCircle, line: CrazyLine): Boolean {
         if (circle containsPoint line.a || circle containsPoint line.b) return true
 
         val line2 = CrazyLine(circle.pos, circle.pos + line.delta().normalRight().e())
@@ -15,10 +15,10 @@ object CollisionDetection {
         (rect2.pos.x + rect2.size.x > rect1.pos.x || rect2.pos.x < rect1.pos.x + rect1.size.x)
         && (rect2.pos.y + rect2.size.y > rect1.pos.y || rect2.pos.y < rect1.pos.y + rect1.size.y)
 
-    private fun circleCircleCollision(circle1: CrazyCircle, circle2: CrazyCircle) =
+    fun circleCircleCollision(circle1: CrazyCircle, circle2: CrazyCircle) =
         circle1.pos distance circle2.pos <= circle1.radius + circle2.radius
 
-    private fun circleRectCollision(circle1: CrazyCircle, rect1: CrazyRect): Boolean {
+    fun circleRectCollision(circle1: CrazyCircle, rect1: CrazyRect): Boolean {
         val circleSize = CrazyVector.square(circle1.radius)
         val rect2 = CrazyRect(rect1.pos - circleSize, rect1.size + (circleSize * 2.0))
         return rect2 containsPoint circle1.pos
@@ -81,9 +81,9 @@ object CollisionDetection {
 
     fun shapeShapeCollision(shape1: CrazyShape, shape2: CrazyShape): Boolean {
         val checkNotNecessary = (shape1 is CrazyRect && shape2 is CrazyRect)// || (shape1 is CrazyCircle && shape2 is CrazyCircle)
-        val firstCollisionCheck = checkNotNecessary || rectRectCollision(shape1.surroundedRect(), shape2.surroundedRect())
+        val firstCollisionCheck = rectRectCollision(shape1.surroundedRect(), shape2.surroundedRect())
 
-        return firstCollisionCheck && when (shape1) {
+        return firstCollisionCheck && (checkNotNecessary || when (shape1) {
             is CrazyCircle -> {
                 when (shape2) {
                     is CrazyPolygon -> circlePolygonCollision(shape1, shape2)
@@ -106,7 +106,7 @@ object CollisionDetection {
                 when (shape2) {
                     is CrazyCircle -> circleRectCollision(shape2, shape1)
                     is CrazyPolygon -> polygonPolygonCollision(shape2, shape1.toPolygon())
-                    is CrazyRect -> rectRectCollision(shape1, shape2)
+                    //is CrazyRect -> rectRectCollision(shape1, shape2)
                     is CrazyLine -> rectLineCollision(shape1, shape2)
                     else -> null
                 }!!
@@ -121,6 +121,8 @@ object CollisionDetection {
                 }!!
             }
             else -> null
-        }!!
+        }!!)
     }
+
+
 }

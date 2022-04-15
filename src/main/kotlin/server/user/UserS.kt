@@ -131,7 +131,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
                     ResponseResult(
                         true,
-                        data = GameStartI(CrazyGame.LISTINING_KEYS)
+                        data = GameStartI(CrazyGame.LISTING_KEYS)
                     )
                 }, mapOf("class-cast" to WrongRequestEx(a.value)), true)
 

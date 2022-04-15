@@ -102,7 +102,7 @@ export interface RocketTypeI {
 
 interface GameClassI {
      fun data(): Any
-     suspend fun calc(s: Double)
+     suspend fun calc(factor: Double)
 }
 
 data class GameStartI(
