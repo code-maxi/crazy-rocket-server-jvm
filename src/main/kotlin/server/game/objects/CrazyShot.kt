@@ -2,6 +2,7 @@ package server.game.objects
 
 import javafx.scene.paint.Color
 import javafx.scene.shape.StrokeLineCap
+import server.adds.math.CrazyCollision
 import server.adds.math.CrazyVector
 import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.ShapeDebugConfig
@@ -9,7 +10,6 @@ import server.adds.math.vec
 import server.data_containers.AbstractGameObjectI
 import server.data_containers.GameObjectType
 import server.game.objects.abstct.GeoObject
-import server.game.objects.abstct.VulnerableObjectI
 
 data class CrazyRocketShotConfig(
     val shotType: CrazyShotType,
@@ -30,7 +30,8 @@ enum class CrazyShotType(
     val thickness: Double,
     val mass: Double,
     val stability: Double,
-    val shrinkMassLinear: Boolean
+    val shrinkLinear: Boolean,
+    val explosionImpulsePower: Double
 ) {
     SIMPLE_SHOT(
         "simple-shot",
@@ -39,9 +40,10 @@ enum class CrazyShotType(
         1.0,
         Color.RED,
         2.0,
-        100.0,
+        0.5,
         5.0,
-        true
+        true,
+        10.0
     )
 }
 
@@ -50,21 +52,22 @@ interface ShotVulnerableObject {
 }
 
 class CrazyShot(
-    pos: CrazyVector, angle: Double, teamColor: String?, speed: Double,
+    pos: CrazyVector, val angle: Double, teamColor: String?, speed: Double,
     startVelocity: CrazyVector, val shotType: CrazyShotType
 ) : GeoObject(GameObjectType.SIMPLE_SHOT, pos, velocity = startVelocity + vec(angle, speed, true)) {
     private val startStartStability = shotType.stability
     private var stability = startStartStability
     private var lineCollider = makeCollider()
 
-    fun life() = stability / startStartStability
+    private fun life() = stability / startStartStability
+    private fun shotLength() = (shotType.startLength - shotType.endLength) * life() + shotType.endLength
 
-    override fun getMass() = shotType.mass * (if (shotType.shrinkMassLinear) life() else 1.0)
+    override fun getMass() = shotType.mass * (if (shotType.shrinkLinear) life() else 1.0)
 
     override fun collider() = lineCollider
 
     private fun makeCollider() =
-        CrazyLine(pos, pos + velocity.e() * ((shotType.startLength - shotType.endLength) * life() + shotType.endLength))
+        CrazyLine(pos, pos + vec(angle, shotLength(), true))
             .setConfig(ShapeDebugConfig(
                 paintCoords = false,
                 paintPoints = false,
@@ -87,13 +90,16 @@ class CrazyShot(
             for (that in objects) {
                 if (that !== this && that is ShotVulnerableObject) {
                     if (this collides that) {
-                        val collisionResult = this.handlePartiallyElasticCollision(that, SHOT_ASTEROID_COLLISION_FACTOR)
+                        val collisionResult = CrazyCollision.partiallyElasticCollision2Dv2(
+                            this.getMass(), this.velocity, this.pos,
+                            that.getMass(), that.velocity, that.pos,
+                            SHOT_ASTEROID_COLLISION_FACTOR,
+                            this.velocity.e() * shotType.explosionImpulsePower * (if (shotType.shrinkLinear) life() else 1.0)
+                        )
 
                         if (collisionResult != null) {
                             that.velocity = collisionResult.nv2
-
-                            //that.onShot(collisionResult.energyLost/2.0 + kinEnergy(), this)
-
+                            that.onShot(collisionResult.energyLost/2.0 + kinEnergy(), this)
                             suicide()
                         }
                     }

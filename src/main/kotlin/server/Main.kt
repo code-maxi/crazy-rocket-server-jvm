@@ -9,12 +9,13 @@ import server.adds.debug.DebugEnvironment
 import server.adds.math.geom.tests.*
 import server.galaxy.GalaxyS
 import server.game.debug.GameDebugger
+import server.game.debug.HumanDevelopmentDebugger
 import tornadofx.launch
 
 fun main(args: Array<String>) {
     when (args[0]) {
         "debugger" -> {
-            launch<Test2dPhysics>()
+            launch<HumanDevelopmentDebugger>()
         }
         "server" -> {
             runBlocking {

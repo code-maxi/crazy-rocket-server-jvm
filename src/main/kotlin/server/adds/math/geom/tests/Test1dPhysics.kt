@@ -1,7 +1,5 @@
 package server.adds.math.geom.tests
 
-import javafx.scene.Node
-import javafx.scene.control.Label
 import javafx.scene.paint.Color
 import server.adds.debug.*
 import server.adds.math.geom.shapes.CrazyCircle
@@ -14,7 +12,7 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 class Test1dPhysics : CrazyDebugger(
-    GeomDebuggerConfig(
+    CrazyDebuggerConfig(
     title = "1D-Physics-Debugger",
     eyeModule = TransformEyeModuleConfig(),
     timerModule = TimerModuleConfig(startStepSpeed = 50),

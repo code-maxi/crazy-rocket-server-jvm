@@ -1,5 +1,6 @@
 package server.game.objects
 
+import SendFormat
 import javafx.scene.paint.Color
 import server.adds.debug.DebugObjectOptions
 import server.adds.math.geom.GeoI
@@ -10,13 +11,15 @@ import server.adds.math.vec
 import server.data_containers.KeyboardI
 import server.data_containers.UserViewI
 import server.data_containers.*
+import server.game.CrazyTeam
 import server.game.objects.abstct.GeoObject
 import java.lang.Math.PI
 
 class CrazyRocket(
-    pos: CrazyVector,
-    val userProps: UserPropsI
-) : GeoObject(GameObjectType.ROCKET, pos, 0.0, CrazyVector.zero()) {
+    val userProps: UserPropsI,
+    val team: CrazyTeam,
+    private val onMessage: (id: String, m: SendFormat) -> Unit
+) : GeoObject(GameObjectType.ROCKET, CrazyVector.zero(), 0.0, CrazyVector.zero()) {
 
     private var keyboard = KeyboardI()
     private lateinit var rocketType: RocketType
@@ -34,6 +37,12 @@ class CrazyRocket(
         setRocketType(RocketType.DEFAULT)
         eye = pos
         polygonCollider = makePolygonCollider()
+    }
+
+    fun send(message: SendFormat) { onMessage(userProps.id, message) }
+
+    fun onMessage(message: SendFormat) {
+
     }
 
     private fun makePolygonCollider() = rocketType.colliderPolygon
@@ -72,7 +81,7 @@ class CrazyRocket(
             userProps.teamColor, it.speed, velocity, it.shotType
         )
         addObject(shot)
-        this.velocity = (this.impulse() - shot.impulse()/20.0) / this.getMass()
+        this.velocity = (this.impulse() - shot.impulse()) / this.getMass()
     }
 
     override fun getMass() = rocketType.mass

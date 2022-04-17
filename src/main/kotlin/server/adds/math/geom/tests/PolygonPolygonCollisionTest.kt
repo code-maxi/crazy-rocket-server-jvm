@@ -7,7 +7,7 @@ import server.adds.math.geom.shapes.CrazyPolygon
 import server.adds.math.vec
 
 class PolygonPolygonCollisionTest : CrazyDebugger(
-    GeomDebuggerConfig(
+    CrazyDebuggerConfig(
         unit = 100.0,
         eyeModule = TransformEyeModuleConfig(),
         timerModule = TimerModuleConfig(startStepSpeed = 50),

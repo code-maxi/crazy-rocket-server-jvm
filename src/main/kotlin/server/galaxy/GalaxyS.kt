@@ -109,7 +109,7 @@ class GalaxyS(
         checkMyPassword(password)
 
         game = CrazyGame(config, GameConfig(
-            sendUser = { id, sendFormat -> users[id]?.onMessageFromGame(sendFormat) },
+            onRocketMessage = { id, sendFormat -> users[id]?.onMessageFromGame(sendFormat) },
         ))
 
         props = props.copy(state = "running")

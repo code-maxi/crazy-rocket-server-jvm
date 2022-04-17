@@ -7,7 +7,7 @@ import server.adds.math.geom.shapes.*
 import server.adds.math.vec
 
 class CirclePolygonIntersectionTest : CrazyDebugger(
-    GeomDebuggerConfig(
+    CrazyDebuggerConfig(
         unit = 100.0,
         eyeModule = TransformEyeModuleConfig(),
         timerModule = TimerModuleConfig(startStepSpeed = 50),

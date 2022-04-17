@@ -112,8 +112,8 @@ data class GameStartI(
 enum class GameObjectType(val id: String, val defaultZIndex: Int) {
     ASTEROID("asteroid", 1),
     ROCKET("rocket", 2),
-    SIMPLE_SHOT("simple-shot", 0)
-
+    SIMPLE_SHOT("simple-shot", 0),
+    BASE("base", 1)
     ;
 
     companion object {

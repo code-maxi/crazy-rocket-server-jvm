@@ -125,7 +125,7 @@ class CrazyAsteroid(
 
     companion object {
         const val ASTEROID_COLLISION_FACTOR = 1.0
-        const val PROPORTION_STABILITY_MASS = 10.0
+        const val PROPORTION_STABILITY_MASS = 100.0
     }
 
     override fun onShot(collisionEnergy: Double, shot: CrazyShot) {

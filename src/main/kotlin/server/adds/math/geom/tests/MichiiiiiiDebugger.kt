@@ -1,14 +1,13 @@
 package server.adds.math.geom.tests
 
 import javafx.scene.paint.Color
-import server.adds.CrazyGraphicStyle
 import server.adds.debug.*
 import server.adds.math.CrazyVector
 import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.vec
 
-class MichiiiiiiDebugger : CrazyDebugger(GeomDebuggerConfig(
+class MichiiiiiiDebugger : CrazyDebugger(CrazyDebuggerConfig(
     "MichiiiiiiDebugger",
     50.0,
     eyeModule = TransformEyeModuleConfig(),

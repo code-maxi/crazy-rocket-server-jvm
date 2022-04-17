@@ -18,3 +18,21 @@ object ArrayA {
         return ArrayCompareD(added, removed, stayed)
     }
 }
+
+inline fun <T> ArrayList<T>.saveForEach(
+    action: (T) -> Unit
+) {
+    for (i in this.indices) {
+       try { action(this[i]) }
+       catch (_: java.lang.IndexOutOfBoundsException) {}
+    }
+}
+
+inline fun <T> ArrayList<T>.saveForEachIndexed(
+    action: (T, Int) -> Unit
+) {
+    for (i in this.indices) {
+        try { action(this[i], i) }
+        catch (_: java.lang.IndexOutOfBoundsException) {}
+    }
+}

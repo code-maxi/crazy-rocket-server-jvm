@@ -6,7 +6,6 @@ import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
-import server.adds.CrazyGraphicStyle
 import server.adds.debug.*
 import server.adds.math.*
 import server.adds.math.geom.shapes.CrazyCircle
@@ -123,7 +122,7 @@ data class Test2dObject(
                 val isV1Right = ne scalar v1 > 0
                 val isV2Left = ne scalar v2 < 0
 
-                if (isV1Right && isV2Left || true) {
+                if (isV1Right && isV2Left) {
                     val cn1 = ne * (ne scalar v1)
                     val cn2 = ne * (ne scalar v2)
 
@@ -165,8 +164,8 @@ data class Test2dObject(
     override fun zIndex() = 0
 
     override fun paintDebug(g2: GraphicsContext, transform: DebugTransform, canvasSize: CrazyVector) {
-        drawingShapes[0].paintDebug(g2, transform, canvasSize)
-    //for (i in drawingShapes.indices) drawingShapes[i].paintDebug(g2, transform, canvasSize)
+        //drawingShapes[0].paintDebug(g2, transform, canvasSize)
+        for (i in drawingShapes.indices) drawingShapes[i].paintDebug(g2, transform, canvasSize)
     }
 
     override fun debugOptions() = DebugObjectOptions(name, name, debugOptions.toMap())
@@ -175,7 +174,7 @@ data class Test2dObject(
 }
 
 class Test2dPhysics : CrazyDebugger(
-    GeomDebuggerConfig(
+    CrazyDebuggerConfig(
         title = "1D-Physics-Debugger",
         eyeModule = TransformEyeModuleConfig(),
         timerModule = TimerModuleConfig(startStepSpeed = 30),
@@ -223,7 +222,7 @@ class Test2dPhysics : CrazyDebugger(
             val result = elements[i].checkCollision(elements.toList())
             if (result != null) {
                 logModule(result)
-                //stopAfterAct = true
+                stopAfterAct = true
             }
         }
 

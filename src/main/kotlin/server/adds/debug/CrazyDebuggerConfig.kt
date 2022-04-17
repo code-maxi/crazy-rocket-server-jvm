@@ -36,7 +36,7 @@ data class LoggerModuleConfig(
     val minWidth: Double = 350.0
 )
 
-data class GeomDebuggerConfig(
+data class CrazyDebuggerConfig(
     val title: String = "Geom-Debugger",
     val unit: Double = 1.0,
     val moduleComponentHeight: Double = 300.0,

@@ -15,7 +15,7 @@ import server.adds.math.toDegrees
 import server.adds.math.vec
 
 class CircleRicochetOnLineTest : CrazyDebugger(
-    GeomDebuggerConfig(
+    CrazyDebuggerConfig(
         unit = 100.0,
         eyeModule = TransformEyeModuleConfig(),
         timerModule = TimerModuleConfig(startStepSpeed = 50),

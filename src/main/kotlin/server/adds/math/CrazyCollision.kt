@@ -1,6 +1,7 @@
 package server.adds.math
 
 import server.adds.math.geom.shapes.*
+import kotlin.math.sqrt
 
 object CrazyCollision {
     fun circleLineCollision(circle: CrazyCircle, line: CrazyLine): Boolean {
@@ -157,19 +158,38 @@ object CrazyCollision {
     }
 
     fun partiallyElasticCollision2Dv2(
-        m1: Double, v1: CrazyVector, p1: CrazyVector,
-        m2: Double, v2: CrazyVector, p2: CrazyVector,
-        k: Double = 1.0
+        m1p: Double, v1p: CrazyVector, p1: CrazyVector,
+        m2p: Double, v2p: CrazyVector, p2: CrazyVector,
+        k: Double = 1.0,
+        impulse1Addend: CrazyVector? = null, impulse2Addend: CrazyVector? = null
     ): PartiallyElasticCollisionData2D? {
         var result: PartiallyElasticCollisionData2D? = null
 
-        val ne = (p1 - p2).e()
+        var m1 = m1p
+        var v1 = v1p
+
+        var m2 = m2p
+        var v2 = v2p
+
+        if (impulse1Addend != null) {
+            val ip1 = v1p * m1p + impulse1Addend
+            v1 = ip1 / m1p
+            m1 = sqrt((ip1 scalar ip1) / (v1p scalar v1p))
+        }
+
+        if (impulse2Addend != null) {
+            val ip2 = v2p * m2p + impulse2Addend
+            v2 = ip2 / m2p
+            m2 = sqrt((ip2 scalar ip2) / (v2p scalar v2p))
+        }
+
+        val ne = (p2 - p1).e()
         val te = ne.normalLeft()
 
         val isV1Right = ne scalar v1 > 0
         val isV2Left = ne scalar v2 < 0
 
-        if (isV1Right && isV2Left) {
+        if (isV1Right && isV2Left || true) {
             val cn1 = ne * (ne scalar v1)
             val cn2 = ne * (ne scalar v2)
 
@@ -178,7 +198,7 @@ object CrazyCollision {
 
             val collision1dResult = partiallyElasticCollision1D(m1, cn1.length(), m2, cn2.length(), k)
 
-            val nv1 = ct1 + (ne * collision1dResult.nv1)
+            val nv1 = ct1 - (ne * collision1dResult.nv1)
             val nv2 = ct2 + (ne * collision1dResult.nv2)
 
             result = PartiallyElasticCollisionData2D(nv1, nv2, collision1dResult.energyLost)

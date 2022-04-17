@@ -4,6 +4,7 @@ import GalaxyConfigI
 import SendFormat
 import kotlinx.coroutines.yield
 import server.adds.math.vec
+import server.adds.saveForEach
 import server.adds.text.Ansi
 import server.adds.text.Text
 import server.data_containers.*
@@ -13,29 +14,40 @@ import server.game.objects.CrazyRocket
 import server.game.objects.abstct.GeoObject
 import kotlin.math.PI
 import kotlin.reflect.KClass
-import kotlin.reflect.cast
 
 data class GameConfig(
-    val sendUser: (id: String, send: SendFormat) -> Unit,
+    val onRocketMessage: (id: String, send: SendFormat) -> Unit,
     val debug: Boolean = false
+)
+
+data class GameObjectWantsToJoin(
+    val id: String,
+    val gameObject: AbstractGameObject,
+    val callback: ((go: AbstractGameObject) -> Unit)?
+)
+
+data class GameObjectWantsToSuicide(
+    val id: String,
+    val callback: (() -> Unit)?
 )
 
 class CrazyGame(
     config: GalaxyConfigI,
-    private val gameConfig: GameConfig
+    val gameConfig: GameConfig
 ) : GameClassI {
     private var objectMap = mutableMapOf<String, AbstractGameObject>()
+    private var currentObjects = listOf<AbstractGameObject>()
     private var idCount = 0
 
     private val logListeners = hashMapOf<String, (from: String?, text: String, fromColor: Ansi?, textColor: Ansi?) -> Unit>(
         "main" to { f, t, c1, c2 -> Text.formattedPrint(f, t, c1, c2) }
     )
-    private val deletingObjects = arrayListOf<String>()
-    private val addingObjects = arrayListOf<Pair<AbstractGameObject, String>>()
+    private val deletingObjects = arrayListOf<GameObjectWantsToSuicide>()
+    private val addingObjects = arrayListOf<GameObjectWantsToJoin>()
 
     val props = GamePropsI(10, config.width, config.height)
 
-    fun objects() = objectMap.values.toList()
+    fun objects() = currentObjects
     fun size() = vec(props.width, props.height)
 
     fun addLoggingListener(id: String, listener: (from: String?, text: String, fromColor: Ansi?, textColor: Ansi?) -> Unit) { logListeners[id] = listener }
@@ -62,26 +74,25 @@ class CrazyGame(
     }
 
     fun <T : AbstractGameObject> objectsOfType(o: KClass<T>) =
-        objectMap.values.toList().filterIsInstance(o.java)
+        currentObjects.filterIsInstance(o.java)
 
-    fun geoObjects() = objectMap.values.toList().filterIsInstance(GeoObject::class.java)
+    fun geoObjects() = currentObjects.filterIsInstance(GeoObject::class.java)
 
-    fun killObject(id: String) {
-        if (deletingObjects.none { it == id }) deletingObjects.add(id)
+    fun killObject(id: String, callback: (() -> Unit)? = null) {
+        if (deletingObjects.toList().none { it.id == id }) {
+            deletingObjects.add(GameObjectWantsToSuicide(id, callback))
+        }
     }
 
-    fun addObject(obj: AbstractGameObject, id: String = newID()) {
-        addingObjects.add(obj to id)
+    fun addObject(obj: AbstractGameObject, id: String = newID(), callback: ((go: AbstractGameObject) -> Unit)? = null) {
+        addingObjects.add(GameObjectWantsToJoin(id, obj, callback))
     }
 
     fun addRocket(u: UserPropsI): CrazyRocket {
-        val rocket = CrazyRocket(
-            vec(props.width.toDouble(), props.height.toDouble()) * vec(Math.random(), Math.random()),
-            u
-        )
-        addObject(rocket, u.id)
+        //val rocket = CrazyRocket(u)
+        //addObject(rocket, u.id)
 
-        return rocket
+        TODO()
     }
 
     fun createRandomAsteroids(howMany: Int) {
@@ -101,10 +112,13 @@ class CrazyGame(
     override suspend fun calc(factor: Double) {
         yield()
 
-        val objectList = objectMap.values.toList()
+        currentObjects = objectMap.values.toList()
 
         for (step in 1..CALCULATION_TIMES) {
-            for (o in objectList) o.calc(factor, step)
+            for (i in currentObjects.indices) {
+               try { currentObjects[i].calc(factor, step) }
+               catch (_: java.lang.IndexOutOfBoundsException) {}
+            }
             yield()
         }
 
@@ -115,14 +129,18 @@ class CrazyGame(
 
     @Synchronized
     private fun handleAddingAndDeletingObjects() {
-        for (d in deletingObjects) objectMap.remove(d)
+        deletingObjects.saveForEach { d ->
+            objectMap.remove(d.id)
+            d.callback?.let { it() }
+        }
         deletingObjects.clear()
 
-        for (a in addingObjects) {
-            if (!a.first.isInitialized()) {
-                log(null, "${a.second} wants to join.")
-                a.first.initialize(this, a.second)
-                objectMap[a.second] = a.first
+        addingObjects.saveForEach { a ->
+            if (!a.gameObject.isInitialized()) {
+                log(null, "${a.id} wants to join.")
+                a.gameObject.initialize(this, a.id)
+                objectMap[a.id] = a.gameObject
+                a.callback?.let { it(a.gameObject) }
             }
         }
         addingObjects.clear()

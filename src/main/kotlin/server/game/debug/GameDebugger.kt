@@ -10,15 +10,18 @@ import server.adds.math.CrazyVector
 import server.adds.math.geom.shapes.CrazyRect
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.niceString
+import server.adds.math.vec
 import server.data_containers.*
 import server.game.CrazyGame
 import server.game.GameConfig
+import server.game.objects.CrazyAsteroid
 import server.game.objects.CrazyRocket
 import server.game.objects.abstct.GeoObject
 import tornadofx.action
 import tornadofx.checkbox
+import kotlin.math.PI
 
-class GameDebugger : CrazyDebugger(GeomDebuggerConfig(
+class GameDebugger : CrazyDebugger(CrazyDebuggerConfig(
     title = "Game-Debugger",
     eyeModule = TransformEyeModuleConfig(),
     timerModule = TimerModuleConfig(startStepSpeed = 50, isDefaultContinuousSelected = true),
@@ -48,8 +51,28 @@ class GameDebugger : CrazyDebugger(GeomDebuggerConfig(
     private val messages = arrayListOf<SendFormat>()
 
     init {
-        game.createRandomAsteroids(10)
+        //game.createRandomAsteroids(10)
         rocket = game.addRocket(userProps)
+
+        game.addObject(
+            CrazyAsteroid(
+                7.0,
+                Math.random() * 0.25,
+                rocket.pos + vec(15, 0),
+                Math.random() * 2 * PI,
+                CrazyVector.zero()
+            )
+        )
+
+        game.addObject(
+            CrazyAsteroid(
+                7.0,
+                Math.random() * 0.25,
+                rocket.pos + vec(-15, 0),
+                Math.random() * 2 * PI,
+                CrazyVector.zero()
+            )
+        )
 
         game.addLoggingListener("debugger") { f, t, _, _ ->
             logModule(t, f)

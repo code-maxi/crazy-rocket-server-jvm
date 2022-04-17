@@ -130,3 +130,10 @@ data class PartiallyElasticCollisionData1D(
     val nv2: Double,
     val energyLost: Double
 )
+
+fun bellRandom(times: Int): Double {
+    var res = 0.0
+    for (i in 1..times) res += Math.random()
+    res /= times.toDouble()
+    return res
+}

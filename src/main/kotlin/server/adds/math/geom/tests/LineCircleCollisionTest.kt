@@ -10,7 +10,7 @@ import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.vec
 
 class LineCircleCollisionTest : CrazyDebugger(
-    GeomDebuggerConfig(
+    CrazyDebuggerConfig(
         unit = 100.0,
         eyeModule = TransformEyeModuleConfig(),
         timerModule = TimerModuleConfig(startStepSpeed = 20),

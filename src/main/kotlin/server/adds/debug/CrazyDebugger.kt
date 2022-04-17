@@ -41,7 +41,7 @@ import javax.swing.Timer
 import kotlin.math.abs
 
 
-abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App() {
+abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App() {
     private lateinit var canvas: Canvas
     protected var stopAfterAct = false
 
@@ -354,8 +354,8 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
                 gc.moveTo(0.0, screenPos.y)
                 gc.lineTo(canvasSize.x, screenPos.y)
 
-                if (moduleConfig.paintMarks && x % 2 == 0) {
-                    CrazyGraphics.paintTextRect(gc,
+                if (moduleConfig.paintMarks) {
+                    if ((worldPos.x / gridLength).toInt() % 2 == 0) CrazyGraphics.paintTextRect(gc,
                         vec(screenPos.x, 0),
                         worldPos.x.niceString().toString(),
                         center = vec(0.5, -0.5),
@@ -365,7 +365,7 @@ abstract class CrazyDebugger(val configData: GeomDebuggerConfig) : Logable, App(
                         ),
                         textColor = Color.WHITE
                     )
-                    CrazyGraphics.paintTextRect(
+                    if ((worldPos.y / gridLength).toInt() % 2 == 0) CrazyGraphics.paintTextRect(
                         gc,
                         vec(0, screenPos.y),
                         worldPos.y.niceString().toString(),

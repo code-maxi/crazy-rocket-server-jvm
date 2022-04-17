@@ -17,7 +17,7 @@ data class ShapeMapItem(
 )
 
 class CollisionTest : CrazyDebugger(
-    GeomDebuggerConfig(
+    CrazyDebuggerConfig(
     unit = 100.0,
     eyeModule = TransformEyeModuleConfig(),
     timerModule = TimerModuleConfig(startStepSpeed = 20),
