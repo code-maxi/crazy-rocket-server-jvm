@@ -3,6 +3,7 @@ package server.data_containers
 import OwnExceptionDataI
 import ResponseResult
 import SendFormat
+import TeamColor
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import server.adds.text.Ansi
@@ -132,6 +133,11 @@ class TooLittlePointsInPolygonEx(pointsSize: Int) : OwnException(
 class GameObjectIsNotInitialized(name: String) : OwnException(
     "game-object-is-not-initialized",
     "The Game Object $name is not initialized yet."
+)
+
+class TeamNotInUse(team: TeamColor) : OwnException(
+    "team-is-not-in-use",
+    "The team ${team.teamName} you are trying to access is not in use."
 )
 
 fun parseSendFormat(str: String): SendFormat {

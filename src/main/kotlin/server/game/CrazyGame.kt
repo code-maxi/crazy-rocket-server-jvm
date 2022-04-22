@@ -2,6 +2,7 @@ package server.game
 
 import GalaxyConfigI
 import SendFormat
+import TeamColor
 import kotlinx.coroutines.yield
 import server.adds.math.vec
 import server.adds.saveForEach
@@ -14,10 +15,11 @@ import server.game.objects.CrazyRocket
 import server.game.objects.abstct.GeoObject
 import kotlin.math.PI
 import kotlin.reflect.KClass
+import kotlin.reflect.cast
 
 data class GameConfig(
     val onRocketMessage: (id: String, send: SendFormat) -> Unit,
-    val debug: Boolean = false
+    val availableTeams: List<TeamColor>
 )
 
 data class GameObjectWantsToJoin(
@@ -35,7 +37,8 @@ class CrazyGame(
     config: GalaxyConfigI,
     val gameConfig: GameConfig
 ) : GameClassI {
-    private var objectMap = mutableMapOf<String, AbstractGameObject>()
+    private val objectMap = mutableMapOf<String, AbstractGameObject>()
+    private val teams = mutableMapOf<TeamColor, CrazyTeam>()
     private var currentObjects = listOf<AbstractGameObject>()
     private var idCount = 0
 
@@ -47,8 +50,16 @@ class CrazyGame(
 
     val props = GamePropsI(10, config.width, config.height)
 
+    init {
+        for (c in gameConfig.availableTeams) {
+            teams[c] = CrazyTeam(c, this, this.size().randomPosInSquare(2))
+        }
+    }
+
     fun objects() = currentObjects
     fun size() = vec(props.width, props.height)
+
+    fun getTeam(c: TeamColor) = teams[c] ?: throw TeamNotInUse(c)
 
     fun addLoggingListener(id: String, listener: (from: String?, text: String, fromColor: Ansi?, textColor: Ansi?) -> Unit) { logListeners[id] = listener }
     fun removeLoggingListener(id: String) { logListeners.remove(id) }
@@ -76,6 +87,9 @@ class CrazyGame(
     fun <T : AbstractGameObject> objectsOfType(o: KClass<T>) =
         currentObjects.filterIsInstance(o.java)
 
+    fun getObject(id: String) = objectMap[id]
+    fun <T : AbstractGameObject> castedObject(id: String, klass: KClass<T>) = objectMap[id]?.let { klass.cast(it) }
+
     fun geoObjects() = currentObjects.filterIsInstance(GeoObject::class.java)
 
     fun killObject(id: String, callback: (() -> Unit)? = null) {
@@ -88,12 +102,6 @@ class CrazyGame(
         addingObjects.add(GameObjectWantsToJoin(id, obj, callback))
     }
 
-    fun addRocket(u: UserPropsI): CrazyRocket {
-        //val rocket = CrazyRocket(u)
-        //addObject(rocket, u.id)
-
-        TODO()
-    }
 
     fun createRandomAsteroids(howMany: Int) {
         for (i in 0..howMany) {

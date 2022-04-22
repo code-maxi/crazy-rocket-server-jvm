@@ -34,30 +34,14 @@ class HumanDevelopmentDebugger : CrazyDebugger(CrazyDebuggerConfig(
 
     init {
         for (i in 0..2) {
-            humanDevelopment.addHuman(
-                humanDevelopment.createHuman(
-                    CrazyHumanData(5.0, false),
-                    20,
-                    listOf(),
-                    50,
-                    1.2
-                )
-            )
-            humanDevelopment.addHuman(
-                humanDevelopment.createHuman(
-                    CrazyHumanData(3.0, true),
-                    20,
-                    listOf(1, 3, 5),
-                    50,
-                    1.2
-                )
-            )
+            humanDevelopment.addHuman(humanDevelopment.bearAChild(true, 1))
+            humanDevelopment.addHuman(humanDevelopment.bearAChild(false, 1))
         }
     }
 
     override suspend fun act(s: Double): List<DebugObjectI> {
         humanDevelopment.develop(s, givingFood.value)
-        return humanDevelopment.humanList() + CrazyRect(CrazyVector.zero(), CrazyHumanItem.WORLD_SIZE).setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillOpacity = 0.0))
+        return humanDevelopment.humanList()// + CrazyRect(CrazyVector.zero(), CrazyHumanItem.WORLD_SIZE).setCrazyStyle(ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillOpacity = 0.0))
     }
 
     override fun customGui() = VBox().apply {

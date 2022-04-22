@@ -4,9 +4,10 @@ import SendFormat
 import javafx.scene.paint.Color
 import server.adds.debug.DebugObjectOptions
 import server.adds.math.geom.GeoI
-import server.adds.math.RocketMath.inRange
+import server.adds.math.CrazyMath.inRange
 import server.adds.math.CrazyVector
 import server.adds.math.geom.shapes.*
+import server.adds.math.niceString
 import server.adds.math.vec
 import server.data_containers.KeyboardI
 import server.data_containers.UserViewI
@@ -24,19 +25,23 @@ class CrazyRocket(
     private var keyboard = KeyboardI()
     private lateinit var rocketType: RocketType
     private var fires = listOf<RocketFire>()
-    private var polygonCollider: CrazyPolygon
+    private lateinit var polygonCollider: CrazyPolygon
 
-    var eye: CrazyVector
+    lateinit var eye: CrazyVector
     var zoom = 1.0
     var zoomTarget = 1.0
     private var zoomSpeed = 0.05
 
     private var shotChargeMap = mutableMapOf<String, Int>()
 
-    init {
+    override fun onInitialize() {
         setRocketType(RocketType.DEFAULT)
         eye = pos
         polygonCollider = makePolygonCollider()
+
+        val base = getGame().getObject(team.getBases().random()) as CrazyBase
+        base.join(this)
+        this.pos = base.pos - vec(60, 0)
     }
 
     fun send(message: SendFormat) { onMessage(userProps.id, message) }
@@ -70,7 +75,7 @@ class CrazyRocket(
         }
     }
 
-    override fun collider() = polygonCollider.setColor(Color.RED)
+    override fun collider() = polygonCollider.setColor(team.teamColor.javafxColor)
 
     fun circleCollider() = CrazyCircle(rocketType.size.higherCoordinate() / 2.0, pos)
 
@@ -90,17 +95,19 @@ class CrazyRocket(
         if (step == 1) {
             polygonCollider = makePolygonCollider()
 
-            val arrowUp = keyboard.keyPressed("ArrowUp")
-            val arrowRight = keyboard.keyPressed("ArrowRight")
-            val arrowLeft = keyboard.keyPressed("ArrowLeft")
-
             if (zoom < zoomTarget) zoom += zoomSpeed
             else if (zoom > zoomTarget) zoom -= zoomSpeed
 
-            if (arrowRight || arrowLeft)
-                ang += (if (arrowRight) 1 else -1) * rocketType.turningSpeed * factor
+            if (isPropEmpty("entering-base") && isPropEmpty("leaving-base") && isPropEmpty("in-base")) {
+                val arrowUp = keyboard.keyPressed("ArrowUp")
+                val arrowRight = keyboard.keyPressed("ArrowRight")
+                val arrowLeft = keyboard.keyPressed("ArrowLeft")
 
-            if (arrowUp) velocity += vec(ang, rocketType.acceleratingSpeed, true).stepSpeed() * factor
+                if (arrowRight || arrowLeft)
+                    ang += (if (arrowRight) 1 else -1) * rocketType.turningSpeed * factor
+
+                if (arrowUp) velocity += vec(ang, rocketType.acceleratingSpeed, true).stepSpeed() * factor
+            }
 
             eye += (pos - eye) * rocketType.eyeLazy
 
@@ -130,6 +137,9 @@ class CrazyRocket(
         return DebugObjectOptions(
             "Rocket", getID(),
             mapOf(
+                "Props" to "",
+                *propsArray(),
+                "Speed" to velocity.length().niceString(),
                 "Fire Counts" to "",
                 *shotChargeMap.map { it.key to it.value.toString() }.toTypedArray(),
                 "Pressed Keys" to "",
@@ -138,8 +148,16 @@ class CrazyRocket(
         )
     }
 
-    private fun onMouseEvent(key: String, pressed: Boolean) {
+    fun exitBase() {
+        readProp("in-base")?.let {
+            getGame().castedObject(it as String, CrazyBase::class)?.askForExit(this)
+        }
+    }
 
+    private fun onMouseEvent(key: String, pressed: Boolean) {
+        if (pressed && key == "KeyL") {
+            exitBase()
+        }
     }
 
     override fun data() = TODO("Not yet implemented.")

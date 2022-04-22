@@ -18,13 +18,14 @@ import server.game.objects.CrazyAsteroid
 import server.game.objects.CrazyRocket
 import server.game.objects.abstct.GeoObject
 import tornadofx.action
+import tornadofx.button
 import tornadofx.checkbox
 import kotlin.math.PI
 
 class GameDebugger : CrazyDebugger(CrazyDebuggerConfig(
     title = "Game-Debugger",
     eyeModule = TransformEyeModuleConfig(),
-    timerModule = TimerModuleConfig(startStepSpeed = 50, isDefaultContinuousSelected = true),
+    timerModule = TimerModuleConfig(startStepSpeed = 200, isDefaultContinuousSelected = true),
     inspectorModule = InspectorModuleConfig(paintDebugDefault = false),
     gridModule = GridModuleConfig(10.0, true),
     loggerModule = LoggerModuleConfig(),
@@ -39,40 +40,22 @@ class GameDebugger : CrazyDebugger(CrazyDebuggerConfig(
     
     private val game = CrazyGame(
         GalaxyConfigI(1.0, 200.0, 3, 200, 200),
-        GameConfig({ id,m -> onMessage(id, m) })
+        GameConfig({ id,m -> onMessage(id, m) }, listOf(TeamColor.RED))
     )
 
     private var followRocketEye = true
     private var followRocketZoom = false
 
-    private val rocket: CrazyRocket
+    private var rocket: CrazyRocket? = null
     private var gameKeyboard = KeyboardI(listOf())
     
     private val messages = arrayListOf<SendFormat>()
 
     init {
-        //game.createRandomAsteroids(10)
-        rocket = game.addRocket(userProps)
-
-        game.addObject(
-            CrazyAsteroid(
-                7.0,
-                Math.random() * 0.25,
-                rocket.pos + vec(15, 0),
-                Math.random() * 2 * PI,
-                CrazyVector.zero()
-            )
-        )
-
-        game.addObject(
-            CrazyAsteroid(
-                7.0,
-                Math.random() * 0.25,
-                rocket.pos + vec(-15, 0),
-                Math.random() * 2 * PI,
-                CrazyVector.zero()
-            )
-        )
+        game.createRandomAsteroids(10)
+        game.getTeam(TeamColor.RED).inviteSomebody(userProps) {
+            rocket = it
+        }
 
         game.addLoggingListener("debugger") { f, t, _, _ ->
             logModule(t, f)
@@ -84,12 +67,15 @@ class GameDebugger : CrazyDebugger(CrazyDebuggerConfig(
             ClientKeyI.convertJavaFxKey(it.key, it.value)
         })
 
-        if (followRocketEye) {
-            eyeModule!!.setEyePos(rocket.eye)
+        rocket?.let {
+            if (followRocketEye) {
+                eyeModule!!.setEyePos(it.eye)
+            }
+            if (followRocketZoom) {
+                eyeModule!!.setEyeScale(it.zoom)
+            }
         }
-        if (followRocketZoom) {
-            eyeModule!!.setEyeScale(rocket.zoom)
-        }
+
 
         game.onClientData(listOf(ClientDataRequestI(
             userProps,
@@ -101,6 +87,7 @@ class GameDebugger : CrazyDebugger(CrazyDebuggerConfig(
         game.calc(s)
 
         val gameObjects = game.objects()
+        //logModule("Objects: " + gameObjects.joinToString(", "))
 
         val worldDebugOptions = mapOf(
             "Kin Energy Sum" to gameObjects.filterIsInstance(GeoObject::class.java).sumOf { it.kinEnergy() }.niceString(),
@@ -130,14 +117,19 @@ class GameDebugger : CrazyDebugger(CrazyDebuggerConfig(
             isSelected = followRocketEye
             action {
                 followRocketEye = isSelected
-                if (isSelected) rocket.eye = eyeModule!!.getEyePos()
+                if (isSelected && rocket != null) rocket!!.eye = eyeModule!!.getEyePos()
             }
         }
         checkbox("Follow Rocket's zoom") {
             isSelected = followRocketZoom
             action {
                 followRocketZoom = isSelected
-                if (isSelected) rocket.zoomTarget = eyeModule!!.getEyeScale()
+                if (isSelected && rocket != null) rocket!!.zoomTarget = eyeModule!!.getEyeScale()
+            }
+        }
+        button("Exit") {
+            action {
+                rocket?.exitBase()
             }
         }
     }

@@ -21,6 +21,7 @@ abstract class GeoObject(
         val velLength = velocity.length()
         return (velLength * velLength * getMass()) / 2.0
     }
+
     
     fun setSpeed(s: Double) { velocity = velocity.e() * s }
     fun setAngle(a: Double) { velocity = vec(a, velocity.length()) }

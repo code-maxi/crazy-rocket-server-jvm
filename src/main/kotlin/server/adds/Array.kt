@@ -28,6 +28,15 @@ inline fun <T> ArrayList<T>.saveForEach(
     }
 }
 
+inline fun <T> List<T>.saveForEach(
+    action: (T) -> Unit
+) {
+    for (i in this.indices) {
+        try { action(this[i]) }
+        catch (_: java.lang.IndexOutOfBoundsException) {}
+    }
+}
+
 inline fun <T> ArrayList<T>.saveForEachIndexed(
     action: (T, Int) -> Unit
 ) {

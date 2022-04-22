@@ -1,3 +1,4 @@
+import javafx.scene.paint.Color
 import server.data_containers.TeamColorDoesNotExistEx
 import server.data_containers.UserPropsI
 import server.adds.math.CrazyVector
@@ -7,11 +8,11 @@ data class SendFormat(val header: String, val value: Any? = null)
 
 // Team
 
-enum class TeamColor(val color: String, val teamName: String) {
-    RED("red", "RED"),
-    BLUE("blue", "BLUE"),
-    YELLOW("yellow", "YELLOW"),
-    GREEN("green", "GREEN")
+enum class TeamColor(val color: String, val teamName: String, val javafxColor: Color) {
+    RED("red", "RED", Color.RED),
+    BLUE("blue", "BLUE", Color.BLUE),
+    YELLOW("yellow", "YELLOW", Color.YELLOW),
+    GREEN("green", "GREEN", Color.GREEN)
 }
 
 fun stringToTeamColor(color: String) = TeamColor.values().find { it.color == color } ?: throw TeamColorDoesNotExistEx(color)

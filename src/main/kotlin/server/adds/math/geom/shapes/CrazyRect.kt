@@ -20,6 +20,8 @@ class CrazyRect(val pos: CrazyVector, val size: CrazyVector, config: ShapeDebugC
 
     override fun surroundedRect() = this
 
+    override fun isSurroundedByCircle(circle: CrazyCircle) = circle containsPoint pos && circle containsPoint (pos + size)
+
     override fun transform(trans: CrazyTransform): CrazyRect {
         val tlCorner = pos transformTo trans
         val brCorner = (pos + size) transformTo trans

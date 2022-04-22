@@ -10,6 +10,7 @@ abstract class AbstractGameObject(val type: GameObjectType) : DebugObjectI {
     private var game: CrazyGame? = null
     private var id: String? = null
     private var initialized = false
+    private var properties = hashMapOf<String, Any>()
 
     var zIndex = type.defaultZIndex
     override fun zIndex() = zIndex
@@ -31,6 +32,17 @@ abstract class AbstractGameObject(val type: GameObjectType) : DebugObjectI {
     open fun onInitialize() {}
 
     fun suicide() { getGame().killObject(getID()) }
+
+    fun setProp(id: String, value: Any?) {
+        if (value == null) properties.remove(id)
+        else properties[id] = value
+    }
+
+    fun readProp(id: String) = properties[id]
+    fun isPropEmpty(id: String) = readProp(id) == null
+    fun removeProp(id: String) { properties.remove(id) }
+
+    fun propsArray() = properties.toList().map { it.first to it.second.toString() }.toTypedArray()
 
     protected fun addObject(o: AbstractGameObject) { getGame().addObject(o) }
 

@@ -25,6 +25,8 @@ class CrazyCircle(
         pos transformTo trans
     )
 
+    override fun isSurroundedByCircle(circle: CrazyCircle) = circle.pos distance this.pos < circle.radius - this.radius
+
     override fun containsPoint(point: CrazyVector) = point distance pos < radius
 
     override fun paintSelf(g2: GraphicsContext, transform: DebugTransform, config: ShapeDebugConfig) {

@@ -24,6 +24,7 @@ abstract class CrazyShape(val type: ShapeType, val config: ShapeDebugConfig?) : 
     abstract fun setConfig(shapeDebugConfig: ShapeDebugConfig?): CrazyShape
     abstract fun transform(trans: CrazyTransform): CrazyShape
     abstract infix fun containsPoint(point: CrazyVector): Boolean
+    abstract infix fun isSurroundedByCircle(circle: CrazyCircle): Boolean
 
     open fun setDebugConfig(options: DebugObjectOptions) = setConfig(shapeConfig().copy(debugOptions = options))
     open fun setCrazyStyle(style: CrazyGraphicStyle) = setConfig(shapeConfig().copy(crazyStyle = style))

@@ -18,7 +18,8 @@ data class ShapeDebugConfig(
             fillColor = Color.LIGHTBLUE,
             fillOpacity = 0.3,
             strokeColor = Color.BLUE,
-            lineWidth = 2.0
+            lineWidth = 2.0,
+            lineDash = doubleArrayOf()
         )
     }
 }

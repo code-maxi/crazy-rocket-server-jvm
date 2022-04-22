@@ -25,8 +25,14 @@ data class CrazyGraphicStyle(
 object CrazyGraphics {
     fun setCrazyStyle(g2: GraphicsContext, style: CrazyGraphicStyle?) {
         if (style != null) {
-            if (style.fillColor != null) g2.fill = opacity(style.fillColor, style.fillOpacity ?: 0.0)
-            if (style.strokeColor != null) g2.stroke = opacity(style.strokeColor, style.strokeOpacity ?: 0.0)
+            if (style.fillOpacity == 0.0)
+                g2.fill = Color(0.0,0.0,0.0,0.0)
+            else if (style.fillColor != null) g2.fill = opacity(style.fillColor, style.fillOpacity ?: 0.0)
+
+            if (style.strokeOpacity == 0.0)
+                g2.stroke = Color(0.0,0.0,0.0,0.0)
+            else if (style.strokeColor != null) g2.stroke = opacity(style.strokeColor, style.strokeOpacity ?: 0.0)
+
             if (style.lineDash != null) g2.setLineDashes(*style.lineDash)
             if (style.lineWidth != null) g2.lineWidth = style.lineWidth
             if (style.lineCap != null) g2.lineCap = style.lineCap

@@ -92,10 +92,14 @@ abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App
         objects = act(f)
         val fps = (1000000 / (System.nanoTime() - timeBefore)).toInt()
 
+        val worldZeroPos = eyeTransform().world(CrazyVector.zero())
+        val worldScreenSize = eyeTransform().world(canvasSize) - worldZeroPos
+        val worldScreenRect = CrazyRect(worldZeroPos, worldScreenSize)
+
         visibleObjects = objects
             .filter { o->
-                o.surroundedRect().transform(eyeTransform().screenTrans())
-                    .touchesRect(CrazyRect(CrazyVector.zero(), canvasSize))
+                //logModule("${o.surroundedRect()} vs $worldScreenRect = ${o.surroundedRect().touchesRect(worldScreenRect)}")
+                o.surroundedRect().touchesRect(worldScreenRect)
             }
             .sortedBy { it.zIndex() }
 

@@ -20,6 +20,12 @@ data class CrazyVector(val x: Double, val y: Double) {
 
     fun square() = CrazyVector(x*x, y*y)
 
+    fun randomPosInSquare(n: Int): CrazyVector {
+        val r1 = bellRandom(n)
+        val r2 = bellRandom(n)
+        return CrazyVector(this.x * r1, this.y * r2)
+    }
+
     fun length() = sqrt(this.x * this.x + this.y * this.y)
     fun angle() = atan2(y, x)
     fun e(): CrazyVector {
@@ -86,6 +92,8 @@ data class CrazyVector(val x: Double, val y: Double) {
         val format = DecimalFormat("#.##")
         return "(${format.format(x)} | ${format.format(y)})"
     }
+
+    override fun toString() = niceString()
 
     fun toLine(pos: CrazyVector) = CrazyLine(pos, pos + this)
 

@@ -22,7 +22,7 @@ data class CrazyMatrix(val a: Double, val b: Double, val c: Double, val d: Doubl
     fun inverse() = CrazyMatrix(d, -b, -c , a) * (1/(a*d - b*c))
 }
 
-object RocketMath {
+object CrazyMath {
     fun inRange(z1: Double, z2: Double, d: Double) =
         z1 <= z2 + d/2 && z1 >= z2 - d/2
 }

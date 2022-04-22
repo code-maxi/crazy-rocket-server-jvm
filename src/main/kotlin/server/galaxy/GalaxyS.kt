@@ -108,9 +108,9 @@ class GalaxyS(
 
         checkMyPassword(password)
 
-        game = CrazyGame(config, GameConfig(
+        game = TODO("Not finished yet.")/*CrazyGame(config, GameConfig(
             onRocketMessage = { id, sendFormat -> users[id]?.onMessageFromGame(sendFormat) },
-        ))
+        ))*/
 
         props = props.copy(state = "running")
 
@@ -164,7 +164,8 @@ class GalaxyS(
 
     fun joinGame(user: UserS) {
         if (users.containsKey(user.id)) {
-            user.myRocket = getGame().addRocket(user.props)
+            TODO()
+            //user.myRocket = getGame().addRocket(user.props, TODO())
         }
     }
 

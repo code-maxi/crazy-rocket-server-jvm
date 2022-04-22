@@ -16,6 +16,7 @@ abstract class ColliderObject(type: GameObjectType) : AbstractGameObject(type), 
     override fun debugOptions(): DebugObjectOptions? = null
     open fun shapeDebugConfig(): ShapeDebugConfig? = null
 
+
     infix fun collides(that: ColliderObject) = this.collider() collides that.collider()
 
     fun <T : ColliderObject> getCollidingObjects(type: KClass<T>) =
