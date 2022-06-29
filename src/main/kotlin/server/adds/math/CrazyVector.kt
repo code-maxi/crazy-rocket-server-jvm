@@ -11,7 +11,7 @@ data class CrazyVector(val x: Double, val y: Double) {
     operator fun times(v: CrazyVector) = CrazyVector(this.x * v.x, this.y * v.y)
     operator fun div(s: Number) = CrazyVector(this.x / s.toDouble(), this.y / s.toDouble())
     operator fun div(v: CrazyVector) = CrazyVector(this.x / v.x, this.y / v.y)
-    operator fun unaryMinus() = this * -1.0
+    operator fun unaryMinus() = CrazyVector(-this.x, -this.y)
 
     infix fun mulX(s: Number) = CrazyVector(x*s.toDouble(), y)
     infix fun mulY(s: Number) = CrazyVector(x, y*s.toDouble())

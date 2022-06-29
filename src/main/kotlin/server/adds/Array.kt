@@ -45,3 +45,5 @@ inline fun <T> ArrayList<T>.saveForEachIndexed(
         catch (_: java.lang.IndexOutOfBoundsException) {}
     }
 }
+
+fun <K, V> Map<K, V>.toDataList() = this.map { listOf(it.key!!, it.value!!) }

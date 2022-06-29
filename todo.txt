@@ -2,3 +2,4 @@
 // - removing id from constructor
 // - implementing onMousePress and onMouseRelease
 - use messages from clientDataRequest
+- implementing extensions for the base

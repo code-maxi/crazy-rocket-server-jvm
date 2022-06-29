@@ -1,6 +1,6 @@
 package server.game.debug
 
-import GalaxyConfigI
+import GameConfigI
 import SendFormat
 import TeamColor
 import javafx.scene.layout.VBox
@@ -10,17 +10,14 @@ import server.adds.math.CrazyVector
 import server.adds.math.geom.shapes.CrazyRect
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.niceString
-import server.adds.math.vec
 import server.data_containers.*
 import server.game.CrazyGame
 import server.game.GameConfig
-import server.game.objects.CrazyAsteroid
 import server.game.objects.CrazyRocket
 import server.game.objects.abstct.GeoObject
 import tornadofx.action
 import tornadofx.button
 import tornadofx.checkbox
-import kotlin.math.PI
 
 class GameDebugger : CrazyDebugger(CrazyDebuggerConfig(
     title = "Game-Debugger",
@@ -39,7 +36,7 @@ class GameDebugger : CrazyDebugger(CrazyDebuggerConfig(
     )
     
     private val game = CrazyGame(
-        GalaxyConfigI(1.0, 200.0, 3, 200, 200),
+        GameConfigI(1.0, 200.0, 3, 5000, 5000),
         GameConfig({ id,m -> onMessage(id, m) }, listOf(TeamColor.RED))
     )
 
@@ -86,7 +83,7 @@ class GameDebugger : CrazyDebugger(CrazyDebuggerConfig(
 
         game.calc(s)
 
-        val gameObjects = game.objects()
+        val gameObjects = game.objectList()
         //logModule("Objects: " + gameObjects.joinToString(", "))
 
         val worldDebugOptions = mapOf(

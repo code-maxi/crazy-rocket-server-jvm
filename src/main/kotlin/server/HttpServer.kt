@@ -11,7 +11,7 @@ import com.sun.net.httpserver.HttpServer
 import server.adds.ArrayA
 import server.adds.Network
 import server.data_containers.OwnException
-import server.galaxy.GalaxyS
+import server.galaxy.GameContainer
 import java.net.InetSocketAddress
 
 class HTTPServer(val port: Int) {
@@ -35,7 +35,7 @@ class HTTPServer(val port: Int) {
         server.createContext("/", responseWebSite)
         server.createContext("/get-galaxies") {
             if (it.requestMethod == "GET") {
-                val response = Gson().toJson(JsonListI(GalaxyS.getGalaxies()))
+                val response = Gson().toJson(JsonListI(GameContainer.getGameContainers()))
                 it.sendResponseHeaders(200, response.toByteArray().size.toLong())
                 it.responseBody.write(response.toByteArray())
                 it.close()
@@ -48,7 +48,7 @@ class HTTPServer(val port: Int) {
             ) { parsed, finish ->
                 println("/create-galaxy parsed: $parsed")
 
-                val result = try { GalaxyS.createGalaxy(parsed); "successfully" }
+                val result = try { GameContainer.create(parsed); "successfully" }
                 catch (ex: ClassCastException) { "wrong request" }
                 catch (ex: OwnException) { ex.toString() }
 
@@ -65,7 +65,7 @@ class HTTPServer(val port: Int) {
             ) { parsed, finish ->
                 println("/delete-galaxy parsed: $parsed")
 
-                val result = try { GalaxyS.deleteGalaxy(parsed); "successfully" }
+                val result = try { GameContainer.delete(parsed); "successfully" }
                 catch (ex: ClassCastException) { "wrong request" }
                 catch (ex: OwnException) { ex.toString() }
                 val res = JsonStatusI(result)

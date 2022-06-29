@@ -11,24 +11,39 @@ import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.vec
-import server.data_containers.GameObjectType
+import server.data_containers.ClientCanvasObjectD
+import server.data_containers.GameObjectTypeE
+import server.game.data.*
 import server.game.objects.abstct.GeoObject
 import kotlin.math.PI
 
-class CrazyAsteroid(
+data class AsteroidPropsD(
     val size: Double,
+    val life: Double,
+)
+
+data class AsteroidOD(
+    override val id: String,
+    override val props: AsteroidPropsD?,
+    override val paint: List<PaintDataD>?
+) : ClientCanvasObjectD {
+    override val type = GameObjectTypeE.ASTEROID
+}
+
+class CrazyAsteroid(
+    val radius: Double,
     private val rotation: Double,
     pos: CrazyVector,
     ang: Double,
     velocity: CrazyVector
-) : GeoObject(GameObjectType.ASTEROID, pos, ang, velocity), ShotVulnerableObject {
+) : GeoObject(GameObjectTypeE.ASTEROID, pos, ang, velocity), ShotVulnerableObject {
     private val startStability = getMass() * PROPORTION_STABILITY_MASS
     private var stability = startStability
-    var collisionDone = false
+    private var collisionDone = false
 
-    override fun getMass() = size * size * PI
+    override fun getMass() = radius * radius * PI
 
-    fun shrinkStability(energy: Double) {
+    private fun shrinkStability(energy: Double) {
         stability -= energy
     }
 
@@ -37,10 +52,6 @@ class CrazyAsteroid(
 
         if (step == 1) {
             ang += rotation * factor
-            if (pos.x < 0) pos = pos.copy(x = getGame().size().x)
-            if (pos.y < 0) pos = pos.copy(y = getGame().size().y)
-            if (pos.x > getGame().size().x) pos = pos.copy(x = 0.0)
-            if (pos.y > getGame().size().y) pos = pos.copy(y = 0.0)
             collisionDone = false
         }
 
@@ -82,7 +93,9 @@ class CrazyAsteroid(
         }
     }
 
-    override fun collider() = CrazyCircle(size, pos)
+    fun sizeRect() = CrazyVector.square(radius) * 2
+
+    override fun collider() = CrazyCircle(radius, pos)
 
     override fun shapeDebugConfig() = ShapeDebugConfig()
 
@@ -121,14 +134,51 @@ class CrazyAsteroid(
         )
     )
 
-    override fun data() = TODO("Not yet implemented.")
+    override fun propsData() = null
 
-    companion object {
-        const val ASTEROID_COLLISION_FACTOR = 1.0
-        const val PROPORTION_STABILITY_MASS = 100.0
-    }
+    override fun paintedData() = listOf(
+        PaintDataD(
+            PaintTypeE.IMAGE,
+            this.pos,
+            this.zIndex,
+            ImagePropsD(
+                src = "asteroid.png",
+                size = sizeRect()
+            )
+        ),
+        PaintDataD(
+            PaintTypeE.PROCESS,
+            this.pos,
+            this.zIndex,
+            ProcessPropsD(
+                value = stability / startStability,
+                size = CRAZY_PROCESS_SIZE_FOR_RADIUS_1 * this.radius,
+                roundedCorners = 5,
+                fColor1 = "255,0,0",
+                bColor = "0,0,0,0.5",
+                borderColor = "0,100,255"
+            ),
+            ignoresTrans = true
+        )
+    )
+
+    override fun paintedMapIcon() = PaintMapIcon(
+        zIndex,
+        ClientMapIcons.POINT,
+        this.pos,
+        PointPropsD(
+            this.radius,
+            "0,100,255,0.3"
+        )
+    )
 
     override fun onShot(collisionEnergy: Double, shot: CrazyShot) {
         shrinkStability(collisionEnergy)
+    }
+
+    companion object {
+        val CRAZY_PROCESS_SIZE_FOR_RADIUS_1 = vec(0.5, 0.1)
+        const val ASTEROID_COLLISION_FACTOR = 1.0
+        const val PROPORTION_STABILITY_MASS = 100.0
     }
 }

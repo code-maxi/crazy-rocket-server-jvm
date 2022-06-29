@@ -59,7 +59,7 @@ open class GameIsAlreadyRunning : OwnException(
     "The game is already running so it can not be started twice."
 )
 
-class GalaxyHasNotBeenInitializedEx : OwnException(
+class GameContainerHasNotBeenInitializedEx : OwnException(
     "galaxy-not-initialized",
     "Your galaxy has not been initialized on serverside. It seems you have to join the galaxy first."
 )

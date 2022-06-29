@@ -13,8 +13,8 @@ object CrazyCollision {
     }
 
     fun rectRectCollision(rect1: CrazyRect, rect2: CrazyRect) =
-        (rect2.pos.x + rect2.size.x > rect1.pos.x || rect2.pos.x < rect1.pos.x + rect1.size.x)
-        && (rect2.pos.y + rect2.size.y > rect1.pos.y || rect2.pos.y < rect1.pos.y + rect1.size.y)
+        (rect2.pos.x + rect2.size.x > rect1.pos.x && rect2.pos.x < rect1.pos.x + rect1.size.x)
+        && (rect2.pos.y + rect2.size.y > rect1.pos.y && rect2.pos.y < rect1.pos.y + rect1.size.y)
 
     fun circleCircleCollision(circle1: CrazyCircle, circle2: CrazyCircle) =
         circle1.pos distance circle2.pos <= circle1.radius + circle2.radius

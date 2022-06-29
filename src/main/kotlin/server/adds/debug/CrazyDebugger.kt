@@ -56,8 +56,8 @@ abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App
     protected val eyeModule = configData.eyeModule?.let { TransformEyeModule(it) }
     protected val timerModule = configData.timerModule?.let { TimerModule(it) }
     protected val inspectorModule = configData.inspectorModule?.let { InspectorModule(it) }
-    protected val gridModule = configData.gridModule?.let { GridModule(it) }
-    protected val loggerModule = configData.loggerModule?.let { LoggerModule(it) }
+    private val gridModule = configData.gridModule?.let { GridModule(it) }
+    private val loggerModule = configData.loggerModule?.let { LoggerModule(it) }
 
     private fun moduleList() = listOfNotNull(
         eyeModule,
@@ -92,16 +92,16 @@ abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App
         objects = act(f)
         val fps = (1000000 / (System.nanoTime() - timeBefore)).toInt()
 
-        val worldZeroPos = eyeTransform().world(CrazyVector.zero())
-        val worldScreenSize = eyeTransform().world(canvasSize) - worldZeroPos
+        val puffer = CrazyVector.square(5)
+        val worldZeroPos = eyeTransform().world(CrazyVector.zero()) - puffer
+        val worldScreenSize = eyeTransform().world(canvasSize) - worldZeroPos + puffer * 2
         val worldScreenRect = CrazyRect(worldZeroPos, worldScreenSize)
 
         visibleObjects = objects
-            .filter { o->
-                //logModule("${o.surroundedRect()} vs $worldScreenRect = ${o.surroundedRect().touchesRect(worldScreenRect)}")
-                o.surroundedRect().touchesRect(worldScreenRect)
-            }
+            .filter { it.surroundedRect().touchesRect(worldScreenRect) }
             .sortedBy { it.zIndex() }
+
+        logModule(visibleObjects.size.toString() + " vs. " + objects.size.toString())
 
         inspectorModule?.select()
         if (paintNecessary) paint()
@@ -300,7 +300,6 @@ abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App
         fun setEyeScale(s: Double) { transform = transform.copy(zoom = s) }
         fun getEyePos() = transform.eye
         fun getEyeScale() = transform.zoom
-
         fun getTrans() = transform.copy(canvasSize = canvasSize)
 
         fun mouseEvent(it: MouseEvent, type: MouseEventType) {
@@ -396,7 +395,7 @@ abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App
         private var runButton: Button? = null
         private val timerRunning = SimpleBooleanProperty()
         private val isContinuousSelected = SimpleBooleanProperty(false)
-        private var delayBetweenSteps = 20
+        private var delayBetweenSteps = 200
         private var fps = 0
         private var fpsLabel: Label? = null
         private var delayChangeCount = 0

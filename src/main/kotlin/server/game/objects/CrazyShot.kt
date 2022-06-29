@@ -1,5 +1,6 @@
 package server.game.objects
 
+import TeamColor
 import javafx.scene.paint.Color
 import javafx.scene.shape.StrokeLineCap
 import server.adds.math.CrazyCollision
@@ -7,8 +8,8 @@ import server.adds.math.CrazyVector
 import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.vec
-import server.data_containers.AbstractGameObjectI
-import server.data_containers.GameObjectType
+import server.data_containers.GameObjectTypeE
+import server.game.data.*
 import server.game.objects.abstct.GeoObject
 
 data class CrazyRocketShotConfig(
@@ -52,9 +53,9 @@ interface ShotVulnerableObject {
 }
 
 class CrazyShot(
-    pos: CrazyVector, val angle: Double, teamColor: String?, speed: Double,
+    pos: CrazyVector, val angle: Double, teamColor: TeamColor?, speed: Double,
     startVelocity: CrazyVector, val shotType: CrazyShotType
-) : GeoObject(GameObjectType.SIMPLE_SHOT, pos, velocity = startVelocity + vec(angle, speed, true)) {
+) : GeoObject(GameObjectTypeE.SIMPLE_SHOT, pos, velocity = startVelocity + vec(angle, speed, true)) {
     private val startStartStability = shotType.stability
     private var stability = startStartStability
     private var lineCollider = makeCollider()
@@ -111,9 +112,29 @@ class CrazyShot(
         }
     }
 
-    override fun data(): AbstractGameObjectI {
-        TODO("Not yet implemented")
-    }
+    override fun paintedData() = listOf(
+        PaintDataD(
+            PaintTypeE.LINE,
+            this.collider().a,
+            zIndex,
+            LinePropsD(
+                this.collider().b - this.collider().a,
+                SerializableColor.fxToSerializable(shotType.color),
+                shotType.thickness * life()
+            )
+        )
+    )
+
+    override fun paintedMapIcon() = PaintMapIcon(
+        zIndex,
+        ClientMapIcons.LINE,
+        this.pos,
+        LinePropsDM(
+            this.collider().b - this.collider().a,
+            SerializableColor.fxToSerializable(Color.YELLOW),
+            1.0
+        )
+    )
 
     companion object {
         const val SHOT_ASTEROID_COLLISION_FACTOR = 0.5

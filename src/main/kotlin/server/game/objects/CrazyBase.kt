@@ -10,23 +10,37 @@ import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.vec
 import server.adds.saveForEach
-import server.data_containers.AbstractGameObjectI
-import server.data_containers.GameObjectType
-import server.game.CrazyGood
-import server.game.CrazyHumanEnvironmentData
+import server.data_containers.GameObjectTypeE
+import server.game.CrazyGoodsContainer
+import server.game.CrazyHumanEnvironment
+import server.game.KickedUserItem
+import server.game.data.*
 import server.game.objects.abstct.GeoObject
 
-interface CrazyBaseExtensions {
-    val name: String
-}
+enum class BaseExtensionTypeE { CARGO_AREA, HUMAN_AREA }
 
-data class CrazyBaseState(
-    var humanEnvironment: CrazyHumanEnvironmentData,
-    var extensions: CrazyBaseExtensions,
-    var goods: Map<String, CrazyGood>
+data class CrazyBasePropsExtensionI(
+    val place: Double, // in degrees: (0 - 360)
+    val type: BaseExtensionTypeE,
+    val stability: Int // in %: (0 - 100)
 )
 
-class CrazyBase(val teamColor: TeamColor, pos: CrazyVector) : GeoObject(GameObjectType.BASE, pos) {
+data class CrazyBasePaintPropsI(
+    val name: String,
+    val enterZoneRadius: Double,
+    val outerRingRadius: Double?,
+    val outerRingRotation: Double?,
+    val interceptionRadius: Double?,
+    val extensions: List<CrazyBasePropsExtensionI>,
+    val extensionWidth: Double,
+    val tableValues: List<List<Any>>, // [string, string][]
+    val teamColor: String
+)
+
+class CrazyBase(val teamColor: TeamColor, val name: String, pos: CrazyVector) : GeoObject(GameObjectTypeE.BASE, pos) {
+    private val humanEnvironment = CrazyHumanEnvironment()
+    private var goodsContainer = CrazyGoodsContainer()
+
     private val enteredObjects = mutableListOf<String>()
     private val usersWantToExit = mutableListOf<String>()
     private fun enterZoneCollider()  = CrazyCircle(ENTER_ZONE_RADIUS, pos)
@@ -38,9 +52,6 @@ class CrazyBase(val teamColor: TeamColor, pos: CrazyVector) : GeoObject(GameObje
     }
 
     override fun collider() = outerRingCollider()
-    override fun data(): AbstractGameObjectI {
-        TODO("Not yet implemented")
-    }
 
     private fun batterObject(obj: GeoObject) {
         val delta = obj.pos - this.pos
@@ -48,7 +59,7 @@ class CrazyBase(val teamColor: TeamColor, pos: CrazyVector) : GeoObject(GameObje
         val addingImpulse = addingVelocity * obj.getMass()
 
         obj.velocity += addingVelocity
-        this.velocity = (this.impulse() + addingImpulse) / this.getMass()
+        this.velocity = (this.impulse() - addingImpulse) / this.getMass()
     }
 
     private fun optimizeVelocityOfFriendlyObject(obj: GeoObject) {
@@ -174,7 +185,9 @@ class CrazyBase(val teamColor: TeamColor, pos: CrazyVector) : GeoObject(GameObje
     override fun surroundedRect() = attractionZoneCollider().surroundedRect()
 
     override fun debugOptions() = DebugObjectOptions("Base", getID(), mapOf(
-        "Entered items" to enteredObjects.toList().joinToString(", ")
+        "Entered items" to enteredObjects.toList().joinToString(", "),
+        "Crazy Goods" to null,
+        *goodsContainer.toMapArray()
     ))
 
     companion object {
@@ -187,7 +200,16 @@ class CrazyBase(val teamColor: TeamColor, pos: CrazyVector) : GeoObject(GameObje
         var HARMONIZING_ANGLE_FACTOR = 0.999
         var OUTGOING_ACCELERATION = 0.2
         var PREFERRED_OUTGOING_SPEED = 20.0
-        var BASE_MASS = 3000.0
+        var BASE_MASS = 500.0
         var OUTGOING_ANGLE = 0.0
+
+        var BASE_NAMES = mutableListOf(
+            "HOGWARTS",
+            "BEYOND",
+            "SUPER_SPACE",
+            "CXI_1",
+            "MIS_1",
+            "iSPHERE"
+        )
     }
 }

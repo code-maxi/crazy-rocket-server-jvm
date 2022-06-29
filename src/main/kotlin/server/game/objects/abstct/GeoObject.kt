@@ -5,10 +5,10 @@ import server.adds.math.CrazyVector
 import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.vec
-import server.data_containers.GameObjectType
+import server.data_containers.GameObjectTypeE
 
 abstract class GeoObject(
-    type: GameObjectType,
+    type: GameObjectTypeE,
     var pos: CrazyVector,
     var ang: Double = 0.0,
     var velocity: CrazyVector = CrazyVector.zero()
@@ -22,7 +22,6 @@ abstract class GeoObject(
         return (velLength * velLength * getMass()) / 2.0
     }
 
-    
     fun setSpeed(s: Double) { velocity = velocity.e() * s }
     fun setAngle(a: Double) { velocity = vec(a, velocity.length()) }
     
@@ -49,7 +48,7 @@ abstract class GeoObject(
         }
     }
 
-    suspend fun handlePartiallyElasticCollision(that: GeoObject, k: Double = 1.0) =
+    fun handlePartiallyElasticCollision(that: GeoObject, k: Double = 1.0) =
         CrazyCollision.partiallyElasticCollision2Dv2(this.getMass(), this.velocity, this.pos, that.getMass(), that.velocity, that.pos, k)
 
     infix fun movingAwayFrom(that: GeoObject) = (that.pos + that.velocity - this.pos - this.velocity).length() > (that.pos - this.pos).length()
@@ -58,7 +57,15 @@ abstract class GeoObject(
         if (step == 1) move(factor)
     }
 
-    fun move(factor: Double) { pos += velocity.stepSpeed() * factor }
+    fun move(factor: Double) {
+        pos += velocity.stepSpeed() * factor
+
+        val gameSize = getGame().size()
+        if (pos.x < 0) pos = pos setX (gameSize.x - pos.x)
+        if (pos.x > gameSize.x) pos = pos setY (pos.x - gameSize.x)
+        if (pos.y < 0) pos = pos setY (gameSize.y - pos.y)
+        if (pos.y > gameSize.y) pos = pos setY (pos.y - gameSize.y)
+    }
 
     fun getGeo() = collider().surroundedRect().toGeo(ang)
 }

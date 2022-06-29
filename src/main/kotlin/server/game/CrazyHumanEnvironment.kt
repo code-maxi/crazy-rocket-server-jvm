@@ -85,7 +85,7 @@ class CrazyHumanItem(
         }
     }
 
-    fun feed(time: Double, food: Double): Double {
+    fun feed(food: Double): Double {
         val odd = if (food < foodINeed) {
             underfed += foodINeed - food
             0.0
@@ -95,12 +95,12 @@ class CrazyHumanItem(
             food - foodINeed
         }
 
-        println()
+        /*println()
         println("food I need: $foodINeed")
         println("food: $food")
         println("Underfed: $underfed")
         println("time: $time")
-        println("DEATH_BY_UNDERFED_MASS_FACTOR * (weight + underfed): ${DEATH_BY_UNDERFED_MASS_FACTOR * (weight + underfed)}")
+        println("DEATH_BY_UNDERFED_MASS_FACTOR * (weight + underfed): ${DEATH_BY_UNDERFED_MASS_FACTOR * (weight + underfed)}")*/
 
         if (underfed >= DEATH_BY_UNDERFED_MASS_FACTOR * (weight + underfed)) {
             environment.killHuman(id, true)
@@ -109,6 +109,8 @@ class CrazyHumanItem(
 
         return odd
     }
+
+    fun familyMembers() = (children + friend + id).mapNotNull { environment.getHuman(it) }
 
     fun foodINeed(time: Double) = (weight + underfed) * FOOD_WEIGHT_FACTOR_PER_YEAR * time + underfed
 
@@ -165,7 +167,7 @@ class CrazyHumanItem(
 
     companion object {
         const val FOOD_WEIGHT_FACTOR_PER_YEAR = 10.0
-        const val DEATH_BY_UNDERFED_MASS_FACTOR = 5.0
+        const val DEATH_BY_UNDERFED_MASS_FACTOR = 0.75
         val WORLD_SIZE = vec(15, 15)
         const val FULL_GROWN_AGE = 25
     }
@@ -182,6 +184,7 @@ class CrazyHumanEnvironment(startHumans: List<CrazyHumanItem> = listOf()) {
     private val humans = mutableMapOf(*startHumans.map { newId() to it }.toTypedArray())
     private var age = 0.0
 
+    private var currentHumans = listOf<CrazyHumanItem>()
     private val humansWantToBeAdded = mutableListOf<CrazyHumanItem>()
     private val humansWantToBeKilled = mutableListOf<String>()
     private var idCounter = 0
@@ -238,7 +241,7 @@ class CrazyHumanEnvironment(startHumans: List<CrazyHumanItem> = listOf()) {
         age += time
 
         var currentFood = food
-        val currentHumans = humans.values.toList().sortedBy { it.human.generationType()?.value }
+        currentHumans = humans.values.toList().sortedBy { it.human.generationType()?.value }
 
         for (h in currentHumans) h.develop(time, currentHumans)
 
@@ -260,7 +263,7 @@ class CrazyHumanEnvironment(startHumans: List<CrazyHumanItem> = listOf()) {
         }*/
 
         for (h in currentHumans) {
-            currentFood = h.feed(time, currentFood)
+            currentFood = h.feed(currentFood)
             if (currentFood <= 0) break
         }
 
@@ -275,5 +278,19 @@ class CrazyHumanEnvironment(startHumans: List<CrazyHumanItem> = listOf()) {
         humansWantToBeAdded.clear()
 
         return currentFood
+    }
+
+    fun transferHumans(toEnvironment: CrazyHumanEnvironment, transferredWeight: Double) {
+        var takenHumansWeight = 0.0
+        var i = 0
+        while (takenHumansWeight < transferredWeight && i < humans.size) {
+            val family = currentHumans[i].familyMembers()
+            takenHumansWeight += family.sumOf { it.weight }
+            for (member in family) {
+                toEnvironment.addHuman(member)
+                this.killHuman(member.id, false)
+            }
+            i ++
+        }
     }
 }

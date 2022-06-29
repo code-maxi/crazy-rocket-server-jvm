@@ -1,12 +1,11 @@
 package server.galaxy
 
 import CreateNewGalaxyI
-import GalaxyConfigI
+import GameConfigI
 import GalaxyPasswordI
 import GalaxyPropsI
-import GalaxyI
-import JoinGalaxyI
-import SendFormat
+import GameContainerI
+import JoinGameContainerI
 import TeamColor
 import TeamI
 import TeamPropsI
@@ -16,15 +15,14 @@ import server.adds.text.Text
 import server.adds.text.Text.formattedPrint
 import server.data_containers.*
 import server.game.CrazyGame
-import server.game.GameConfig
 import server.user.UserS
 import stringToTeamColor
 
-class GalaxyS(
+class GameContainer(
     name: String,
-    private val config: GalaxyConfigI
+    private val config: GameConfigI
 ) {
-    var props = GalaxyPropsI(name, "queue")
+    private var props = GalaxyPropsI(name, "queue")
 
     private val users = hashMapOf<String, UserS>()
     private var game: CrazyGame? = null
@@ -35,12 +33,7 @@ class GalaxyS(
         TeamColor.GREEN to arrayListOf()
     )
 
-    //val clientAnswerChannel = Channel<ClientAnswerI>()
-
-    private val clientDataList = arrayListOf<ClientDataRequestI>()
     private fun userList() = users.values.toList()
-
-    fun getGame() = game ?: throw GameNotInitializedEx(props.name)
 
     private fun teamData() = teams.map {
         TeamI(
@@ -53,23 +46,23 @@ class GalaxyS(
         )
     }
 
-    fun data() = GalaxyI(
-        userList().map { it.props },
+    fun data() = GameContainerI(
+        userList().map { it.getProps() },
         props, teamData()
     )
 
     init {
-        log("created with password '${galaxyPassword(props.name)}'!")
+        log("created with password '${getPassword(props.name)}'!")
     }
 
     private fun log(text: String, color: Ansi? = null) {
         formattedPrint("Galaxy [${props.name}]", text, color, name = Ansi.CYAN)
     }
 
-    suspend fun joinUser(u: UserS, joinData: JoinGalaxyI) {
+    suspend fun joinUser(u: UserS, joinData: JoinGameContainerI) {
         Text.checkValidName(joinData.userName, "user name", 3, 20)
 
-        if (users.values.any { it.props.name == joinData.userName })
+        if (users.values.any { it.getProps().name == joinData.userName })
             throw NameAlreadyExistsEx(joinData.userName)
 
         val teamColor = stringToTeamColor(joinData.teamColor)
@@ -80,23 +73,24 @@ class GalaxyS(
         if (teams[teamColor]!!.size >= config.maxUsersInTeam)
             throw TeamIsFull(teamColor.teamName, config.maxUsersInTeam)
 
-        users[u.props.id] = u
+        users[u.getProps().id] = u
         teams[teamColor]!!.add(u.id)
+
         u.onSuccessfullyJoined(this, joinData)
 
-        sendGalaxyDataToClients()
+        sendPreviewDataToClients()
     }
 
     suspend fun closeUser(u: UserS) {
-        users.remove(u.props.id)
-        u.props.teamColor?.let {
+        users.remove(u.getProps().id)
+        u.getProps().teamColor?.let {
             val teamColor = stringToTeamColor(it)
-            teams[teamColor]?.remove(u.props.id)
+            teams[teamColor]?.remove(u.getProps().id)
         }
-        sendGalaxyDataToClients()
+        sendPreviewDataToClients()
     }
 
-    private suspend fun sendGalaxyDataToClients() {
+    private suspend fun sendPreviewDataToClients() {
         users.forEach { it.value.sendGalaxyData(this) }
         UserS.userQueue.forEach {
             if (it.value.prevGalaxy == props.name) it.value.sendGalaxyData(this)
@@ -104,17 +98,13 @@ class GalaxyS(
     }
 
     private suspend fun setupGame(password: String) {
-        log("Game setup 1!")
-
         checkMyPassword(password)
 
-        game = TODO("Not finished yet.")/*CrazyGame(config, GameConfig(
+        game = CrazyGame(config, GameConfig(
             onRocketMessage = { id, sendFormat -> users[id]?.onMessageFromGame(sendFormat) },
-        ))*/
-
+        ))
         props = props.copy(state = "running")
-
-        sendGalaxyDataToClients()
+        sendPreviewDataToClients()
 
         log("Game setup! 2")
     }
@@ -151,7 +141,7 @@ class GalaxyS(
             userList().forEach {
                 it.onGameCalculated(
                     game!!.props,
-                    game!!.objects()
+                    game!!.objectList()
                 )
             }
 
@@ -164,7 +154,7 @@ class GalaxyS(
 
     fun joinGame(user: UserS) {
         if (users.containsKey(user.id)) {
-            TODO()
+
             //user.myRocket = getGame().addRocket(user.props, TODO())
         }
     }
@@ -175,31 +165,24 @@ class GalaxyS(
     }
 
     private fun checkMyPassword(password: String) {
-        if (!checkGalaxyPassword(props.name, password))
+        if (getPassword(props.name) != password)
             throw InvalidPasswordEx(props.name)
-    }
-
-    private suspend fun sendAllClients(s: SendFormat) {
-        users.forEach { it.value.send(s) }
     }
 
     companion object {
 
-        private var galaxies = hashMapOf<String, GalaxyS>()
+        private var gameContainers = hashMapOf<String, GameContainer>()
         private var galaxyPasswords = hashMapOf<String, String>()
 
-        fun galaxyList() = galaxies.values
-
-        fun checkGalaxyPassword(galaxy: String, password: String) = galaxyPasswords[galaxy] == password
-        fun galaxyPassword(galaxy: String) = galaxyPasswords[galaxy]
+        private fun gameContainers() = gameContainers.values
+        fun getPassword(galaxy: String) = galaxyPasswords[galaxy]
 
         fun log(text: String, color: Ansi? = null) {
             formattedPrint("Galaxy Static", text, color, name = Ansi.PURPLE)
         }
-
-        fun createGalaxy(g: CreateNewGalaxyI) {
-            return if (!galaxies.contains(g.name)) {
-                galaxies[g.name] = GalaxyS(g.name, g.config)
+        fun create(g: CreateNewGalaxyI) {
+            return if (!gameContainers.contains(g.name)) {
+                gameContainers[g.name] = GameContainer(g.name, g.config)
                 galaxyPasswords[g.name] = g.password
 
                 log("Galaxy \"${g.name}\" successfully created.")
@@ -208,24 +191,24 @@ class GalaxyS(
             else throw NameAlreadyExistsEx(g.name)
         }
 
-        fun deleteGalaxy(g: GalaxyPasswordI) {
-            if (galaxies[g.name] != null) {
+        fun delete(g: GalaxyPasswordI) {
+            if (gameContainers[g.name] != null) {
                 if (galaxyPasswords[g.name] == g.password) {
-                    galaxies.remove(g.name)
+                    gameContainers.remove(g.name)
                     galaxyPasswords.remove(g.name)
                     //saveGalaxyState()
                 } else throw InvalidPasswordEx(g.name)
             } else throw GalaxyDoesNotExist(g.name)
         }
 
-        suspend fun joinGalaxy(join: JoinGalaxyI, user: UserS) {
-            return try { galaxies[join.galaxyName]!!.joinUser(user, join) }
+        suspend fun join(join: JoinGameContainerI, user: UserS) {
+            return try { gameContainers[join.galaxyName]!!.joinUser(user, join) }
               catch (ex: NullPointerException) { throw GalaxyDoesNotExist(join.userName) }
         }
 
-        fun getGalaxies() = galaxyList().map { it.data() }
+        fun getGameContainers() = gameContainers().map { it.data() }
 
-        fun getGalaxy(key: String) = galaxies[key] ?: throw GalaxyDoesNotExist(key)
+        fun getGameContainer(key: String) = gameContainers[key] ?: throw GalaxyDoesNotExist(key)
 
         /*
         private fun saveGalaxyState() {

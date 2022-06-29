@@ -12,15 +12,17 @@ import server.adds.math.vec
 import server.data_containers.KeyboardI
 import server.data_containers.UserViewI
 import server.data_containers.*
+import server.galaxy.GameContainer
+import server.game.CrazyGame
 import server.game.CrazyTeam
+import server.game.data.ClientWorldD
 import server.game.objects.abstct.GeoObject
 import java.lang.Math.PI
 
 class CrazyRocket(
-    val userProps: UserPropsI,
-    val team: CrazyTeam,
-    private val onMessage: (id: String, m: SendFormat) -> Unit
-) : GeoObject(GameObjectType.ROCKET, CrazyVector.zero(), 0.0, CrazyVector.zero()) {
+    private val userProps: UserPropsI,
+    val team: CrazyTeam
+) : GeoObject(GameObjectTypeE.ROCKET, CrazyVector.zero(), 0.0, CrazyVector.zero()) {
 
     private var keyboard = KeyboardI()
     private lateinit var rocketType: RocketType
@@ -42,12 +44,6 @@ class CrazyRocket(
         val base = getGame().getObject(team.getBases().random()) as CrazyBase
         base.join(this)
         this.pos = base.pos - vec(60, 0)
-    }
-
-    fun send(message: SendFormat) { onMessage(userProps.id, message) }
-
-    fun onMessage(message: SendFormat) {
-
     }
 
     private fun makePolygonCollider() = rocketType.colliderPolygon
@@ -160,11 +156,23 @@ class CrazyRocket(
         }
     }
 
+    fun dataFromMyPerspective(data: ClientWorldD): ClientWorldD {
+        val mapViewRect = CrazyRect(
+            eye, eye - vec(rocketType.defaultViewWidth, rocketType.defaultViewWidth * CrazyGame.MAP_HEIGHT_TO_WIDTH)
+        )
+        return data.copy(
+            objects = data.objects.filter {
+                if (it.srPos != null && it.srSize != null) CrazyRect(it.srPos!!, it.srSize!!).touchesRect(mapViewRect)
+                else false
+            }
+        )
+    }
+
     override fun data() = TODO("Not yet implemented.")
 
     class RocketFire(
         private val settings: RocketFireSettingsI
-    ) : GameClassI {
+    ) {
         private var on = false
         private var fireShown = 0.0
         private var fireTarget = 0.0

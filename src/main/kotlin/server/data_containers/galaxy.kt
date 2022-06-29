@@ -2,17 +2,16 @@ import javafx.scene.paint.Color
 import server.data_containers.TeamColorDoesNotExistEx
 import server.data_containers.UserPropsI
 import server.adds.math.CrazyVector
-import server.galaxy.GalaxyS
 
 data class SendFormat(val header: String, val value: Any? = null)
 
 // Team
 
-enum class TeamColor(val color: String, val teamName: String, val javafxColor: Color) {
-    RED("red", "RED", Color.RED),
-    BLUE("blue", "BLUE", Color.BLUE),
-    YELLOW("yellow", "YELLOW", Color.YELLOW),
-    GREEN("green", "GREEN", Color.GREEN)
+enum class TeamColor(val color: String, val teamName: String, val javafxColor: Color, val serializableColor: String) {
+    RED("red", "RED", Color.RED, "255,0,0"),
+    BLUE("blue", "BLUE", Color.BLUE, "0,50,255"),
+    YELLOW("yellow", "YELLOW", Color.YELLOW, "255,255,0"),
+    GREEN("green", "GREEN", Color.GREEN, "0,255,0")
 }
 
 fun stringToTeamColor(color: String) = TeamColor.values().find { it.color == color } ?: throw TeamColorDoesNotExistEx(color)
@@ -30,7 +29,7 @@ data class TeamI(
 
 // Galaxy
 
-data class PrevGalaxyRequestI(
+data class SetPrevGalaxyRequestI(
     val galaxy: String
 )
 
@@ -39,7 +38,7 @@ data class GalaxyPropsI(
     val state: String
 )
 
-data class GalaxyConfigI(
+data class GameConfigI(
     val asteroidSpeed: Double,
     val asteroidAmount: Double,
     val maxUsersInTeam: Int,
@@ -47,15 +46,15 @@ data class GalaxyConfigI(
     val height: Int
 )
 
-data class GalaxyI( // data sent to login client
+data class GameContainerI( // data sent to login client
     val users: List<UserPropsI>,
     val props: GalaxyPropsI,
     val teams: List<TeamI>
 )
 
-data class GalaxyPrevI(
+data class GameContainerPrevI(
     val myUser: UserPropsI,
-    val galaxy: GalaxyI
+    val galaxy: GameContainerI
 )
 
 data class GalaxyPasswordArrI(
@@ -71,7 +70,7 @@ data class GalaxyPasswordI(
 data class CreateNewGalaxyI(
     val name: String,
     val password: String,
-    val config: GalaxyConfigI
+    val config: GameConfigI
 )
 
 data class GalaxyAdminI(
@@ -79,7 +78,7 @@ data class GalaxyAdminI(
     val value: Any?
 )
 
-data class JoinGalaxyI(
+data class JoinGameContainerI(
     val userName: String,
     val screenSize: CrazyVector,
     val galaxyName: String,
@@ -91,7 +90,7 @@ data class GalaxyPaswordArrI(
 )
 
 data class GalaxyDataI(
-    val other: GalaxyI,
+    val other: GameContainerI,
     val width: Double,
     val height: Double,
     val fps: Double

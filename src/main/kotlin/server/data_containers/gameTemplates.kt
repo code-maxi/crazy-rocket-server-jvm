@@ -18,7 +18,8 @@ enum class RocketType(
     val colliderPolygon: CrazyPolygon,
     val eyeLazy: Double,
     val fireShots: List<CrazyRocketShotConfig>,
-    val mass: Double
+    val mass: Double,
+    val defaultViewWidth: Int
 ) {
     DEFAULT(
         "default-rocket",
@@ -48,7 +49,8 @@ enum class RocketType(
             customId = "center",
             speed = 20.0
         )),
-        10.0
+        10.0,
+        20
     )
 }
 

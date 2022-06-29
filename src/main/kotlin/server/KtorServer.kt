@@ -19,7 +19,7 @@ import server.adds.text.Ansi
 import server.adds.Error
 import server.adds.text.Text.formattedPrint
 import server.data_containers.*
-import server.galaxy.GalaxyS
+import server.galaxy.GameContainer
 import server.user.UserS
 
 object KtorServer {
@@ -35,7 +35,7 @@ object KtorServer {
                 get("/get-galaxies") {
                     log("request to /create-galaxy/{galaxy}...")
 
-                    val response = Gson().toJson(JsonListI(GalaxyS.getGalaxies()))
+                    val response = Gson().toJson(JsonListI(GameContainer.getGameContainers()))
                     call.respondText(response, ContentType.Application.Json, HttpStatusCode.OK)
                 }
 
@@ -45,7 +45,7 @@ object KtorServer {
                         log("request to /create-galaxy/{galaxy}: $json", Ansi.CYAN)
                         val parsed = Gson().fromJson(json, CreateNewGalaxyI::class.java)
 
-                        GalaxyS.createGalaxy(parsed)
+                        GameContainer.create(parsed)
 
                         ResponseResult(true, message = "The Galaxy was successfully created!")
                     }, mapOf(
@@ -61,7 +61,7 @@ object KtorServer {
                         val param = call.receiveText()
                         val parsed = Gson().fromJson(param, GalaxyPasswordI::class.java)
 
-                        GalaxyS.deleteGalaxy(parsed)
+                        GameContainer.delete(parsed)
 
                         ResponseResult(true, message = "The Galaxy was successfully deleted!")
                     }, mapOf(
