@@ -1,9 +1,9 @@
 package server.galaxy
 
-import CreateNewGalaxyI
+import CreateNewGameI
 import GameConfigI
-import GalaxyPasswordI
-import GalaxyPropsI
+import GamePasswordI
+import GameContainerPropsI
 import GameContainerI
 import JoinGameContainerI
 import TeamColor
@@ -16,13 +16,12 @@ import server.adds.text.Text.formattedPrint
 import server.data_containers.*
 import server.game.CrazyGame
 import server.user.UserS
-import stringToTeamColor
 
 class GameContainer(
     name: String,
     private val config: GameConfigI
 ) {
-    private var props = GalaxyPropsI(name, "queue")
+    private var props = GameContainerPropsI(name, "queue")
 
     private val users = hashMapOf<String, UserS>()
     private var game: CrazyGame? = null
@@ -65,7 +64,7 @@ class GameContainer(
         if (users.values.any { it.getProps().name == joinData.userName })
             throw NameAlreadyExistsEx(joinData.userName)
 
-        val teamColor = stringToTeamColor(joinData.teamColor)
+        val teamColor = TeamColor.stringToTeamColor(joinData.teamColor)
 
         if (!teams.containsKey(teamColor))
             throw TeamColorDoesNotExistEx(joinData.teamColor)
@@ -84,7 +83,7 @@ class GameContainer(
     suspend fun closeUser(u: UserS) {
         users.remove(u.getProps().id)
         u.getProps().teamColor?.let {
-            val teamColor = stringToTeamColor(it)
+            val teamColor = TeamColor.stringToTeamColor(it)
             teams[teamColor]?.remove(u.getProps().id)
         }
         sendPreviewDataToClients()
@@ -180,7 +179,7 @@ class GameContainer(
         fun log(text: String, color: Ansi? = null) {
             formattedPrint("Galaxy Static", text, color, name = Ansi.PURPLE)
         }
-        fun create(g: CreateNewGalaxyI) {
+        fun create(g: CreateNewGameI) {
             return if (!gameContainers.contains(g.name)) {
                 gameContainers[g.name] = GameContainer(g.name, g.config)
                 galaxyPasswords[g.name] = g.password
@@ -191,7 +190,7 @@ class GameContainer(
             else throw NameAlreadyExistsEx(g.name)
         }
 
-        fun delete(g: GalaxyPasswordI) {
+        fun delete(g: GamePasswordI) {
             if (gameContainers[g.name] != null) {
                 if (galaxyPasswords[g.name] == g.password) {
                     gameContainers.remove(g.name)

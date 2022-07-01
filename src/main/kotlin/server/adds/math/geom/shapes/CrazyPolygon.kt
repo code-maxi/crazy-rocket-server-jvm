@@ -52,9 +52,7 @@ open class CrazyPolygon(
     open fun getMyPoints() = points
 
     override fun isSurroundedByCircle(circle: CrazyCircle): Boolean {
-        for (p in points) {
-            if (!circle.containsPoint(p)) return false
-        }
+        for (p in points) { if (!circle.containsPoint(p)) return false }
         return true
     }
 

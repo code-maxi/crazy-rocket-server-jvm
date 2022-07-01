@@ -3,6 +3,7 @@ package server.adds.debug
 import javafx.stage.Stage
 import tornadofx.App
 
+/*
 class DebugEnvironment : App() {
     override fun start(stage: Stage) {
         super.start(stage)
@@ -36,3 +37,4 @@ class DebugEnvironment : App() {
         }
     }
 }
+*/

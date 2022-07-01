@@ -34,13 +34,22 @@ import server.adds.math.vec
 import server.adds.text.Ansi
 import server.adds.text.Logable
 import server.adds.text.Text
-import server.data_containers.ClientMouseI
 import tornadofx.*
 import java.text.DecimalFormat
 import javax.swing.Timer
 import kotlin.math.abs
 
+data class ClientMouseI(
+    val pos: CrazyVector,
+    val button: Int
+)
 
+/**
+ * I'm a graphical debugger, and I offer canvas rendering, parameter debugging during running time, a loop timer,
+ * a grid view on the canvas and custom GUI. If you want to get started just extend me and
+ * overwrite the abstract function "act". In the constructor you can define some properties and
+ * the modules you want to use.
+ */
 abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App() {
     private lateinit var canvas: Canvas
     protected var stopAfterAct = false
@@ -71,20 +80,49 @@ abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App
 
     private lateinit var root: BorderPane
 
+    /**
+     * Returns whether a key is pressed.
+     * @param key
+     */
     fun isKeyPressed(key: KeyCode) = keyboard[key] ?: false
+
+    /**
+     * Retruns the current position of the mouse.
+     */
     fun getMousePos() = mouse?.pos
+
+    /**
+     * Retruns the mouse object.
+     */
     fun getMouse() = mouse
 
+    /**
+     * Return the geometric transformation of the view.
+     */
     fun eyeTransform() = eyeModule?.getTrans() ?: DebugTransform(unit = configData.unit, canvasSize = canvasSize)
 
-    override fun log(str: String, color: Ansi?) {
-        Text.formattedPrint(configData.title, str, color, Ansi.YELLOW, configData.title.length+1)
+    /**
+     * Logs some text into the console.
+     * @param text
+     * @color the color of the text (optional)
+     */
+    override fun log(text: String, color: Ansi?) {
+        Text.formattedPrint(configData.title, text, color, Ansi.YELLOW, configData.title.length+1)
     }
 
+    /**
+     * Logs some text into the GUI logger.
+     * @param text the text
+     * @param from the owner of the text (optional)
+     */
     protected fun logModule(text: String, from: String? = null) {
         loggerModule?.log(text, from)
     }
 
+    /**
+     * Performs one debugger step.
+     * @param f the factor the step is calculated with
+     */
     protected suspend fun step(f: Double): Int {
         stopAfterAct = false
 
@@ -130,7 +168,7 @@ abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App
         }
     }
 
-    fun initialize(): Scene {
+    private fun initialize(): Scene {
         root = BorderPane().apply {
             center {
                 splitpane(Orientation.VERTICAL) {
@@ -227,6 +265,9 @@ abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App
         return scene
     }
 
+    /**
+     * Starts the debugger. The function MUST BE CALLED in the constructor of any debugger subclasses!
+     */
     override fun start(stage: Stage) {
         super.start(stage)
         stage.scene = initialize()
@@ -235,6 +276,11 @@ abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App
         stage.show()
     }
 
+    /**
+     * A function that is called when a mouse event was triggered. It can be overwritten by subclasses.
+     * @param it the mouse event
+     * @param type the type of the mouse event
+     */
     open fun mouseEvent(it: MouseEvent, type: MouseEventType) {
         mouse = ClientMouseI(eyeTransform().world(vec(it.x, it.y)), when (it.button) {
             MouseButton.PRIMARY -> 1
@@ -263,22 +309,41 @@ abstract class CrazyDebugger(val configData: CrazyDebuggerConfig) : Logable, App
         paint()
     }
 
+    /**
+     * A function that is called when a key was pressed. It can be overwritten by subclasses.
+     * @param it the key event
+     */
     open fun onKeyPressed(it: KeyEvent) {
         Platform.runLater { canvas.requestFocus() }
         keyboard[it.code] = true
     }
 
+    /**
+     * A function that is called when a key was released. It can be overwritten by subclasses.
+     * @param it the key event
+     */
     open fun onKeyReleased(it: KeyEvent) {
         keyboard[it.code] = false
     }
 
+    /**
+     * A function that is called when the mouse wheel was scrolled. It can be overwritten by subclasses.
+     * @param it the scroll event
+     */
     open fun scrollEvent(it: ScrollEvent) {
         eyeModule?.scrollEvent(it)
         paint()
     }
 
+    /**
+     * The function returns additional GUI components. It can be overwritten by subclasses.
+     */
     open fun customGui(): Node? { return null }
 
+    /**
+     * The function that is called in every debugger step. It can calculate something and finally it returns the objects that should be shown in the debugger as a list. It MUST BE OVERWRITTEN by subclasses.
+     * @s the factor of the step
+     */
     abstract suspend fun act(s: Double): List<DebugObjectI>
 
     inner class TransformEyeModule(val moduleConfig: TransformEyeModuleConfig) : DebuggerModuleI {

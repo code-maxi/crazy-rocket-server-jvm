@@ -2,12 +2,12 @@ package server.user
 
 import server.data_containers.ClientDataI
 import server.data_containers.KeyboardI
-import GalaxyAdminI
+import GameAdminI
 import GameContainerPrevI
 import JoinGameContainerI
-import SetPrevGalaxyRequestI
-import ResponseResult
-import SendFormat
+import SetPrevGameRequestI
+import server.data_containers.ResponseResult
+import server.data_containers.SendFormat
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import io.ktor.http.cio.websocket.*
@@ -53,10 +53,12 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
     private suspend fun sendDirectly(v: SendFormat) { session.send(Frame.Text(Gson().toJson(v))) }
 
     suspend fun sendGalaxyData(gal: GameContainer) {
-        sendDirectly(SendFormat(
+        sendDirectly(
+            SendFormat(
             "prev-galaxy-data",
             GameContainerPrevI(props, gal.data())
-        ))
+        )
+        )
     }
 
     private suspend fun setPrevGalaxy(prev: String) {
@@ -88,7 +90,7 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
         when(a.header) {
             "prev-galaxy" -> {
-                val prev = Gson().fromJson(a.value.toString(), SetPrevGalaxyRequestI::class.java)
+                val prev = Gson().fromJson(a.value.toString(), SetPrevGameRequestI::class.java)
                 setPrevGalaxy(prev.galaxy)
             }
             "join-galaxy" -> {
@@ -107,16 +109,18 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
 
                 log("Join galaxy result: $result")
 
-                sendDirectly(SendFormat(
+                sendDirectly(
+                    SendFormat(
                     "join-galaxy-result",
                     result
-                ))
+                )
+                )
             }
             "start-game" -> {
                 log("Want to start game...")
 
                 val result = resultCatch("start-or-join-game-result", {
-                    val admin = Gson().fromJson(a.value.toString(), GalaxyAdminI::class.java)
+                    val admin = Gson().fromJson(a.value.toString(), GameAdminI::class.java)
                     gameContainerOrError().startGame(admin.password)
 
                     ResponseResult(
@@ -129,10 +133,12 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
                 log(result.toString())
                 log("")
 
-                sendDirectly(SendFormat(
+                sendDirectly(
+                    SendFormat(
                     "start-or-join-game-result",
                     result
-                ))
+                )
+                )
             }
             "start-or-join-game" -> {
                 val result = resultCatch("start-or-join-game-result", {
@@ -140,10 +146,12 @@ class UserS(private val session: DefaultWebSocketSession) : Logable {
                     ResponseResult(true)
                 }, print = true)
 
-                sendDirectly(SendFormat(
+                sendDirectly(
+                    SendFormat(
                     "join-game-result",
                     result
-                ))
+                )
+                )
             }
             "client-data-request" -> {
                 try {

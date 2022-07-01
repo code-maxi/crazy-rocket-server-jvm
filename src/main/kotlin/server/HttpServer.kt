@@ -1,10 +1,10 @@
 package server
 
-import CreateNewGalaxyI
-import GalaxyPasswordI
-import GalaxyPropsI
-import JsonListI
-import JsonStatusI
+import CreateNewGameI
+import GamePasswordI
+import GameContainerPropsI
+import server.data_containers.JsonListI
+import server.data_containers.JsonStatusI
 import com.google.gson.Gson
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
@@ -44,7 +44,7 @@ class HTTPServer(val port: Int) {
         server.createContext("/create-galaxy") {
             println("request to /create-galaxy ${it.requestMethod}")
             Network.handlePostRequest(
-                it, CreateNewGalaxyI::class.java
+                it, CreateNewGameI::class.java
             ) { parsed, finish ->
                 println("/create-galaxy parsed: $parsed")
 
@@ -61,7 +61,7 @@ class HTTPServer(val port: Int) {
         server.createContext("/delete-galaxy") {
             println("request to /delete-galaxy ${it.requestMethod}")
             Network.handlePostRequest(
-                it, GalaxyPasswordI::class.java
+                it, GamePasswordI::class.java
             ) { parsed, finish ->
                 println("/delete-galaxy parsed: $parsed")
 
@@ -78,7 +78,7 @@ class HTTPServer(val port: Int) {
         server.start()
     }
 
-    fun updateContexts(list: ArrayList<GalaxyPropsI>) {
+    fun updateContexts(list: ArrayList<GameContainerPropsI>) {
         println("Contexts: " + contexts.joinToString())
         println("List: " + list.joinToString())
 

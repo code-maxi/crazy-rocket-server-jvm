@@ -1,9 +1,9 @@
 package server
 
-import CreateNewGalaxyI
-import GalaxyPasswordI
-import JsonListI
-import ResponseResult
+import CreateNewGameI
+import GamePasswordI
+import server.data_containers.JsonListI
+import server.data_containers.ResponseResult
 import com.google.gson.Gson
 import io.ktor.application.*
 import io.ktor.routing.*
@@ -43,7 +43,7 @@ object KtorServer {
                     val res = Error.resultCatch("create-galaxy-http-response", {
                         val json = call.receiveText()
                         log("request to /create-galaxy/{galaxy}: $json", Ansi.CYAN)
-                        val parsed = Gson().fromJson(json, CreateNewGalaxyI::class.java)
+                        val parsed = Gson().fromJson(json, CreateNewGameI::class.java)
 
                         GameContainer.create(parsed)
 
@@ -59,7 +59,7 @@ object KtorServer {
                 post("/delete-galaxy") {
                     val res = Error.resultCatch("create-galaxy-http-response", {
                         val param = call.receiveText()
-                        val parsed = Gson().fromJson(param, GalaxyPasswordI::class.java)
+                        val parsed = Gson().fromJson(param, GamePasswordI::class.java)
 
                         GameContainer.delete(parsed)
 

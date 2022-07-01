@@ -1,7 +1,7 @@
 package server.game.debug
 
 import GameConfigI
-import SendFormat
+import server.data_containers.SendFormat
 import TeamColor
 import javafx.scene.layout.VBox
 import javafx.scene.paint.Color

@@ -1,6 +1,6 @@
 package server.adds
 
-import JsonStatusI
+import server.data_containers.JsonStatusI
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.sun.net.httpserver.HttpExchange

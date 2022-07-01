@@ -25,7 +25,8 @@ class CrazyCircle(
         pos transformTo trans
     )
 
-    override fun isSurroundedByCircle(circle: CrazyCircle) = circle.pos distance this.pos < circle.radius - this.radius
+    override fun isSurroundedByCircle(circle: CrazyCircle) =
+        (circle.pos distance this.pos) + this.radius < circle.radius
 
     override fun containsPoint(point: CrazyVector) = point distance pos < radius
 
@@ -44,7 +45,7 @@ class CrazyCircle(
 
     override fun shapeString() = "Circle(radius = $radius, pos = ${pos.niceString()})"
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?) = CrazyCircle(radius, pos, shapeDebugConfig)
+    override fun setConfig(config: ShapeDebugConfig?) = CrazyCircle(radius, pos, config)
     //override fun transform(trans: GeomTransform) = RocketCircle(radius * trans.scaling, pos + trans.pos)
 
     override fun setColor(c: Color) = super.setColor(c) as CrazyCircle

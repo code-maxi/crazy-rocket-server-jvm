@@ -1,6 +1,6 @@
 package server.adds
 
-import ResponseResult
+import server.data_containers.ResponseResult
 import com.google.gson.JsonSyntaxException
 import server.data_containers.OwnException
 

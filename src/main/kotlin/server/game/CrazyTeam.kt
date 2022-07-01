@@ -1,39 +1,16 @@
 package server.game
 
-import SendFormat
+import server.data_containers.SendFormat
 import TeamColor
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import server.adds.math.CrazyVector
 import server.adds.saveForEach
 import server.data_containers.UserPropsI
-import server.game.objects.BasePropsResponseD
 import server.game.objects.CrazyBase
 import server.game.objects.CrazyRocket
-
-data class KickedUserItem(
-    val userId: String,
-    val startTime: Int,
-    val reason: String
-) {
-    private var time = startTime
-    fun startTimer() {
-        GlobalScope.launch {
-            while (time > 0) {
-                delay(1000)
-                time --
-            }
-        }
-    }
-    fun currentTime() = time
-}
 
 class CrazyTeam(val teamColor: TeamColor, val game: CrazyGame, mainBasePosition: CrazyVector) {
     private val users = arrayListOf<String>()
     private val bases = hashMapOf<String, String>()
-
-    private var kickedUserQueue = mutableMapOf<String, KickedUserItem>()
 
     init {
         val name = CrazyBase.BASE_NAMES.random()

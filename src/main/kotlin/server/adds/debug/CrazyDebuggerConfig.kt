@@ -36,6 +36,18 @@ data class LoggerModuleConfig(
     val minWidth: Double = 350.0
 )
 
+/**
+ * The config class to set up a debugger.
+ * @param title the title of the debugger window
+ * @param unit the proportion between the absolute coordinates (in unit) and the rendered result (in pixel)
+ * @param moduleComponentHeight the default height of the component row at the bottom
+ * @param eyeModule a module to change the debugger view by mouse actions (default)
+ * @param timerModule a module to control the step behaviour (default)
+ * @param inspectorModule a module to inspect properties of an object during running time (default) –
+ * Usage: If you want to debug an object that defines "debugOptions" just click on it with the secondary mouse button and the GUI will show you the properties of the object.
+ * @param gridModule a module to draw a grid on the canvas (default)
+ * @param loggerModule a module for a logging console in the debugger shown as a GUI component (default)
+ */
 data class CrazyDebuggerConfig(
     val title: String = "Geom-Debugger",
     val unit: Double = 1.0,

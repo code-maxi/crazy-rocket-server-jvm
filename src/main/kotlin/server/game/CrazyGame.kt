@@ -1,9 +1,13 @@
 package server.game
 
-import SendFormat
+import server.data_containers.SendFormat
 import TeamColor
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import server.adds.math.vec
 import server.data_containers.*
+import server.game.objects.CrazyRocket2
 import server.game.objects.abstct.AbstractGameObject
 import server.game.objects.abstct.GeoObject
 import kotlin.reflect.KClass
@@ -16,18 +20,53 @@ data class GameConfig(
     val height: Int
 )
 
+data class KickedUserItem(
+    val userId: String,
+    val startTime: Int,
+    val reason: String
+) {
+    private var time = startTime
+    fun startTimer() {
+        GlobalScope.launch {
+            while (time > 0) {
+                delay(1000)
+                time --
+            }
+        }
+    }
+    fun currentTime() = time
+    fun guiComponents() = mapOf<ClientGUIComponent, Map<String, Any?>>(
+        ClientGUIComponent.KICKED_OUT_OF_GAME to mapOf(
+            "time" to currentTime(),
+            "reason" to reason
+        )
+    )
+}
+
 class CrazyGame(
     val config: GameConfig
 ) : AbstractGame() {
     // the list of the team classes which cover the team
     private val teams = mutableMapOf<TeamColor, CrazyTeam>()
 
+    private var kickedUserQueue = mutableMapOf<String, KickedUserItem>()
+
     /**
      * How often the function calc is called.
-     * Step 1:
+     * Step 1: move all objects
      * Step 4:
      */
     override val CALCULATION_TIMES = 4
+    override fun dataForUser(userId: String) =
+        objectMap[userId]?.let { (it as CrazyRocket2).getClientData() }
+            ?: kickedUserQueue[userId]?.let {
+                ClientResponseD(
+                    yourID = userId,
+                    world = null,
+                    messages = listOf(),
+                    guiComponents = it.guiComponents()
+                )
+            }
 
     init {
         for (c in config.availableTeams) {

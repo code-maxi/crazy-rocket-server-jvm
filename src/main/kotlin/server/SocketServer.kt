@@ -1,11 +1,5 @@
 package server
 
-import SendFormat
-import com.google.gson.Gson
-import server.user.UserS
-import java.net.InetSocketAddress
-import kotlin.concurrent.thread
-
 //lateinit var server: SocketServer
 
 /*class SocketServer(port: Int) : WebSocketServer(InetSocketAddress(port)), Logable {
@@ -29,7 +23,7 @@ import kotlin.concurrent.thread
     override fun onError(conn: WebSocket?, ex: Exception?) { UserS.findUser(conn!!).onError(ex!!) }
     override fun onMessage(conn: WebSocket?, message: String?) {
         try {
-            val parse = Gson().fromJson(message!!, SendFormat::class.java)
+            val parse = Gson().fromJson(message!!, server.data_containers.SendFormat::class.java)
             UserS.findUser(conn!!).onMessage(parse)
         }
         catch (ex: com.google.gson.JsonSyntaxException) { log("Couldn't parse $message", LogType.ERROR) }

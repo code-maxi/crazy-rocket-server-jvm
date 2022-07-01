@@ -12,7 +12,7 @@ import server.adds.math.geom.shapes.CrazyLine
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.vec
 import server.data_containers.ClientCanvasObjectD
-import server.data_containers.GameObjectTypeE
+import server.game.objects.abstct.GameObjectTypeE
 import server.game.data.*
 import server.game.objects.abstct.GeoObject
 import kotlin.math.PI

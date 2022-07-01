@@ -5,6 +5,7 @@ import server.adds.saveForEach
 import server.adds.text.Ansi
 import server.adds.text.Text
 import server.data_containers.ClientDataRequest
+import server.data_containers.ClientResponseD
 import server.data_containers.UserPropsI
 import server.game.objects.abstct.AbstractGameObject
 import kotlin.reflect.KClass
@@ -96,7 +97,7 @@ abstract class AbstractGame {
         factor: Double,
         users: List<UserPropsI>,
         clientDataRequests: Map<String, ClientDataRequest>
-    ): Map<String, Map<String, Any?>> {
+    ): Map<String, ClientResponseD?> {
         yield()
 
         users.forEach {
@@ -128,7 +129,7 @@ abstract class AbstractGame {
         return clientDataRequests.map { it.key to dataForUser(it.key) }.toMap()
     }
 
-    abstract fun dataForUser(userId: String): Map<String, Any?>
+    protected abstract fun dataForUser(userId: String): ClientResponseD?
 
     open fun whenNewUserJoined(user: UserPropsI) {}
     open fun whenUserLeft(user: UserPropsI) {}

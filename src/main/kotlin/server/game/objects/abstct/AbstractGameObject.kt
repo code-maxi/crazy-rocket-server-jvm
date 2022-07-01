@@ -2,13 +2,9 @@ package server.game.objects.abstct
 
 import server.adds.debug.DebugObjectI
 import server.adds.text.Ansi
-import server.data_containers.ClientCanvasObjectD
-import server.data_containers.GameObjectTypeE
 import server.game.AbstractGame
 import server.game.CrazyGame
 import server.game.data.DataMemory
-import server.game.data.PaintDataD
-import server.game.data.PaintMapIcon
 
 /**
  * This class is the abstract origin for the game object. Every game object must extend this class to be used in the game.

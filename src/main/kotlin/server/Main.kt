@@ -1,6 +1,6 @@
 package server
 
-import CreateNewGalaxyI
+import CreateNewGameI
 import GameConfigI
 import kotlinx.coroutines.*
 import org.apache.http.impl.client.HttpClients
@@ -39,7 +39,7 @@ fun main(args: Array<String>) {
         "server" -> {
             runBlocking {
                 //GalaxyS.readGalaxyState()
-                GameContainer.create(CreateNewGalaxyI("test", "test-p", GameConfigI(1.0, 100.0, 2, 100, 100)))
+                GameContainer.create(CreateNewGameI("test", "test-p", GameConfigI(1.0, 100.0, 2, 100, 100)))
                 KtorServer.create()
             }
 

@@ -67,25 +67,49 @@ class CrazyLine(
         }
     }
 
-    fun drawAsVector(color: Color = Color.BLUE, lineWidth: Double = 2.0) = setConfig(shapeConfig().copy(drawLineAsVector = true, crazyStyle = ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = color, strokeColor = color, fillOpacity = 1.0, lineWidth = lineWidth)))
+    /**
+     * Returns a clone of this line that is drawn with a vector arrow.
+     * @param color the color of the arrow (default: BLUE)
+     * @param lineWidth the line width of the arrow (default: 2px)
+     */
+    fun drawAsVector(color: Color = Color.BLUE, lineWidth: Double = 2.0) =
+        setConfig(shapeConfig().copy(drawLineAsVector = true, crazyStyle = ShapeDebugConfig.DEFAULT_CRAZY_STYLE.copy(fillColor = color, strokeColor = color, fillOpacity = 1.0, lineWidth = lineWidth)))
 
-    override fun isSurroundedByCircle(circle: CrazyCircle) = circle containsPoint a && circle containsPoint b
-    fun leftPoint() = if (a.x < b.x) a else b
-    fun rightPoint() = if (a.x > b.x) a else b
+    override fun isSurroundedByCircle(circle: CrazyCircle) =
+        circle containsPoint a && circle containsPoint b
 
     override fun shapeString() = "Line(a = ${a.niceString()}; b = ${b.niceString()})"
 
     fun rightLine() = copy(a, a + (b - a).normalRight())
 
-    fun orthogonalLineFromPoint(p: CrazyVector, vecLength: Double = 1.0) = CrazyLine(p, p + this.delta().normalRight().e() * vecLength * (if (isPointRight(p)) -1.0 else 1.0))
+    fun orthogonalLineFromPoint(p: CrazyVector, vecLength: Double = 1.0) =
+        CrazyLine(p, p + this.delta().normalRight().e() * vecLength * (if (isPointRight(p)) -1.0 else 1.0))
 
+    /**
+     * Returns the delta vector between a and b (b - a).
+     */
     fun delta() = b - a
 
+    /**
+     * Returns a vector representing the line (a - b).
+     */
+    fun toVec() = b - a
+
+    /**
+     * Returns a copy of this line with other optional properties.
+     * @param a the point a (default)
+     * @param a the point b (default)
+     * @param config the debug config (default)
+     */
     fun copy(a: CrazyVector = this.a, b: CrazyVector = this.b, config: ShapeDebugConfig? = this.config) =
         CrazyLine(a, b, config)
 
-    override fun setConfig(shapeDebugConfig: ShapeDebugConfig?): CrazyLine = CrazyLine(a, b, shapeDebugConfig)
+    override fun setConfig(config: ShapeDebugConfig?): CrazyLine = CrazyLine(a, b, config)
 
+    /**
+     * Returns whether a point is on the right side of the line.
+     * @param pos the point
+     */
     infix fun isPointRight(pos: CrazyVector) = (b - a).normalRight() scalar (pos - a) > 0
 
     infix fun normalLineFrom(pos: CrazyVector): CrazyLine {
@@ -93,6 +117,11 @@ class CrazyLine(
         return CrazyLine(pos, pos + delta().normalRight().e() * (if (rightOnLine) -1 else 1))
     }
 
+    /**
+     * Calculates the intersection between this line and another one and returns the result as
+     * a "CrazyLineIntersectionData" object.
+     * @param that the other line
+     */
     infix fun intersection(that: CrazyLine): CrazyLineIntersectionData {
         val d1 = this.b - this.a
         val d2 = that.b - that.a
@@ -114,10 +143,6 @@ class CrazyLine(
             collides = onLine1 && onLine2
         )
     }
-
-    fun modifyDelta(f: (CrazyVector) -> CrazyVector) = copy(a, f(b - a))
-
-    fun toVec() = b - a
 
     override fun setZIndex(i: Int): CrazyLine = super.setZIndex(i) as CrazyLine
     override fun setColor(c: Color): CrazyLine = super.setColor(c) as CrazyLine

@@ -1,6 +1,6 @@
 package server.user
 
-import SendFormat
+import server.data_containers.SendFormat
 import com.google.gson.Gson
 import java.io.InputStream
 import java.io.OutputStream
@@ -84,7 +84,7 @@ Sec-WebSocket-Accept: ${
                 val inpp = Gson().fromJson(data, SendFormat::class.java)
                 onMessage(inpp)
             } catch (e: Exception) {
-                println("Can't Read Object $data. It's not a SendFormat.")
+                println("Can't Read Object $data. It's not a server.data_containers.SendFormat.")
             }
         }
         onKill()

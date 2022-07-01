@@ -1,6 +1,5 @@
 package server.game.objects.abstct
 
-import server.data_containers.GameObjectTypeE
 import server.game.objects.CrazyShot
 
 interface VulnerableObjectI {

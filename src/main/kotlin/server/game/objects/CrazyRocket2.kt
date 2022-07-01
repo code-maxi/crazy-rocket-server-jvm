@@ -1,14 +1,14 @@
 package server.game.objects
 
-import SendFormat
+import server.data_containers.SendFormat
 import server.adds.math.CrazyVector
 import server.adds.math.geom.shapes.CrazyPolygon
 import server.adds.math.geom.shapes.CrazyRect
-import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.vec
 import server.data_containers.*
 import server.game.CrazyGame
 import server.game.CrazyTeam
+import server.game.objects.abstct.GameObjectTypeE
 import server.game.objects.abstct.GeoObject
 
 class CrazyRocket2(
@@ -47,10 +47,6 @@ class CrazyRocket2(
         if (step == 1) colliderPolygon = makeCollider()
     }
 
-    override fun data(): Map<String, Any?> {
-
-    }
-
     /**
      * Transfers the ClientDataRequest data to the rocket to use it in the game.
      * @param data
@@ -63,6 +59,10 @@ class CrazyRocket2(
         // calling onMessage for each message
         for (message in data.messages) onMessage(message)
     }
+
+    fun isActionPressed(id: String) = actionStates[id]?.isPressed
+    fun wasActionPressed(id: String) = actionStates[id]?.wasPressed
+    fun wasActionReleased(id: String) = actionStates[id]?.wasReleased
 
     private fun onMessage(m: SendFormat) {
         // messages from the client can be handled here
@@ -111,7 +111,8 @@ class CrazyRocket2(
                 objects = objectReadyToSend,
                 effectTasks = effectsToSend
             ),
-            guiComponents = guiComponents
+            guiComponents = guiComponents,
+            messages = messages
         )
 
         currentObjectsInView = objectsInMapView.map { it.getID() }
@@ -120,7 +121,7 @@ class CrazyRocket2(
 
         lastTimeDataWasSent = getGame().getCurrentIterationTime()
 
-        return  data
+        return data
     }
 
 

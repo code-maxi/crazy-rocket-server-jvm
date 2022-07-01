@@ -1,6 +1,5 @@
 package server.data_containers
 
-import SendFormat
 import TeamColor
 import javafx.scene.input.KeyCode
 import server.adds.math.CrazyVector
@@ -90,11 +89,36 @@ data class ClientCanvasEffectD(
 )
 
 enum class ClientGUIComponent {
-
+    KICKED_OUT_OF_GAME
 }
 
 data class ClientResponseD(
     val yourID: String,
-    val world: ClientWorldD,
-    val guiComponents: Map<ClientGUIComponent, Map<String, Any?>?>
+    val world: ClientWorldD?,
+    val guiComponents: Map<ClientGUIComponent, Map<String, Any?>?>,
+    val messages: List<SendFormat>
 )
+
+data class GameStartI(
+    val listeningKeys: List<String>
+)
+
+data class SendFormat(val header: String, val value: Any? = null)
+data class ResponseResult(
+    val successfully: Boolean,
+    val header: String? = null,
+    val data: Any? = null,
+    val message: String? = null,
+    val errorType: String? = null
+)
+
+data class OwnExceptionDataI(
+    val type: String,
+    val message: String
+)
+
+data class JsonListI<T>(
+    val list: List<T>
+)
+
+data class JsonStatusI(val status: String)

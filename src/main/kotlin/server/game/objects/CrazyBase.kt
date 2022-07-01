@@ -10,11 +10,9 @@ import server.adds.math.geom.shapes.CrazyCircle
 import server.adds.math.geom.shapes.ShapeDebugConfig
 import server.adds.math.vec
 import server.adds.saveForEach
-import server.data_containers.GameObjectTypeE
+import server.game.objects.abstct.GameObjectTypeE
 import server.game.CrazyGoodsContainer
 import server.game.CrazyHumanEnvironment
-import server.game.KickedUserItem
-import server.game.data.*
 import server.game.objects.abstct.GeoObject
 
 enum class BaseExtensionTypeE { CARGO_AREA, HUMAN_AREA }

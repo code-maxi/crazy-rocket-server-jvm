@@ -7,12 +7,11 @@ import server.adds.debug.DebugObjectOptions
 import server.adds.debug.DebugTransform
 import server.adds.math.geom.shapes.CrazyShape
 import server.adds.math.geom.shapes.ShapeDebugConfig
-import server.data_containers.GameObjectTypeE
 import server.game.CrazyGame
 import kotlin.reflect.KClass
 
 /**
- * It's an abstract object class that offers collision detection with other "ColliderObject" instances.
+ * I'm an abstract object class that offers collision detection with other "ColliderObject" instances.
  */
 
 abstract class ColliderObject(type: GameObjectTypeE) : AbstractGameObject(type), DebugObjectI {

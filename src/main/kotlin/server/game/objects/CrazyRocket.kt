@@ -1,6 +1,5 @@
 package server.game.objects
 
-import SendFormat
 import javafx.scene.paint.Color
 import server.adds.debug.DebugObjectOptions
 import server.adds.math.geom.GeoI
@@ -12,10 +11,9 @@ import server.adds.math.vec
 import server.data_containers.KeyboardI
 import server.data_containers.UserViewI
 import server.data_containers.*
-import server.galaxy.GameContainer
 import server.game.CrazyGame
 import server.game.CrazyTeam
-import server.game.data.ClientWorldD
+import server.game.objects.abstct.GameObjectTypeE
 import server.game.objects.abstct.GeoObject
 import java.lang.Math.PI
 

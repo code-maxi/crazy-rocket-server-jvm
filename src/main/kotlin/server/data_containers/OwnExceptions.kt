@@ -1,8 +1,5 @@
 package server.data_containers
 
-import OwnExceptionDataI
-import ResponseResult
-import SendFormat
 import TeamColor
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
@@ -11,7 +8,7 @@ import server.adds.text.Text.formattedPrint
 import server.adds.math.CrazyVector
 
 abstract class OwnException(type: String, message: String) : Exception(message) {
-    val exceptionData = OwnExceptionDataI(type, message)
+    private val exceptionData = OwnExceptionDataI(type, message)
 
     fun responseResult(header: String? = null, print: Boolean = false): ResponseResult {
         val result = ResponseResult(
@@ -31,7 +28,7 @@ abstract class OwnException(type: String, message: String) : Exception(message) 
 
 class WrongRequestEx(request: Any?) : OwnException(
     "wrong-request",
-    "The Request '$request' is wrong."
+    "The request '$request' is wrong."
 )
 
 class InvalidPasswordEx(galaxy: String) : OwnException(
@@ -39,19 +36,9 @@ class InvalidPasswordEx(galaxy: String) : OwnException(
     "The password was wrong for galaxy '$galaxy'."
 )
 
-open class DoesNotExistEx(type: String, value: String) : OwnException(
-    "does-not-exist",
-    "The $type '$value' doesn't exist."
-)
-
 class GalaxyDoesNotExist(galaxy: String) : OwnException(
     "galaxy-does-not-exist",
     "You're trying to access a galaxy called '$galaxy' that doesn't exist."
-)
-
-open class DoesAlreadyExistEx(val type: String, val value: String) : OwnException(
-    "does-already-exist",
-    "The $type '$value' does already exist."
 )
 
 open class GameIsAlreadyRunning : OwnException(
@@ -62,10 +49,6 @@ open class GameIsAlreadyRunning : OwnException(
 class GameContainerHasNotBeenInitializedEx : OwnException(
     "galaxy-not-initialized",
     "Your galaxy has not been initialized on serverside. It seems you have to join the galaxy first."
-)
-class GameNotInitializedEx(galaxy: String) : OwnException(
-    "game-not-initialized",
-    "You're trying to access the game of galaxy \"$galaxy\" that has not been initialized yet."
 )
 
 class InvalidTextEx(
@@ -90,14 +73,6 @@ class TeamColorDoesNotExistEx(team: String) : OwnException(
 class TeamIsFull(team: String, maxSize: Int) : OwnException(
     "team-is-full",
     "The team \"team\" is already full. The max size of members is $maxSize."
-)
-
-class IdIsAlreadyInUse(
-    type: String,
-    id: String
-) : OwnException(
-    "invalid-id-exception",
-    "The ID '$id' of '$type' is already in use."
 )
 
 class WrongFormatEx(ms: String, format: String) : OwnException(
@@ -130,11 +105,6 @@ class TooLittlePointsInPolygonEx(pointsSize: Int) : OwnException(
     "There are to little points ($pointsSize) in polygon."
 )
 
-class GameObjectIsNotInitialized(name: String) : OwnException(
-    "game-object-is-not-initialized",
-    "The Game Object $name is not initialized yet."
-)
-
 class TeamNotInUse(team: TeamColor) : OwnException(
     "team-is-not-in-use",
     "The team ${team.teamName} you are trying to access is not in use."
@@ -142,5 +112,5 @@ class TeamNotInUse(team: TeamColor) : OwnException(
 
 fun parseSendFormat(str: String): SendFormat {
     try { return Gson().fromJson(str, SendFormat::class.java) }
-    catch (ex: JsonSyntaxException) { throw WrongFormatEx(str, "SendFormat") }
+    catch (ex: JsonSyntaxException) { throw WrongFormatEx(str, "server.data_containers.SendFormat") }
 }
